@@ -1,4 +1,12 @@
-import ensureLocation from '../src/ensureLocation';
+import ensureLocation_ from '../src/ensureLocation';
+
+function ensureLocation(location) {
+  const locationWithoutOrigin = ensureLocation_(location, {
+    origin: 'https://example.com',
+  });
+  delete locationWithoutOrigin.origin;
+  return locationWithoutOrigin;
+}
 
 describe('ensureLocation', () => {
   it('should preserve fully-defined location descriptor objects', () => {

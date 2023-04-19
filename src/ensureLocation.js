@@ -1,9 +1,19 @@
-export default function ensureLocation(location) {
+export default function ensureLocation(location, { origin } = {}) {
+  if (!origin) {
+    if (typeof window === 'undefined') {
+      throw new Error(
+        '[farce] `origin` parameter is required when calling `ensureLocation()`',
+      );
+    }
+    origin = window.location.origin;
+  }
+
   if (typeof location === 'object') {
     // Set default values for fields other than pathname.
     return {
       search: '',
       hash: '',
+      origin,
       ...location,
     };
   }
@@ -29,6 +39,7 @@ export default function ensureLocation(location) {
   }
 
   return {
+    origin,
     pathname: remainingPath,
     search,
     hash,
