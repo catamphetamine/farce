@@ -120,3 +120,5 @@ dist
 # Yalc.
 .yalc/
 yalc.lock
+
+project.sublime-workspace
