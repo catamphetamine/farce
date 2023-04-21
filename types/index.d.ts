@@ -20,6 +20,13 @@ export interface Location<TState = any> {
    */
   action: 'PUSH' | 'REPLACE' | 'POP';
   /**
+   * Origin, host, hostname, port.
+   */
+  origin: string;
+  host: string;
+  hostname: string;
+  port: string;
+  /**
    * the path name; as on window.location e.g. '/foo'
    */
   pathname: string;
@@ -60,6 +67,10 @@ export interface Location<TState = any> {
  * Location descriptor object used in #push and #replace.
  */
 export interface LocationDescriptorObject {
+  origin?: Location['origin'];
+  host?: Location['host'];
+  hostname?: Location['hostname'];
+  port?: Location['port'];
   pathname: Location['pathname'];
   query?: QueryDescriptor;
   search?: Location['search'];
