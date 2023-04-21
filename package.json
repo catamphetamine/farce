@@ -1,13 +1,13 @@
 {
-  "name": "farce",
+  "name": "@catamphetamine/farce",
   "version": "0.4.5",
   "description": "History repeats itself",
   "keywords": [
     "history"
   ],
-  "homepage": "https://github.com/4Catalyzer/farce#readme",
+  "homepage": "https://github.com/catamphetamine/farce#readme",
   "bugs": {
-    "url": "https://github.com/4Catalyzer/farce/issues"
+    "url": "https://github.com/catamphetamine/farce/issues"
   },
   "license": "MIT",
   "author": "4Catalyzer",
@@ -19,7 +19,7 @@
   "types": "lib/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/4Catalyzer/farce.git"
+    "url": "https://github.com/catamphetamine/farce.git"
   },
   "scripts": {
     "build": "rimraf lib && 4c build --types false src && npm run build:pick && npm run build:types",
