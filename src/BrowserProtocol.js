@@ -9,7 +9,8 @@ export default class BrowserProtocol {
   }
 
   init() {
-    const { pathname, search, hash } = window.location;
+    const { origin, protocol, host, hostname, port, pathname, search, hash } =
+      window.location;
 
     const { key, index = 0, state } = window.history.state || {};
     const delta = this._index != null ? index - this._index : 0;
@@ -17,6 +18,11 @@ export default class BrowserProtocol {
 
     return {
       action: 'POP',
+      origin,
+      protocol,
+      host,
+      hostname,
+      port,
       pathname,
       search,
       hash,
