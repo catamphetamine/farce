@@ -22,9 +22,10 @@
     "url": "https://github.com/catamphetamine/farce.git"
   },
   "scripts": {
-    "build": "rimraf lib && 4c build --types false src && npm run build:pick && npm run build:types",
+    "build": "rimraf lib && 4c build --types false src && npm run build:pick && npm run build:types && npm run build:copy",
     "build:pick": "cherry-pick --cjs-dir cjs --esm-dir esm --cwd lib ../src",
     "build:types": "cpy types/*.d.ts lib",
+    "build:copy": "cpy lib/*.d.ts . && cpy lib/esm esm && cpy lib/cjs cjs",
     "format": "4c format --prettier-ignore .eslintignore .",
     "lint": "4c lint --prettier-ignore .eslintignore .",
     "prepublishOnly": "npm run build",
@@ -45,7 +46,9 @@
   },
   "prettier": "@4c/prettier-config",
   "dependencies": {
-    "query-string": "^5.1.1",
+    "query-string": "^5.1.1"
+  },
+  "peerDependencies": {
     "redux": "^4.1.2"
   },
   "devDependencies": {
@@ -90,7 +93,8 @@
     "rimraf": "^3.0.2",
     "sinon": "^11.1.2",
     "sinon-chai": "^3.7.0",
-    "webpack": "^5.72.1"
+    "webpack": "^5.72.1",
+    "redux": "^4.1.2"
   },
   "publishConfig": {
     "directory": "lib"

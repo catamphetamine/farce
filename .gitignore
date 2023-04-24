@@ -116,6 +116,9 @@ dist
 
 # Transpiled code.
 /lib
+/esm
+/cjs
+/*.d.ts
 
 # Yalc.
 .yalc/
