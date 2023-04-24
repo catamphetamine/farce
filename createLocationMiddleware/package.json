@@ -1,5 +1,5 @@
 {
-  "name": "farce/createLocationMiddleware",
+  "name": "@catamphetamine/farce/createLocationMiddleware",
   "private": true,
   "main": "../cjs/createLocationMiddleware.js",
   "module": "../esm/createLocationMiddleware.js"

@@ -1,5 +1,5 @@
 {
-  "name": "farce/createHistoryMiddleware",
+  "name": "@catamphetamine/farce/createHistoryMiddleware",
   "private": true,
   "main": "../cjs/createHistoryMiddleware.js",
   "module": "../esm/createHistoryMiddleware.js"

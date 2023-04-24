@@ -1,5 +1,5 @@
 {
-  "name": "farce/locationReducer",
+  "name": "@catamphetamine/farce/locationReducer",
   "private": true,
   "main": "../cjs/locationReducer.js",
   "module": "../esm/locationReducer.js"

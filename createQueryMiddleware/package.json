@@ -1,5 +1,5 @@
 {
-  "name": "farce/createQueryMiddleware",
+  "name": "@catamphetamine/farce/createQueryMiddleware",
   "private": true,
   "main": "../cjs/createQueryMiddleware.js",
   "module": "../esm/createQueryMiddleware.js"

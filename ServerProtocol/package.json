@@ -1,5 +1,5 @@
 {
-  "name": "farce/ServerProtocol",
+  "name": "@catamphetamine/farce/ServerProtocol",
   "private": true,
   "main": "../cjs/ServerProtocol.js",
   "module": "../esm/ServerProtocol.js"

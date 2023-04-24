@@ -1,5 +1,5 @@
 {
-  "name": "farce/Actions",
+  "name": "@catamphetamine/farce/Actions",
   "private": true,
   "main": "../cjs/Actions.js",
   "module": "../esm/Actions.js"

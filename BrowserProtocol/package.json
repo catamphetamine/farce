@@ -1,5 +1,5 @@
 {
-  "name": "farce/BrowserProtocol",
+  "name": "@catamphetamine/farce/BrowserProtocol",
   "private": true,
   "main": "../cjs/BrowserProtocol.js",
   "module": "../esm/BrowserProtocol.js"
