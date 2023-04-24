@@ -4,7 +4,7 @@ import ensureLocation from './ensureLocation';
 function noop() {}
 
 export default class ServerProtocol {
-  constructor(url, { origin }) {
+  constructor({ url, origin }) {
     this._location = ensureLocation(url, { origin });
   }
 
