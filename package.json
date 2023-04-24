@@ -11,9 +11,6 @@
   },
   "license": "MIT",
   "author": "4Catalyzer",
-  "files": [
-    "lib"
-  ],
   "main": "lib/cjs/index.js",
   "module": "lib/esm/index.js",
   "types": "lib/index.d.ts",
