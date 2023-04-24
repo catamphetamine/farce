@@ -2,29 +2,30 @@ const ORIGIN_REG_EXP = /^(?:([^:/]+):)?\/\/([^:/]+)(?::([0-9]+))?/;
 
 export default function ensureLocation(location, { origin } = {}) {
   if (!origin) {
-    if (typeof window === 'undefined') {
-      throw new Error(
-        '[farce] `origin` parameter is required when calling `ensureLocation()`',
-      );
+    if (typeof window !== 'undefined') {
+      origin = window.location.origin;
     }
-    origin = window.location.origin;
   }
 
-  // In modern browsers and in Node.js:
-  // const url = new URL('/a/b', 'https://www.example.com')
-
-  const [_, protocol, hostname, port] = origin.match(ORIGIN_REG_EXP);
-
-  const host = port !== undefined ? `${hostname}:${port}` : hostname;
-
-  if (typeof location === 'object') {
-    // Set default values for fields other than pathname.
-    return {
+  let originProps;
+  if (origin) {
+    // In modern browsers and in Node.js:
+    // const url = new URL('/a/b', 'https://www.example.com')
+    const [_, protocol, hostname, port] = origin.match(ORIGIN_REG_EXP);
+    const host = port !== undefined ? `${hostname}:${port}` : hostname;
+    originProps = {
       origin,
       protocol: protocol || '',
       host,
       hostname,
       port: port || '',
+    };
+  }
+
+  if (typeof location === 'object') {
+    // Set default values for fields other than pathname.
+    return {
+      ...originProps,
       search: '',
       hash: '',
       ...location,
@@ -52,11 +53,7 @@ export default function ensureLocation(location, { origin } = {}) {
   }
 
   return {
-    origin,
-    protocol: protocol || '',
-    host,
-    hostname,
-    port: port || '',
+    ...originProps,
     pathname: remainingPath,
     search,
     hash,
