@@ -21,11 +21,12 @@ export interface Location<TState = any> {
   action: 'PUSH' | 'REPLACE' | 'POP';
   /**
    * Origin, host, hostname, port.
+   * Only in web.
    */
-  origin: string;
-  host: string;
-  hostname: string;
-  port: string;
+  origin?: string;
+  host?: string;
+  hostname?: string;
+  port?: string;
   /**
    * the path name; as on window.location e.g. '/foo'
    */
