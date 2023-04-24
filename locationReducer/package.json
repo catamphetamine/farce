@@ -1,6 +1,6 @@
 {
   "name": "@catamphetamine/farce/locationReducer",
   "private": true,
-  "main": "../cjs/locationReducer.js",
-  "module": "../esm/locationReducer.js"
+  "main": "../lib/cjs/locationReducer.js",
+  "module": "../lib/esm/locationReducer.js"
 }

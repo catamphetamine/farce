@@ -1,6 +1,6 @@
 {
   "name": "@catamphetamine/farce/HashProtocol",
   "private": true,
-  "main": "../cjs/HashProtocol.js",
-  "module": "../esm/HashProtocol.js"
+  "main": "../lib/cjs/HashProtocol.js",
+  "module": "../lib/esm/HashProtocol.js"
 }

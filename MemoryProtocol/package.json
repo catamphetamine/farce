@@ -1,6 +1,6 @@
 {
   "name": "@catamphetamine/farce/MemoryProtocol",
   "private": true,
-  "main": "../cjs/MemoryProtocol.js",
-  "module": "../esm/MemoryProtocol.js"
+  "main": "../lib/cjs/MemoryProtocol.js",
+  "module": "../lib/esm/MemoryProtocol.js"
 }

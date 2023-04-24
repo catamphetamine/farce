@@ -1,6 +1,6 @@
 {
   "name": "@catamphetamine/farce/ensureLocationMiddleware",
   "private": true,
-  "main": "../cjs/ensureLocationMiddleware.js",
-  "module": "../esm/ensureLocationMiddleware.js"
+  "main": "../lib/cjs/ensureLocationMiddleware.js",
+  "module": "../lib/esm/ensureLocationMiddleware.js"
 }

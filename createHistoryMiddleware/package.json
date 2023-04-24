@@ -1,6 +1,6 @@
 {
   "name": "@catamphetamine/farce/createHistoryMiddleware",
   "private": true,
-  "main": "../cjs/createHistoryMiddleware.js",
-  "module": "../esm/createHistoryMiddleware.js"
+  "main": "../lib/cjs/createHistoryMiddleware.js",
+  "module": "../lib/esm/createHistoryMiddleware.js"
 }

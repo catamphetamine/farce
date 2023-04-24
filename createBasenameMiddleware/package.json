@@ -1,6 +1,6 @@
 {
   "name": "@catamphetamine/farce/createBasenameMiddleware",
   "private": true,
-  "main": "../cjs/createBasenameMiddleware.js",
-  "module": "../esm/createBasenameMiddleware.js"
+  "main": "../lib/cjs/createBasenameMiddleware.js",
+  "module": "../lib/esm/createBasenameMiddleware.js"
 }

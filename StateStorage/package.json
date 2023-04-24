@@ -1,6 +1,6 @@
 {
   "name": "@catamphetamine/farce/StateStorage",
   "private": true,
-  "main": "../cjs/StateStorage.js",
-  "module": "../esm/StateStorage.js"
+  "main": "../lib/cjs/StateStorage.js",
+  "module": "../lib/esm/StateStorage.js"
 }

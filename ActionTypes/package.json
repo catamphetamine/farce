@@ -1,6 +1,6 @@
 {
   "name": "@catamphetamine/farce/ActionTypes",
   "private": true,
-  "main": "../cjs/ActionTypes.js",
-  "module": "../esm/ActionTypes.js"
+  "main": "../lib/cjs/ActionTypes.js",
+  "module": "../lib/esm/ActionTypes.js"
 }

@@ -1,6 +1,6 @@
 {
   "name": "@catamphetamine/farce/ServerProtocol",
   "private": true,
-  "main": "../cjs/ServerProtocol.js",
-  "module": "../esm/ServerProtocol.js"
+  "main": "../lib/cjs/ServerProtocol.js",
+  "module": "../lib/esm/ServerProtocol.js"
 }

@@ -1,6 +1,6 @@
 {
   "name": "@catamphetamine/farce/createHistoryEnhancer",
   "private": true,
-  "main": "../cjs/createHistoryEnhancer.js",
-  "module": "../esm/createHistoryEnhancer.js"
+  "main": "../lib/cjs/createHistoryEnhancer.js",
+  "module": "../lib/esm/createHistoryEnhancer.js"
 }
