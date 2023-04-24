@@ -2,7 +2,7 @@ import ServerProtocol from '../src/ServerProtocol';
 
 describe('ServerProtocol', () => {
   it('should parse the initial location', () => {
-    const protocol = new ServerProtocol('/foo?bar=baz#qux');
+    const protocol = new ServerProtocol({ url: '/foo?bar=baz#qux' });
 
     expect(protocol.init()).to.eql({
       action: 'POP',
@@ -13,13 +13,13 @@ describe('ServerProtocol', () => {
   });
 
   it('should have dummy support for subscriptions', () => {
-    const protocol = new ServerProtocol('/foo?bar=baz#qux');
+    const protocol = new ServerProtocol({ url: '/foo?bar=baz#qux' });
     const unsubscribe = protocol.subscribe();
     expect(unsubscribe).to.not.throw();
   });
 
   it('should support createHref', () => {
-    const protocol = new ServerProtocol('/foo?bar=baz#qux');
+    const protocol = new ServerProtocol({ url: '/foo?bar=baz#qux' });
 
     expect(
       protocol.createHref({

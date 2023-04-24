@@ -137,7 +137,7 @@ const protocol = new HashProtocol();
 
 ```js
 // Given a standard Node request object:
-const protocol = new ServerProtocol(req.url);
+const protocol = new ServerProtocol({ url, origin });
 ```
 
 #### `MemoryProtocol`
