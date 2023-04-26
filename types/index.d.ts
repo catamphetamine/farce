@@ -235,7 +235,12 @@ export interface MemoryProtocolOptions {
 }
 
 export class ServerProtocol extends ProtocolBase {
-  constructor({ url: LocationDescriptor, origin?: string });
+  constructor(parameters: ServerProtocolParameters);
+}
+
+interface ServerProtocolParameters {
+  url: LocationDescriptor;
+  origin?: string;
 }
 
 export class MemoryProtocol extends ProtocolBase {
