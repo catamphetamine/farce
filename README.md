@@ -2,6 +2,17 @@
 
 _History repeats itself._
 
+This is a fork of the original <code>farce</code> package with some changes:
+
+- `redux` is in `peerDependencies` instead of `dependencies`
+- Added additional properties in a `location` (`BrowserProtocol`/`ServerProtocol`):
+  - `origin`
+  - `hostname`
+  - `host`
+  - `port`
+  - `protocol`
+- `ServerProtocol` has a different constructor argument: `{ url, origin }` instead of `url`.
+
 Farce provides a [Redux](http://redux.js.org/) store enhancer that wraps a series of middlewares to allow controlling browser navigation by dispatching actions and to allow managing location state with the rest of your store state.
 
 [![Codecov][codecov-badge]][codecov]
