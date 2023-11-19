@@ -12,6 +12,7 @@ This is a fork of the original <code>farce</code> package with some changes:
   - `port`
   - `protocol`
 - `ServerProtocol` has a different constructor argument: `{ url, origin }` instead of `url`.
+- Fixed empty `location.pathname` [bug](https://github.com/4Catalyzer/farce/issues/483) in `createBasenameMiddleware.js`.
 
 Farce provides a [Redux](http://redux.js.org/) store enhancer that wraps a series of middlewares to allow controlling browser navigation by dispatching actions and to allow managing location state with the rest of your store state.
 
