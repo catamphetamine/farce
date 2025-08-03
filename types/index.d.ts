@@ -27,6 +27,7 @@ export interface Location<TState = any> {
   host?: string;
   hostname?: string;
   port?: string;
+  protocol?: string;
   /**
    * the path name; as on window.location e.g. '/foo'
    */
