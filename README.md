@@ -1,18 +1,34 @@
 # Farce [![Travis][build-badge]][build] [![npm][npm-badge]][npm]
 
-_History repeats itself._
+This is a fork of the original `farce` package with some changes:
 
-This is a fork of the original <code>farce</code> package with some changes:
-
-- `redux` is in `peerDependencies` instead of `dependencies`
-- Added additional properties in a `location` (`BrowserProtocol`/`ServerProtocol`):
+- In `package.json`, moved `redux` from `dependencies` to `peerDependencies`. This fixed a version conflict bug in cases when `farce` and the application itself used different versions of that package.
+- Changed `ServerProtocol` constructor argument from `url` to `{ url, origin }` ([part 1](https://github.com/catamphetamine/farce/commit/e214fe7956ec0247d46fa95ab023d7dcb111f36e), [part 2](https://github.com/catamphetamine/farce/commit/67d28293c48007a70b92550072e7f9192af92a93), [part 3](https://github.com/catamphetamine/farce/commit/33c2d52b8246e9a6f89b4a86ad90c00166de7b5e), [part 4](https://github.com/catamphetamine/farce/commit/6a9edccdb25cdfec4f1d54ed07b2bb15d69f0a9f)).
+- [Fixed](https://github.com/catamphetamine/farce/commit/2e42d461bbc137deb8c583a76435468ecfc7b1c2) empty `location.pathname` [bug](https://github.com/4Catalyzer/farce/issues/483) in `createBasenameMiddleware.js`.
+- [Added](https://github.com/catamphetamine/farce/commits/feature/locationOrigin/) additional properties in `location` object (`BrowserProtocol`/`ServerProtocol`):
   - `origin`
   - `hostname`
   - `host`
   - `port`
   - `protocol`
-- `ServerProtocol` has a different constructor argument: `{ url, origin }` instead of `url`.
-- Fixed empty `location.pathname` [bug](https://github.com/4Catalyzer/farce/issues/483) in `createBasenameMiddleware.js`.
+
+---
+
+How `farce` works:
+
+- It provides Redux actions that could be dispatched:
+  - `type: PUSH` — navigates to a page.
+  - `type: REPLACE` — redirects to a page: replaces the current page with the new one without the ability to go "Back" to the current one.
+  - `type: GO` — goes "Back"/"Forward".
+- Whenever one of the Redux actions above is dispatched, it emits a `type: UPDATE_LOCATION` Redux action. The `action` property of the Redux action will be:
+  - `"PUSH"` when dispatching a `type: PUSH` action.
+  - `"REPLACE"` when dispatching a `type: REPLACE` action.
+  - `"POP"` when dispatching a `type: GO` action.
+- It listens to "Back"/"Forward" navigation: whenever it happens, it emits a `type: UPDATE_LOCATION` Redux action. The `action` property of the Redux action will be `"POP"`.
+- The application could listen to `type: UPDATE_LOCATION` Redux action and read the `location` property from that action to always have the up-to-date `location` object.
+- No `type: UPDATE_LOCATION` Redux action will be emitted in case of any changes that were made using [History API](https://developer.mozilla.org/en-US/docs/Web/API/History_API) directly, such as `history.pushState()`, `history.replaceState()`, etc. So those changes to the current URL will go unnoticed by this library.
+
+---
 
 Farce provides a [Redux](http://redux.js.org/) store enhancer that wraps a series of middlewares to allow controlling browser navigation by dispatching actions and to allow managing location state with the rest of your store state.
 
