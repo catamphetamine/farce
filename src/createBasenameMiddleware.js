@@ -18,8 +18,13 @@ export default function createBasenameMiddleware({ basename }) {
     makeLocation: (location) => ({
       ...location,
       pathname:
+        // `farce` had a bug here:
+        // `location.pathname` is supposed to always be non-empty.
+        // If `basename` is set to `/basename` and the user navigates to `/basename` URL, `createBasenameMiddleware()` simply strips the whole string from the URL and the result is incorrect: `pathname: ""`.
+        // The fix is adding `|| '/'` after `location.pathname.slice(pathnamePrefix.length)`.
+        // https://github.com/4Catalyzer/farce/issues/483
         location.pathname.indexOf(pathnamePrefix) === 0
-          ? location.pathname.slice(pathnamePrefix.length)
+          ? location.pathname.slice(pathnamePrefix.length) || '/'
           : null,
     }),
   });
