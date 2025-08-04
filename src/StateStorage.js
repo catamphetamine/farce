@@ -1,6 +1,8 @@
+import createPath from './createPath';
+
 export default class StateStorage {
-  constructor(farce, namespace) {
-    this._getFallbackLocationKey = farce.createHref;
+  constructor(namespace) {
+    this._getFallbackLocationKey = createPath;
     this._stateKeyPrefix = `${namespace}|`;
   }
 

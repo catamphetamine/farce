@@ -66,10 +66,6 @@ export default class BrowserProtocol {
     window.history.go(delta);
   }
 
-  createHref(location) {
-    return createPath(location);
-  }
-
   _createExtraState(delta) {
     const keyIndex = this._keyIndex++;
     this._index += delta;

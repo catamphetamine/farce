@@ -1,7 +1,5 @@
 // TypeScript Version: 3.0
 
-import { Middleware, Reducer, StoreEnhancer } from 'redux';
-
 export {};
 
 export type Query = Record<string, string>;
@@ -91,7 +89,7 @@ export interface LocationDescriptorTypes {
 
 export type LocationDescriptor = LocationDescriptorTypes[keyof LocationDescriptorTypes];
 
-export interface HistoryEnhancerOptions {
+export interface CreateReduxMiddlewaresOptions {
   protocol: Protocol;
   middlewares?: Middleware[];
 }
@@ -126,18 +124,14 @@ export interface NavigationListener {
   ): NavigationListenerResult;
 }
 
-export interface FarceStoreExtension {
-  createHref: (location: LocationDescriptor) => string;
-  createLocation: (location: LocationDescriptor) => LocationDescriptorObject;
-  addNavigationListener: (
-    listener: NavigationListener,
-    options?: NavigationListenerOptions,
-  ) => () => void;
-}
+export function createReduxMiddlewares(
+  options: CreateReduxMiddlewaresOptions,
+): Middleware[];
 
-export function createHistoryEnhancer(
-  options: HistoryEnhancerOptions,
-): StoreEnhancer<{ farce: FarceStoreExtension }>;
+export function addNavigationListener(
+  listener: NavigationListener,
+  options?: NavigationListenerOptions,
+): () => void;
 
 export const ActionTypes: {
   INIT: '@@farce/INIT';
@@ -145,8 +139,6 @@ export const ActionTypes: {
   REPLACE: '@@farce/REPLACE';
   NAVIGATE: '@@farce/NAVIGATE';
   GO: '@@farce/GO';
-  CREATE_HREF: '@@farce/CREATE_HREF';
-  CREATE_LOCATION: '@@farce/CREATE_LOCATION';
   UPDATE_LOCATION: '@@farce/UPDATE_LOCATION';
   DISPOSE: '@@farce/DISPOSE';
 };
@@ -197,8 +189,6 @@ export interface Protocol {
   navigate(location: LocationDescriptorObject): Location;
 
   go(delta: number): void;
-
-  createHref(location: LocationDescriptorObject): string;
 }
 
 // This is just to DRY the declarations below.
@@ -210,13 +200,9 @@ declare abstract class ProtocolBase implements Protocol {
   navigate(location: LocationDescriptorObject): Location;
 
   go(delta: number): void;
-
-  createHref(location: LocationDescriptorObject): string;
 }
 
 export class BrowserProtocol extends ProtocolBase {}
-
-export class HashProtocol extends ProtocolBase {}
 
 export interface MemoryProtocolOptions {
   persistent?: boolean;
@@ -255,9 +241,44 @@ export function createBasenameMiddleware(
 export const locationReducer: Reducer<Location, Action>;
 
 export class StateStorage {
-  constructor(farce: FarceStoreExtension, namespace: string);
+  constructor(namespace: string);
 
   read(location: Location, key: string | null): any;
 
   save(location: Location, key: string | null, value: any): void;
 }
+
+// The following types are copy-pasted from `redux`.
+
+interface ReduxAction<T = any> {
+  type: T;
+}
+
+interface AnyAction extends ReduxAction {
+  // Allows any extra properties to be defined in an action.
+  [extraProps: string]: any;
+}
+
+interface Dispatch<A extends Action = AnyAction> {
+  <T extends A>(action: T): T;
+}
+
+interface MiddlewareAPI<D extends Dispatch = Dispatch, S = any> {
+  dispatch: D;
+  getState(): S;
+}
+
+interface Middleware<
+  DispatchExt = {},
+  S = any,
+  D extends Dispatch = Dispatch
+> {
+  (api: MiddlewareAPI<D, S>): (
+    next: Dispatch
+  ) => (action: any) => any;
+}
+
+type Reducer<S = any, A extends Action = AnyAction> = (
+  state: S | undefined,
+  action: A
+) => S;

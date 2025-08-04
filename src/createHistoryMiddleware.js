@@ -25,10 +25,6 @@ export default function createHistoryMiddleware(protocol) {
           case ActionTypes.GO:
             protocol.go(payload);
             return null;
-          case ActionTypes.CREATE_HREF:
-            return protocol.createHref(payload);
-          case ActionTypes.CREATE_LOCATION:
-            return payload;
           case ActionTypes.DISPOSE:
             dispose();
             return null;

@@ -3,4 +3,4 @@
 export {
   createBasenameMiddleware as default,
   BasenameMiddlewareOptions,
-} from 'farce';
+} from '@catamphetamine/farce';

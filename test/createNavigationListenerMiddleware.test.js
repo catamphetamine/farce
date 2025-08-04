@@ -1,10 +1,11 @@
 import delay from 'delay';
 import pDefer from 'p-defer';
-import { createStore } from 'redux';
+import { applyMiddleware, createStore } from 'redux';
 
 import Actions from '../src/Actions';
 import MemoryProtocol from '../src/MemoryProtocol';
-import createHistoryEnhancer from '../src/createHistoryEnhancer';
+import addNavigationListener from '../src/addNavigationListener';
+import createReduxMiddlewares from '../src/createReduxMiddlewares';
 import locationReducer from '../src/locationReducer';
 import { shouldWarn } from './helpers';
 
@@ -17,7 +18,10 @@ describe('createNavigationListenerMiddleware', () => {
   beforeEach(() => {
     protocol = new MemoryProtocol('/foo');
 
-    store = createStore(locationReducer, createHistoryEnhancer({ protocol }));
+    store = createStore(
+      locationReducer,
+      applyMiddleware(...createReduxMiddlewares({ protocol })),
+    );
     store.dispatch(Actions.init());
   });
 
@@ -30,7 +34,7 @@ describe('createNavigationListenerMiddleware', () => {
   describe('PUSH navigations', () => {
     it('should allow navigation on true', () => {
       const listener = sinon.stub().returns(true);
-      store.farce.addNavigationListener(listener);
+      addNavigationListener(listener);
 
       store.dispatch(Actions.push('/bar'));
       expect(store.getState().pathname).to.equal('/bar');
@@ -42,14 +46,14 @@ describe('createNavigationListenerMiddleware', () => {
     });
 
     it('should allow navigation on null', () => {
-      store.farce.addNavigationListener(() => null);
+      addNavigationListener(() => null);
 
       store.dispatch(Actions.push('/bar'));
       expect(store.getState().pathname).to.equal('/bar');
     });
 
     it('should block navigation on false', () => {
-      store.farce.addNavigationListener(() => false);
+      addNavigationListener(() => false);
 
       store.dispatch(Actions.push('/bar'));
       expect(store.getState().pathname).to.equal('/foo');
@@ -59,8 +63,8 @@ describe('createNavigationListenerMiddleware', () => {
       const listener1 = sinon.stub().returns(null);
       const listener2 = sinon.stub().returns(false);
 
-      store.farce.addNavigationListener(listener1);
-      store.farce.addNavigationListener(listener2);
+      addNavigationListener(listener1);
+      addNavigationListener(listener2);
 
       store.dispatch(Actions.push('/bar'));
       expect(store.getState().pathname).to.equal('/foo');
@@ -73,8 +77,8 @@ describe('createNavigationListenerMiddleware', () => {
       const listener1 = sinon.stub().returns(true);
       const listener2 = sinon.stub().returns(false);
 
-      store.farce.addNavigationListener(listener1);
-      store.farce.addNavigationListener(listener2);
+      addNavigationListener(listener1);
+      addNavigationListener(listener2);
 
       store.dispatch(Actions.push('/bar'));
       expect(store.getState().pathname).to.equal('/bar');
@@ -92,7 +96,7 @@ describe('createNavigationListenerMiddleware', () => {
         throw new Error('foo');
       };
 
-      store.farce.addNavigationListener(syncListener);
+      addNavigationListener(syncListener);
 
       store.dispatch(Actions.push('/bar'));
       expect(store.getState().pathname).to.equal('/bar');
@@ -101,7 +105,7 @@ describe('createNavigationListenerMiddleware', () => {
     it('should confirm and allow navigation on string', () => {
       sandbox.stub(window, 'confirm').returns(true);
 
-      store.farce.addNavigationListener(({ pathname }) => pathname);
+      addNavigationListener(({ pathname }) => pathname);
 
       store.dispatch(Actions.push('/bar'));
       expect(store.getState().pathname).to.equal('/bar');
@@ -114,7 +118,7 @@ describe('createNavigationListenerMiddleware', () => {
     it('should confirm and block navigation on string', () => {
       sandbox.stub(window, 'confirm').returns(false);
 
-      store.farce.addNavigationListener(({ pathname }) => pathname);
+      addNavigationListener(({ pathname }) => pathname);
 
       store.dispatch(Actions.push('/bar'));
       expect(store.getState().pathname).to.equal('/foo');
@@ -126,7 +130,7 @@ describe('createNavigationListenerMiddleware', () => {
 
     it('should allow navigation on async true', async () => {
       const deferred = pDefer();
-      store.farce.addNavigationListener(() => deferred.promise);
+      addNavigationListener(() => deferred.promise);
 
       store.dispatch(Actions.push('/bar'));
       expect(store.getState().pathname).to.equal('/foo');
@@ -139,7 +143,7 @@ describe('createNavigationListenerMiddleware', () => {
 
     it('should block navigation on async false', async () => {
       const deferred = pDefer();
-      store.farce.addNavigationListener(() => deferred.promise);
+      addNavigationListener(() => deferred.promise);
 
       store.dispatch(Actions.push('/bar'));
       expect(store.getState().pathname).to.equal('/foo');
@@ -154,8 +158,8 @@ describe('createNavigationListenerMiddleware', () => {
       const deferred1 = pDefer();
       const deferred2 = pDefer();
 
-      store.farce.addNavigationListener(() => deferred1.promise);
-      store.farce.addNavigationListener(() => deferred2.promise);
+      addNavigationListener(() => deferred1.promise);
+      addNavigationListener(() => deferred2.promise);
 
       store.dispatch(Actions.push('/bar'));
       expect(store.getState().pathname).to.equal('/foo');
@@ -181,7 +185,7 @@ describe('createNavigationListenerMiddleware', () => {
         throw new Error('foo');
       };
 
-      store.farce.addNavigationListener(asyncListener);
+      addNavigationListener(asyncListener);
 
       store.dispatch(Actions.push('/bar'));
       expect(store.getState().pathname).to.equal('/foo');
@@ -192,9 +196,7 @@ describe('createNavigationListenerMiddleware', () => {
     });
 
     it('should allow removing listeners', () => {
-      const removeNavigationListener = store.farce.addNavigationListener(
-        () => false,
-      );
+      const removeNavigationListener = addNavigationListener(() => false);
 
       store.dispatch(Actions.push('/bar'));
       expect(store.getState().pathname).to.equal('/foo');
@@ -213,7 +215,7 @@ describe('createNavigationListenerMiddleware', () => {
 
     it('should allow navigation on true', () => {
       const listener = sinon.stub().returns(true);
-      store.farce.addNavigationListener(listener);
+      addNavigationListener(listener);
 
       store.dispatch(Actions.go(-1));
       expect(store.getState().pathname).to.equal('/foo');
@@ -226,7 +228,7 @@ describe('createNavigationListenerMiddleware', () => {
     });
 
     it('should block navigation on false', () => {
-      store.farce.addNavigationListener(() => false);
+      addNavigationListener(() => false);
 
       store.dispatch(Actions.go(-1));
       expect(store.getState().pathname).to.equal('/bar');
@@ -234,7 +236,7 @@ describe('createNavigationListenerMiddleware', () => {
 
     it('should allow navigation on async true', async () => {
       const deferred = pDefer();
-      store.farce.addNavigationListener(() => deferred.promise);
+      addNavigationListener(() => deferred.promise);
 
       store.dispatch(Actions.go(-1));
       expect(store.getState().pathname).to.equal('/bar');
@@ -247,7 +249,7 @@ describe('createNavigationListenerMiddleware', () => {
 
     it('should block navigation on async false', async () => {
       const deferred = pDefer();
-      store.farce.addNavigationListener(() => deferred.promise);
+      addNavigationListener(() => deferred.promise);
 
       store.dispatch(Actions.go(-1));
       expect(store.getState().pathname).to.equal('/bar');
@@ -261,7 +263,7 @@ describe('createNavigationListenerMiddleware', () => {
     it('should confirm and allow navigation on string', () => {
       sandbox.stub(window, 'confirm').returns(true);
 
-      store.farce.addNavigationListener(({ pathname }) => pathname);
+      addNavigationListener(({ pathname }) => pathname);
 
       store.dispatch(Actions.go(-1));
       expect(store.getState().pathname).to.equal('/foo');
@@ -277,9 +279,11 @@ describe('createNavigationListenerMiddleware', () => {
 
       store = createStore(
         locationReducer,
-        createHistoryEnhancer({ protocol: new MemoryProtocol('/foo') }),
+        applyMiddleware(
+          ...createReduxMiddlewares({ protocol: new MemoryProtocol('/foo') }),
+        ),
       );
-      store.farce.addNavigationListener(() => false);
+      addNavigationListener(() => false);
 
       expect(store.getState()).to.be.null();
       store.dispatch(Actions.init());
@@ -301,7 +305,7 @@ describe('createNavigationListenerMiddleware', () => {
       };
 
       const deferred = pDefer();
-      store.farce.addNavigationListener(() => deferred.promise);
+      addNavigationListener(() => deferred.promise);
 
       store.dispatch(Actions.go(-1));
 
@@ -336,7 +340,7 @@ describe('createNavigationListenerMiddleware', () => {
 
     it('should allow navigation with null delta on true', async () => {
       const deferred = pDefer();
-      store.farce.addNavigationListener(() => deferred.promise);
+      addNavigationListener(() => deferred.promise);
 
       /* eslint-disable no-underscore-dangle */
       protocol._index = 0;
@@ -356,7 +360,7 @@ describe('createNavigationListenerMiddleware', () => {
 
     it('should block store update with null delta on false', async () => {
       const deferred = pDefer();
-      store.farce.addNavigationListener(() => deferred.promise);
+      addNavigationListener(() => deferred.promise);
 
       /* eslint-disable no-underscore-dangle */
       protocol._index = 0;
@@ -383,7 +387,10 @@ describe('createNavigationListenerMiddleware', () => {
       sandbox.stub(window, 'addEventListener');
       sandbox.stub(window, 'removeEventListener');
 
-      store = createStore(() => null, createHistoryEnhancer({ protocol }));
+      store = createStore(
+        () => null,
+        applyMiddleware(...createReduxMiddlewares({ protocol })),
+      );
 
       store.dispatch(Actions.init());
     });
@@ -391,18 +398,16 @@ describe('createNavigationListenerMiddleware', () => {
     it('should manage event listener', () => {
       expect(window.addEventListener).not.to.have.been.called();
 
-      const removeNavigationListener1 = store.farce.addNavigationListener(
-        () => null,
-        { beforeUnload: true },
-      );
+      const removeNavigationListener1 = addNavigationListener(() => null, {
+        beforeUnload: true,
+      });
       expect(window.addEventListener)
         .to.have.been.calledOnce()
         .and.to.have.been.called.with('beforeunload');
 
-      const removeNavigationListener2 = store.farce.addNavigationListener(
-        () => null,
-        { beforeUnload: true },
-      );
+      const removeNavigationListener2 = addNavigationListener(() => null, {
+        beforeUnload: true,
+      });
       expect(window.addEventListener)
         .to.have.been.calledOnce()
         .and.to.have.been.called.with('beforeunload');
@@ -417,7 +422,7 @@ describe('createNavigationListenerMiddleware', () => {
     });
 
     it('should remove event listener on dispose', () => {
-      store.farce.addNavigationListener(() => null, { beforeUnload: true });
+      addNavigationListener(() => null, { beforeUnload: true });
       expect(window.removeEventListener).not.to.have.been.called();
 
       store.dispatch(Actions.dispose());
@@ -427,9 +432,7 @@ describe('createNavigationListenerMiddleware', () => {
     });
 
     it('should not add event listener without beforeUnload', () => {
-      const removeNavigationListener = store.farce.addNavigationListener(
-        () => null,
-      );
+      const removeNavigationListener = addNavigationListener(() => null);
       expect(window.addEventListener).not.to.have.been.called();
 
       removeNavigationListener();

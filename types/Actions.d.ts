@@ -8,4 +8,4 @@ export {
   InitAction,
   PushAction,
   ReplaceAction,
-} from 'farce';
+} from '@catamphetamine/farce';

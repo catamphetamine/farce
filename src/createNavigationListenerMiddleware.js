@@ -2,49 +2,13 @@
 
 import ActionTypes from './ActionTypes';
 import Actions from './Actions';
-
-function runListenerEntry({ listener }, location, callback) {
-  let result;
-  try {
-    result = listener(location);
-  } catch (e) {
-    if (__DEV__)
-      console.warn(
-        `Ignoring navigation listener \`${listener.name}\` that failed with \`${e}\`.`,
-      );
-
-    result = null;
-  }
-
-  if (typeof result === 'object' && result && result.then) {
-    result
-      .catch((e) => {
-        if (__DEV__)
-          console.warn(
-            `Ignoring navigation listener \`${listener.name}\` that failed with \`${e}\`.`,
-          );
-
-        return null;
-      })
-      .then(callback);
-
-    return undefined;
-  }
-
-  return callback(result);
-}
-
-function runListenerEntries(listenerEntries, location, callback) {
-  if (!listenerEntries.length) {
-    return callback(true);
-  }
-
-  return runListenerEntry(listenerEntries[0], location, (result) =>
-    result != null
-      ? callback(result)
-      : runListenerEntries(listenerEntries.slice(1), location, callback),
-  );
-}
+import {
+  getNavigationListenerEntries,
+  onBeforeUnload,
+  removeAllNavigationListenerEntries,
+  removeBeforeUnloadListener,
+  runListenerEntries,
+} from './navigationListeners';
 
 function maybeConfirm(result) {
   if (typeof result === 'boolean') {
@@ -62,55 +26,6 @@ function runAllowNavigation(listenerEntries, location, callback) {
 
 export default function createNavigationListenerMiddleware() {
   let nextStep = null;
-  let listenerEntries = [];
-
-  /* istanbul ignore next: not testable with Karma */
-  function onBeforeUnload(event) {
-    const syncResult = runListenerEntries(
-      listenerEntries,
-      null,
-      (result) => result,
-    );
-
-    if (syncResult === true || syncResult === undefined) {
-      // An asynchronous navigation listener usually means there will be a
-      //  custom confirm dialog. However, we'll already be showing the before
-      //  unload dialog, and there's no way to prevent the custom dialog from
-      //  showing. This is really an error condition in the navigation
-      //  listener, but this is the most reasonable thing we can do.
-      return undefined;
-    }
-
-    const resultSafe = syncResult || '';
-
-    event.preventDefault();
-    event.returnValue = resultSafe; // eslint-disable-line no-param-reassign
-    return resultSafe;
-  }
-
-  function addListener(listener, { beforeUnload = false } = {}) {
-    // Add the beforeunload event listener only as needed, as its presence
-    //  prevents the page from being added to the page navigation cache.
-    if (beforeUnload && listenerEntries.every((item) => !item.beforeUnload)) {
-      window.addEventListener('beforeunload', onBeforeUnload);
-    }
-
-    const listenerEntry = { listener, beforeUnload };
-    listenerEntries.push(listenerEntry);
-
-    return () => {
-      listenerEntries = listenerEntries.filter(
-        (item) => item !== listenerEntry,
-      );
-
-      if (
-        beforeUnload &&
-        listenerEntries.every((item) => !item.beforeUnload)
-      ) {
-        window.removeEventListener('beforeunload', onBeforeUnload);
-      }
-    };
-  }
 
   function navigationListenerMiddleware({ dispatch }) {
     return (next) => (action) => {
@@ -125,7 +40,7 @@ export default function createNavigationListenerMiddleware() {
       switch (type) {
         case ActionTypes.NAVIGATE:
           return runAllowNavigation(
-            listenerEntries,
+            getNavigationListenerEntries(),
             payload,
             (allowNavigation) => {
               if (!allowNavigation) {
@@ -141,7 +56,7 @@ export default function createNavigationListenerMiddleware() {
           );
         case ActionTypes.UPDATE_LOCATION: {
           // No navigation listeners to run.
-          if (!listenerEntries.length) {
+          if (!getNavigationListenerEntries().length) {
             return next(action);
           }
 
@@ -154,7 +69,7 @@ export default function createNavigationListenerMiddleware() {
           // Without delta, we can't restore the location.
           if (payload.delta == null) {
             return runAllowNavigation(
-              listenerEntries,
+              getNavigationListenerEntries(),
               payload,
               (allowNavigation) => (allowNavigation ? next(action) : null),
             );
@@ -178,7 +93,7 @@ export default function createNavigationListenerMiddleware() {
           let rewindDone = false;
 
           const syncResult = runListenerEntries(
-            listenerEntries,
+            getNavigationListenerEntries(),
             payload,
             (result) => {
               if (sync) {
@@ -221,9 +136,12 @@ export default function createNavigationListenerMiddleware() {
           return undefined;
         }
         case ActionTypes.DISPOSE:
-          if (listenerEntries.length > 0 && onBeforeUnload) {
-            window.removeEventListener('beforeunload', onBeforeUnload);
+          if (
+            getNavigationListenerEntries().some((item) => item.beforeUnload)
+          ) {
+            removeBeforeUnloadListener(onBeforeUnload);
           }
+          removeAllNavigationListenerEntries();
 
           return next(action);
         default:
@@ -232,6 +150,5 @@ export default function createNavigationListenerMiddleware() {
     };
   }
 
-  navigationListenerMiddleware.addListener = addListener;
   return navigationListenerMiddleware;
 }

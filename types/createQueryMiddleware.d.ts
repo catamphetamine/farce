@@ -3,4 +3,4 @@
 export {
   createQueryMiddleware as default,
   QueryMiddlewareOptions,
-} from 'farce';
+} from '@catamphetamine/farce';

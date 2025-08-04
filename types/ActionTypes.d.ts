@@ -1,3 +1,3 @@
 // TypeScript Version: 3.0
 
-export { ActionTypes as default } from 'farce';
+export { ActionTypes as default } from '@catamphetamine/farce';

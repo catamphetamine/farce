@@ -1,3 +1,3 @@
 // TypeScript Version: 3.0
 
-export { MemoryProtocol as default, MemoryProtocolOptions } from 'farce';
+export { MemoryProtocol as default, MemoryProtocolOptions } from '@catamphetamine/farce';

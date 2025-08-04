@@ -164,18 +164,6 @@ describe('MemoryProtocol', () => {
     expect(listener).not.to.have.been.called();
   });
 
-  it('should support createHref', () => {
-    const protocol = new MemoryProtocol('/foo');
-
-    expect(
-      protocol.createHref({
-        pathname: '/foo',
-        search: '?bar=baz',
-        hash: '#qux',
-      }),
-    ).to.equal('/foo?bar=baz#qux');
-  });
-
   describe('persistence', () => {
     beforeEach(() => {
       window.sessionStorage.clear();

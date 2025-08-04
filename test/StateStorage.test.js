@@ -10,10 +10,7 @@ describe('StateStorage', () => {
   beforeEach(() => {
     window.sessionStorage.clear();
 
-    stateStorage = new StateStorage(
-      { createHref: () => '/path?search' },
-      'test',
-    );
+    stateStorage = new StateStorage('test');
   });
 
   it('should read saved value for default key', () => {

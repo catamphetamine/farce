@@ -1,4 +1,3 @@
-import createPath from './createPath';
 import ensureLocation from './ensureLocation';
 
 const STATE_KEY = '@@farce/state';
@@ -113,9 +112,5 @@ export default class MemoryProtocol {
         }),
       );
     } catch (e) {} // eslint-disable-line no-empty
-  }
-
-  createHref(location) {
-    return createPath(location);
   }
 }

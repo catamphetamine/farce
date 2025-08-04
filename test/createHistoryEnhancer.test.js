@@ -1,8 +1,8 @@
-import { createStore } from 'redux';
+import { applyMiddleware, createStore } from 'redux';
 
 import Actions from '../src/Actions';
 import MemoryProtocol from '../src/MemoryProtocol';
-import createHistoryEnhancer from '../src/createHistoryEnhancer';
+import createReduxMiddlewares from '../src/createReduxMiddlewares';
 import locationReducer from '../src/locationReducer';
 
 describe('createHistoryMiddleware', () => {
@@ -11,7 +11,9 @@ describe('createHistoryMiddleware', () => {
   beforeEach(() => {
     store = createStore(
       locationReducer,
-      createHistoryEnhancer({ protocol: new MemoryProtocol('/foo') }),
+      applyMiddleware(
+        ...createReduxMiddlewares({ protocol: new MemoryProtocol('/foo') }),
+      ),
     );
     store.dispatch(Actions.init());
   });
@@ -45,30 +47,6 @@ describe('createHistoryMiddleware', () => {
     expect(store.getState()).to.include({
       pathname: '/bar',
       index: 0,
-    });
-  });
-
-  it('should support createHref', () => {
-    expect(
-      store.farce.createHref({
-        pathname: '/foo',
-        search: '?bar',
-        hash: '#baz',
-      }),
-    ).to.equal('/foo?bar#baz');
-  });
-
-  it('should support createLocation', () => {
-    expect(
-      store.farce.createLocation({
-        pathname: '/foo',
-        search: '?bar',
-        hash: '#baz',
-      }),
-    ).to.eql({
-      pathname: '/foo',
-      search: '?bar',
-      hash: '#baz',
     });
   });
 

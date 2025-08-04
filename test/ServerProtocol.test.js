@@ -17,16 +17,4 @@ describe('ServerProtocol', () => {
     const unsubscribe = protocol.subscribe();
     expect(unsubscribe).to.not.throw();
   });
-
-  it('should support createHref', () => {
-    const protocol = new ServerProtocol('/foo?bar=baz#qux');
-
-    expect(
-      protocol.createHref({
-        pathname: '/foo',
-        search: '?bar=baz',
-        hash: '#qux',
-      }),
-    ).to.equal('/foo?bar=baz#qux');
-  });
 });

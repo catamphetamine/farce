@@ -10,12 +10,7 @@ export default function createLocationMiddleware({
 
       switch (type) {
         case ActionTypes.NAVIGATE:
-        case ActionTypes.CREATE_HREF:
           return next({ type, payload: makeLocationDescriptor(payload) });
-        case ActionTypes.CREATE_LOCATION:
-          return makeLocation(
-            next({ type, payload: makeLocationDescriptor(payload) }),
-          );
         case ActionTypes.UPDATE_LOCATION:
           return next({ type, payload: makeLocation(payload) });
         default:

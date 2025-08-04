@@ -4,9 +4,10 @@ describe('index', () => {
   it('should export top level correctly', () => {
     expect(farce.Actions).to.exist();
     expect(farce.ActionTypes).to.exist();
+    expect(farce.addNavigationListener).to.exist();
     expect(farce.BrowserProtocol).to.exist();
     expect(farce.createBasenameMiddleware).to.exist();
-    expect(farce.createHistoryEnhancer).to.exist();
+    expect(farce.createReduxMiddlewares).to.exist();
     expect(farce.createHistoryMiddleware).to.exist();
     expect(farce.createLocationMiddleware).to.exist();
     expect(farce.createNavigationListenerMiddleware).to.exist();

@@ -20,30 +20,6 @@ describe('createLocationMiddleware', () => {
     });
   });
 
-  it('should handle location descriptors for CREATE_HREF', () => {
-    expect(
-      dispatch({
-        type: ActionTypes.CREATE_HREF,
-        payload: {},
-      }),
-    ).to.eql({
-      descriptor: {},
-    });
-  });
-
-  it('should create locations for CREATE_LOCATION', () => {
-    expect(
-      dispatch({
-        type: ActionTypes.CREATE_LOCATION,
-        payload: {},
-      }),
-    ).to.eql({
-      location: {
-        descriptor: {},
-      },
-    });
-  });
-
   it('should handle locations for UPDATE_LOCATION', () => {
     expect(
       dispatch({

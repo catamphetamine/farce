@@ -16,12 +16,6 @@ export default function ensureLocationMiddleware() {
           type: ActionTypes.NAVIGATE,
           payload: { ...ensureLocation(payload), action: 'REPLACE' },
         });
-      case ActionTypes.CREATE_HREF:
-      case ActionTypes.CREATE_LOCATION:
-        return next({
-          type,
-          payload: ensureLocation(payload),
-        });
       default:
         return next(action);
     }

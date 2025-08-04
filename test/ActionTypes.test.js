@@ -7,8 +7,6 @@ describe('ActionTypes', () => {
     expect(ActionTypes.REPLACE).to.exist();
     expect(ActionTypes.NAVIGATE).to.exist();
     expect(ActionTypes.GO).to.exist();
-    expect(ActionTypes.CREATE_HREF).to.exist();
-    expect(ActionTypes.CREATE_LOCATION).to.exist();
     expect(ActionTypes.UPDATE_LOCATION).to.exist();
     expect(ActionTypes.DISPOSE).to.exist();
   });

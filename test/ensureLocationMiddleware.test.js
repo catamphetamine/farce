@@ -43,38 +43,6 @@ describe('ensureLocationMiddleware', () => {
     });
   });
 
-  it('should ensure location of CREATE_HREF action', () => {
-    dispatch({
-      type: ActionTypes.CREATE_HREF,
-      payload: '/foo?bar=baz#qux',
-    });
-
-    expect(next).to.be.calledWith({
-      type: ActionTypes.CREATE_HREF,
-      payload: {
-        pathname: '/foo',
-        search: '?bar=baz',
-        hash: '#qux',
-      },
-    });
-  });
-
-  it('should ensure location of CREATE_LOCATION action', () => {
-    dispatch({
-      type: ActionTypes.CREATE_LOCATION,
-      payload: '/foo?bar=baz#qux',
-    });
-
-    expect(next).to.be.calledWith({
-      type: ActionTypes.CREATE_LOCATION,
-      payload: {
-        pathname: '/foo',
-        search: '?bar=baz',
-        hash: '#qux',
-      },
-    });
-  });
-
   it('should not affect other action', () => {
     const UNKNOWN = 'UNKNOWN';
     dispatch({

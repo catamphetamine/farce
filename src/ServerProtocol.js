@@ -1,4 +1,3 @@
-import createPath from './createPath';
 import ensureLocation from './ensureLocation';
 
 function noop() {}
@@ -18,10 +17,6 @@ export default class ServerProtocol {
   subscribe() {
     // Server protocol emits no events.
     return noop;
-  }
-
-  createHref(location) {
-    return createPath(location);
   }
 
   // The other methods are not implemented, because ServerProtocol instances
