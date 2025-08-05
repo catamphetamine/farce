@@ -1,13 +1,16 @@
 {
-  "name": "@catamphetamine/farce",
-  "version": "0.5.0",
-  "description": "History repeats itself",
+  "name": "navigation-stack",
+  "version": "0.1.0",
+  "description": "Handles web browser navigation in a web application",
   "keywords": [
-    "history"
+    "history",
+    "browser",
+    "navigation",
+    "router"
   ],
-  "homepage": "https://github.com/catamphetamine/farce#readme",
+  "homepage": "https://github.com/catamphetamine/navigation-stack#readme",
   "bugs": {
-    "url": "https://github.com/catamphetamine/farce/issues"
+    "url": "https://github.com/catamphetamine/navigation-stack/issues"
   },
   "license": "MIT",
   "author": "catamphetamine",
@@ -16,7 +19,7 @@
   "types": "lib/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/catamphetamine/farce.git"
+    "url": "https://github.com/catamphetamine/navigation-stack.git"
   },
   "scripts": {
     "build": "rimraf lib && 4c build --types false src && npm run build:pick && npm run build:types",
@@ -26,7 +29,7 @@
     "lint": "4c lint --prettier-ignore .eslintignore .",
     "prepublish": "npm run build",
     "release": "4c release",
-    "tdd": "cross-env NODE_ENV=test karma start",
+    "tdd": "cross-env NODE_ENV=test karma start karma.conf.cjs",
     "test": "npm run lint && npm run test:ts && npm run testonly",
     "test:ts": "dtslint types",
     "testonly": "npm run tdd -- --single-run"
@@ -83,10 +86,15 @@
     "p-defer": "^3.0.0",
     "prettier": "^2.6.2",
     "puppeteer": "^13.7.0",
+    "redux": "^4.1.2",
     "rimraf": "^3.0.2",
     "sinon": "^11.1.2",
     "sinon-chai": "^3.7.0",
-    "webpack": "^5.72.1",
-    "redux": "^4.1.2"
+    "webpack": "^5.72.1"
+  },
+  "resolutions": {
+    "dtslint/@definitelytyped/header-parser": "^0.0.41",
+    "dtslint/@definitelytyped/typescript-versions": "^0.0.41",
+    "dtslint/@definitelytyped/utils": "^0.0.41"
   }
 }

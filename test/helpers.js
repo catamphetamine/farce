@@ -16,16 +16,19 @@ export function invokeLocationMiddleware(middleware, action) {
   return result;
 }
 
-export function invokeMakeLocationDescriptor(middleware, location) {
+export function transformInputLocationUsingMiddleware(middleware, location) {
   return invokeLocationMiddleware(middleware, {
     type: ActionTypes.NAVIGATE,
     payload: location,
   }).payload;
 }
 
-export function invokeMakeLocation(middleware, location) {
+export function transformEnvironmentLocationUsingMiddleware(
+  middleware,
+  location,
+) {
   return invokeLocationMiddleware(middleware, {
-    type: ActionTypes.UPDATE_LOCATION,
+    type: ActionTypes.UPDATE,
     payload: location,
   }).payload;
 }

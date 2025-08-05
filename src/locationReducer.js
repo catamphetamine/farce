@@ -1,7 +1,7 @@
 import ActionTypes from './ActionTypes';
 
 export default function locationReducer(state = null, action) {
-  if (action.type === ActionTypes.UPDATE_LOCATION) {
+  if (action.type === ActionTypes.UPDATE) {
     return action.payload;
   }
 

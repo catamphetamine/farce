@@ -2,9 +2,11 @@
 
 export {};
 
-export type Query = Record<string, string>;
+export type NormalizedQuery = Record<string, string>;
 
-export type QueryDescriptor = Record<
+// `InputLocationQuery` may specify query parameter values as any type of data.
+// Those values will later be converted to strings.
+export type InputLocationQuery = Record<
   string,
   string | number | boolean | Record<string, unknown> | null | undefined
 >;
@@ -14,7 +16,7 @@ export interface Location<TState = any> {
    * 'PUSH' or 'REPLACE' if the location was reached via FarceActions.push or
    * FarceActions.replace respectively; 'POP' on the initial location, or if
    * the location was reached via the browser back or forward buttons or
-   * via FarceActions.go
+   * via FarceActions.shift
    */
   action: 'PUSH' | 'REPLACE' | 'POP';
   /**
@@ -24,7 +26,7 @@ export interface Location<TState = any> {
   /**
    * map version of search string
    */
-  query: Query;
+  query: NormalizedQuery;
   /**
    * the search string; as on window.location e.g. '?bar=baz'
    */
@@ -57,11 +59,18 @@ export interface Location<TState = any> {
 /**
  * Location descriptor object used in #push and #replace.
  */
-export interface LocationDescriptorObject {
+export interface InputLocationObject {
   pathname: Location['pathname'];
-  query?: QueryDescriptor;
+  query?: InputLocationQuery;
   search?: Location['search'];
   hash?: Location['hash'];
+  state?: Location['state'];
+}
+
+export interface NormalizedInputLocation {
+  pathname: Location['pathname'];
+  search: Location['search'];
+  hash: Location['hash'];
   state?: Location['state'];
 }
 
@@ -78,69 +87,63 @@ export interface LocationDescriptorObject {
  *
  * https://github.com/4Catalyzer/farce#locations-and-location-descriptors
  */
-export type LocationDescriptorString = string;
+export type InputLocationString = string;
 
 // Using an interface allows consumers to use object merging to add other
 //  location descriptor types.
-export interface LocationDescriptorTypes {
-  object: LocationDescriptorObject;
-  string: LocationDescriptorString;
+export interface InputLocationTypes {
+  object: InputLocationObject;
+  string: InputLocationString;
 }
 
-export type LocationDescriptor = LocationDescriptorTypes[keyof LocationDescriptorTypes];
+export type InputLocation = InputLocationTypes[keyof InputLocationTypes];
 
-export interface CreateReduxMiddlewaresOptions {
-  protocol: Protocol;
-  middlewares?: Middleware[];
+export interface CreateMiddlewaresOptions {
+  environment: Environment;
+  options?: {
+    basePath?: string,
+  };
 }
 
-export interface NavigationListenerOptions {
-  beforeUnload?: boolean;
+export interface NavigationBlockerOptions {
+  // beforeUnload?: boolean;
+  environment: EnvironmentBase;
 }
 
-export type NavigationListenerSyncResult = boolean | string | null | undefined;
-export type NavigationListenerResult =
-  | NavigationListenerSyncResult
-  | Promise<NavigationListenerSyncResult>;
+export type NavigationBlockerSyncResult = boolean | undefined;
+export type NavigationBlockerResult =
+  | NavigationBlockerSyncResult
+  | Promise<NavigationBlockerSyncResult>;
 
 /**
- * The navigation listener function receives the location to which the user
+ * The navigation listener function receives the `location` to which the user
  * is attempting to navigate.
  *
- * This function may return:
- *  - true to allow navigation
- *  - false to block navigation
- *  - A string to prompt the user with that string as the message
- *  - A nully value to call the next navigation and use its return value, if
- *    present, or else to allow navigation
- *  - A promise that resolves to any of the above values, to allow or block
- *    navigation once the promise resolves
- *
- * @see https://github.com/4Catalyzer/farce#navigation-listeners
+ * The `location` argument is `null` when the web browser tab is about to be closed.
  */
-export interface NavigationListener {
+export interface NavigationBlocker {
   (
-    location: Location | LocationDescriptorObject | null,
-  ): NavigationListenerResult;
+    location: Location | NormalizedInputLocation | null,
+  ): NavigationBlockerResult;
 }
 
-export function createReduxMiddlewares(
-  options: CreateReduxMiddlewaresOptions,
+export function createMiddlewares(
+  options: CreateMiddlewaresOptions,
 ): Middleware[];
 
-export function addNavigationListener(
-  listener: NavigationListener,
-  options?: NavigationListenerOptions,
+export function addNavigationBlocker(
+  blocker: NavigationBlocker,
+  options: NavigationBlockerOptions,
 ): () => void;
 
 export const ActionTypes: {
-  INIT: '@@farce/INIT';
-  PUSH: '@@farce/PUSH';
-  REPLACE: '@@farce/REPLACE';
-  NAVIGATE: '@@farce/NAVIGATE';
-  GO: '@@farce/GO';
-  UPDATE_LOCATION: '@@farce/UPDATE_LOCATION';
-  DISPOSE: '@@farce/DISPOSE';
+  INIT: '@@navigation-stack/INIT';
+  PUSH: '@@navigation-stack/PUSH';
+  REPLACE: '@@navigation-stack/REPLACE';
+  NAVIGATE: '@@navigation-stack/NAVIGATE';
+  SHIFT: '@@navigation-stack/SHIFT';
+  UPDATE: '@@navigation-stack/UPDATE';
+  DISPOSE: '@@navigation-stack/DISPOSE';
 };
 
 export interface InitAction {
@@ -149,16 +152,16 @@ export interface InitAction {
 
 export interface PushAction {
   type: typeof ActionTypes['PUSH'];
-  payload: LocationDescriptor;
+  payload: InputLocation;
 }
 
 export interface ReplaceAction {
   type: typeof ActionTypes['REPLACE'];
-  payload: LocationDescriptor;
+  payload: InputLocation;
 }
 
-export interface GoAction {
-  type: typeof ActionTypes['GO'];
+export interface RewindAction {
+  type: typeof ActionTypes['SHIFT'];
   payload: number;
 }
 
@@ -170,58 +173,64 @@ export type Action =
   | InitAction
   | PushAction
   | ReplaceAction
-  | GoAction
+  | RewindAction
   | DisposeAction;
 
 export const Actions: {
   init(): InitAction;
-  push(location: LocationDescriptor): PushAction;
-  replace(location: LocationDescriptor): ReplaceAction;
-  go(delta: number): GoAction;
+  push(location: InputLocation): PushAction;
+  replace(location: InputLocation): ReplaceAction;
+  go(delta: number): RewindAction;
   dispose(): DisposeAction;
 };
 
-export interface Protocol {
+type BeforeDestroyListener = () => boolean | undefined;
+
+export interface Environment {
   init(): void;
 
   subscribe(listener: (location: Location) => void): () => void;
 
-  navigate(location: LocationDescriptorObject): Location;
+  navigate(location: NormalizedInputLocation): Location;
 
   go(delta: number): void;
+
+  addBeforeDestroyListener(listener: BeforeDestroyListener): void;
 }
 
-// This is just to DRY the declarations below.
-declare abstract class ProtocolBase implements Protocol {
+// This is just a copy-paste of the `Environment` interface above.
+declare abstract class EnvironmentBase implements Environment {
   init(): void;
 
   subscribe(listener: (location: Location) => void): () => void;
 
-  navigate(location: LocationDescriptorObject): Location;
+  navigate(location: NormalizedInputLocation): Location;
 
   go(delta: number): void;
+
+  addBeforeDestroyListener(listener: BeforeDestroyListener): void;
 }
 
-export class BrowserProtocol extends ProtocolBase {}
+export class BrowserEnvironment extends EnvironmentBase {}
 
-export interface MemoryProtocolOptions {
+export interface MemoryEnvironmentOptions {
   persistent?: boolean;
 }
 
-export class ServerProtocol extends ProtocolBase {
-  constructor(url: LocationDescriptor);
+export class ServerEnvironment extends EnvironmentBase {
+  constructor(initialLocation: InputLocation);
 }
 
-export class MemoryProtocol extends ProtocolBase {
+export class MemoryEnvironment extends EnvironmentBase {
   constructor(
-    initialLocation: LocationDescriptor,
-    options?: MemoryProtocolOptions,
+    initialLocation: InputLocation,
+    options?: MemoryEnvironmentOptions,
   );
 }
 
 export interface QueryMiddlewareOptions {
-  stringify(query: QueryDescriptor): string;
-  parse(str: string): Query;
+  stringify(query: InputLocationQuery): string;
+  parse(str: string): NormalizedInputLocation;
 }
 
 export function createQueryMiddleware(
@@ -230,12 +239,8 @@ export function createQueryMiddleware(
 
 export const queryMiddleware: Middleware;
 
-export interface BasenameMiddlewareOptions {
-  basename: string;
-}
-
-export function createBasenameMiddleware(
-  options: BasenameMiddlewareOptions,
+export function createBasePathMiddleware(
+  basePath?: string,
 ): Middleware;
 
 export const locationReducer: Reducer<Location, Action>;

@@ -1,8 +1,8 @@
-import createPath from './createPath';
+import getLocationUrl from './getLocationUrl';
 
 export default class StateStorage {
   constructor(namespace) {
-    this._getFallbackLocationKey = createPath;
+    this._getFallbackLocationKey = getLocationUrl;
     this._stateKeyPrefix = `${namespace}|`;
   }
 

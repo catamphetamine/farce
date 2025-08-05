@@ -15,8 +15,8 @@ export default {
     payload: location,
   }),
 
-  go: (delta) => ({
-    type: ActionTypes.GO,
+  shift: (delta) => ({
+    type: ActionTypes.SHIFT,
     payload: delta,
   }),
 

@@ -1,9 +1,9 @@
-import createPath from '../src/createPath';
+import getLocationUrl from '../src/getLocationUrl';
 
-describe('createPath', () => {
-  it('should create path using pathname, search, and hash', () => {
+describe('getLocationUrl', () => {
+  it('should get location URL from `pathname`, `search`, and `hash`', () => {
     expect(
-      createPath({
+      getLocationUrl({
         pathname: '/foo',
         search: '?bar=baz',
         hash: '#qux',

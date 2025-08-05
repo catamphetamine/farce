@@ -1,9 +1,9 @@
 export default {
-  INIT: '@@farce/INIT',
-  PUSH: '@@farce/PUSH',
-  REPLACE: '@@farce/REPLACE',
-  NAVIGATE: '@@farce/NAVIGATE',
-  GO: '@@farce/GO',
-  UPDATE_LOCATION: '@@farce/UPDATE_LOCATION',
-  DISPOSE: '@@farce/DISPOSE',
+  INIT: '@@navigation-stack/INIT',
+  PUSH: '@@navigation-stack/PUSH',
+  REPLACE: '@@navigation-stack/REPLACE',
+  NAVIGATE: '@@navigation-stack/NAVIGATE',
+  SHIFT: '@@navigation-stack/SHIFT',
+  UPDATE: '@@navigation-stack/UPDATE',
+  DISPOSE: '@@navigation-stack/DISPOSE',
 };

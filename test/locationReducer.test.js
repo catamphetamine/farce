@@ -13,7 +13,7 @@ describe('locationReducer', () => {
     search: '',
   };
 
-  it('should handle UPDATE_LOCATION', () => {
+  it('should handle UPDATE', () => {
     const newLocation = {
       action: 'PUSH',
       delta: 1,
@@ -27,7 +27,7 @@ describe('locationReducer', () => {
       search: '?bar=baz',
     };
     const action = {
-      type: ActionTypes.UPDATE_LOCATION,
+      type: ActionTypes.UPDATE,
       payload: newLocation,
     };
     expect(locationReducer(prevState, action)).to.eql(newLocation);

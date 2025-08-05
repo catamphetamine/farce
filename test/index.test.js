@@ -1,23 +1,14 @@
-import * as farce from '../src';
+import * as exports from '../src';
 
 describe('index', () => {
   it('should export top level correctly', () => {
-    expect(farce.Actions).to.exist();
-    expect(farce.ActionTypes).to.exist();
-    expect(farce.addNavigationListener).to.exist();
-    expect(farce.BrowserProtocol).to.exist();
-    expect(farce.createBasenameMiddleware).to.exist();
-    expect(farce.createReduxMiddlewares).to.exist();
-    expect(farce.createHistoryMiddleware).to.exist();
-    expect(farce.createLocationMiddleware).to.exist();
-    expect(farce.createNavigationListenerMiddleware).to.exist();
-    expect(farce.createPath).to.exist();
-    expect(farce.createQueryMiddleware).to.exist();
-    expect(farce.ensureLocation).to.exist();
-    expect(farce.ensureLocationMiddleware).to.exist();
-    expect(farce.locationReducer).to.exist();
-    expect(farce.queryMiddleware).to.exist();
-    expect(farce.ServerProtocol).to.exist();
-    expect(farce.StateStorage).to.exist();
+    expect(exports.Actions).to.exist();
+    expect(exports.ActionTypes).to.exist();
+    expect(exports.addNavigationBlocker).to.exist();
+    expect(exports.createMiddlewares).to.exist();
+    expect(exports.locationReducer).to.exist();
+    expect(exports.BrowserEnvironment).to.exist();
+    expect(exports.MemoryEnvironment).to.exist();
+    expect(exports.ServerEnvironment).to.exist();
   });
 });

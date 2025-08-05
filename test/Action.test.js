@@ -52,14 +52,14 @@ describe('Actions', () => {
     });
   });
 
-  it('#go should create a GO action with delta', () => {
-    expect(Actions.go(1)).to.eql({
-      type: ActionTypes.GO,
+  it('#go should create a SHIFT action with delta', () => {
+    expect(Actions.shift(1)).to.eql({
+      type: ActionTypes.SHIFT,
       payload: 1,
     });
 
-    expect(Actions.go(-1)).to.eql({
-      type: ActionTypes.GO,
+    expect(Actions.shift(-1)).to.eql({
+      type: ActionTypes.SHIFT,
       payload: -1,
     });
   });
