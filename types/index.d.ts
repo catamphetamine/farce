@@ -74,6 +74,10 @@ export interface NormalizedInputLocation {
   state?: Location['state'];
 }
 
+interface TransformedInputLocation extends NormalizedInputLocation {
+  query?: Query;
+}
+
 /**
  * Location descriptor string:
  *  store.dispatch(FarceActions.push('/foo?bar=baz#qux'));
@@ -123,7 +127,7 @@ export type NavigationBlockerResult =
  */
 export interface NavigationBlocker {
   (
-    location: Location | NormalizedInputLocation | null,
+    location: Location | TransformedInputLocation | null,
   ): NavigationBlockerResult;
 }
 
@@ -191,7 +195,7 @@ export interface Environment {
 
   subscribe(listener: (location: Location) => void): () => void;
 
-  navigate(location: NormalizedInputLocation): Location;
+  navigate(location: TransformedInputLocation): Location;
 
   go(delta: number): void;
 
@@ -204,7 +208,7 @@ declare abstract class EnvironmentBase implements Environment {
 
   subscribe(listener: (location: Location) => void): () => void;
 
-  navigate(location: NormalizedInputLocation): Location;
+  navigate(location: TransformedInputLocation): Location;
 
   go(delta: number): void;
 
@@ -230,7 +234,7 @@ export class MemoryEnvironment extends EnvironmentBase {
 
 export interface QueryMiddlewareOptions {
   stringify(query: InputLocationQuery): string;
-  parse(str: string): NormalizedInputLocation;
+  parse(str: string): Query;
 }
 
 export function createQueryMiddleware(
