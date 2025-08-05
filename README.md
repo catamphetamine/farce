@@ -1,13 +1,12 @@
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
-**Table of Contents** _generated with [DocToc](https://github.com/thlorenz/doctoc)_
-
 - [navigation-stack](#navigation-stack)
   - [Install](#install)
   - [Use](#use)
   - [Why Redux?](#why-redux)
   - [Environment](#environment)
+  - [Base Path](#base-path)
   - [Block Navigation](#block-navigation)
   - [Development](#development)
 
@@ -100,6 +99,14 @@ import {
 - Use `BrowserEnvironment` in a web browser.
 - Use `ServerEnvironment` in server-side rendering.
 - Use `MemoryEnvironment` in tests.
+
+## Base Path
+
+If the web application is hosted under a certain URL prefix, it should be specified in `createMiddlewares()` call as `basePath` parameter.
+
+```js
+createMiddlewares({ environment, basePath: '/parent/path' });
+```
 
 ## Block Navigation
 

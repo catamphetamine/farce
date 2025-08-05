@@ -8,6 +8,11 @@ export default function createBasePathMiddleware(basePath) {
     return () => (next) => next;
   }
 
+  // Validate `basePath`.
+  if (basePath[0] !== '/') {
+    throw new Error('`basePath` must start with a slash');
+  }
+
   // Remove trailing slash from `basePath`.
   const pathnamePrefix =
     basePath.slice(-1) === '/' ? basePath.slice(0, -1) : basePath;
