@@ -33,10 +33,11 @@ export default function createEnvironmentMiddleware(
             return next(updateLocation(environment.init()));
 
           case ActionTypes.NAVIGATE:
+            // `environment.navigate()` doesn't trigger the `subscribe()` listener.
             return next(updateLocation(environment.navigate(payload)));
 
           case ActionTypes.SHIFT:
-            // `shift()` will trigger the subscription event,
+            // `shift()` will trigger the `subscribe()` listener,
             // which will call `updateLocation()`.
             environment.shift(payload);
             // eslint-disable-next-line consistent-return

@@ -8,9 +8,9 @@
     "navigation",
     "router"
   ],
-  "homepage": "https://github.com/catamphetamine/navigation-stack#readme",
+  "homepage": "https://gitlab.com/catamphetamine/navigation-stack#readme",
   "bugs": {
-    "url": "https://github.com/catamphetamine/navigation-stack/issues"
+    "url": "https://gitlab.com/catamphetamine/navigation-stack/issues"
   },
   "license": "MIT",
   "author": "catamphetamine",
@@ -19,7 +19,7 @@
   "types": "lib/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/catamphetamine/navigation-stack.git"
+    "url": "https://gitlab.com/catamphetamine/navigation-stack.git"
   },
   "scripts": {
     "build": "rimraf lib && 4c build --types false src && npm run build:pick && npm run build:types",

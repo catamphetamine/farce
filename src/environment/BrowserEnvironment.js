@@ -27,13 +27,12 @@ export default class BrowserEnvironment {
     };
   }
 
+  // Subscribes to changes in location,
+  // excluding ones that happened as a result of calling `.navigate()`.
   subscribe(listener) {
     const onPopState = () => {
       listener(this.init());
     };
-
-    // TODO: On most versions of IE, we need a hashChange listener for hash-
-    //  only changes.
 
     window.addEventListener('popstate', onPopState);
     return () => {

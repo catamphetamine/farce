@@ -4,6 +4,7 @@
 - [navigation-stack](#navigation-stack)
   - [Install](#install)
   - [Use](#use)
+  - [Current Location](#current-location)
   - [Why Redux?](#why-redux)
   - [Environment](#environment)
   - [Base Path](#base-path)
@@ -41,7 +42,7 @@ import {
 } from 'navigation-stack';
 
 const store = createStore(
-  locationReducer,
+  locationReducer, // optional
   applyMiddleware(
     ...createMiddlewares({ environment: new BrowserEnvironment() }),
   ),
@@ -69,16 +70,39 @@ store.dispatch(Actions.shift(1));
 To view the current location:
 
 ```js
+// When `locationReducer()` is used,
+// `store.getState()` is the current location.
 console.log(store.getState());
 ```
 
-It will also "magically" update `store.getState()` when you manually click "Back"/"Forward" buttons in the web browser.
-
-(optional) (advanced) Stop:
+(optional) (advanced) Stop and clean up:
 
 ```js
 store.dispatch(Actions.dispose());
 ```
+
+## Current Location
+
+To track the current location, the application could listen to `ActionTypes.UPDATE` action. The `payload` of the action is the current location.
+
+For example, below is the source code for the default `locationReducer`.
+
+```js
+import { ActionTypes } from 'navigation-stack';
+
+// With this reducer, `state` would always tell the current location.
+function reducer(state, action) {
+  if (action.type === ActionTypes.UPDATE) {
+    // `action.payload` is the current location.
+    return action.payload;
+  }
+  return state;
+}
+```
+
+Calling `store.dispatch(Actions.init())` will trigger the initial `ActionTypes.UPDATE` action which will set the current location. From then on, the current location will always stay in sync with the web browser's URL bar.
+
+The current location will also "magically" be updated when the user clicks "Back" or "Forward" button in the web browser.
 
 ## Why Redux?
 

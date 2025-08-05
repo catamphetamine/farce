@@ -193,6 +193,8 @@ type BeforeDestroyListener = () => boolean | undefined;
 export interface Environment {
   init(): void;
 
+  // Subscribes to changes in location,
+  // excluding ones that happened as a result of calling `.navigate()`.
   subscribe(listener: (location: Location) => void): () => void;
 
   navigate(location: TransformedInputLocation): Location;
@@ -206,6 +208,8 @@ export interface Environment {
 declare abstract class EnvironmentBase implements Environment {
   init(): void;
 
+  // Subscribes to changes in location,
+  // excluding ones that happened as a result of calling `.navigate()`.
   subscribe(listener: (location: Location) => void): () => void;
 
   navigate(location: TransformedInputLocation): Location;

@@ -285,7 +285,7 @@ describe('createNavigationBlockerMiddleware', () => {
       );
       addNavigationBlocker(() => true);
 
-      expect(store.getState()).to.be.null();
+      expect(store.getState()).to.be.undefined();
       store.dispatch(Actions.init());
       expect(store.getState().pathname).to.equal('/foo');
     });
