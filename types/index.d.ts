@@ -2,7 +2,7 @@
 
 export {};
 
-export type NormalizedQuery = Record<string, string>;
+export type Query = Record<string, string>;
 
 // `InputLocationQuery` may specify query parameter values as any type of data.
 // Those values will later be converted to strings.
@@ -26,7 +26,7 @@ export interface Location<TState = any> {
   /**
    * map version of search string
    */
-  query: NormalizedQuery;
+  query: Query;
   /**
    * the search string; as on window.location e.g. '?bar=baz'
    */
