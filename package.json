@@ -1,7 +1,7 @@
 {
   "name": "navigation-stack",
   "version": "0.1.0",
-  "description": "Handles web browser navigation in a web application",
+  "description": "Handles navigation in a web browser",
   "keywords": [
     "history",
     "browser",
@@ -40,8 +40,7 @@
     }
   },
   "lint-staged": {
-    "*": "yarn 4c lint --fix --prettier-ignore .eslintignore",
-    "README.md": "doctoc"
+    "*": "yarn 4c lint --fix --prettier-ignore .eslintignore"
   },
   "prettier": "@4c/prettier-config",
   "dependencies": {

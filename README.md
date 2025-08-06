@@ -1,27 +1,9 @@
-<!-- START doctoc generated TOC please keep comment here to allow auto update -->
-<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
-
-- [navigation-stack](#navigation-stack)
-  - [Install](#install)
-  - [Use](#use)
-  - [Current Location](#current-location)
-  - [Why Redux?](#why-redux)
-  - [Environment](#environment)
-  - [Base Path](#base-path)
-  - [Location State Storage](#location-state-storage)
-  - [Block Navigation](#block-navigation)
-  - [Utility](#utility)
-  - [Development](#development)
-
-<!-- END doctoc generated TOC please keep comment here to allow auto update -->
-
 # navigation-stack
 
 [![npm version](https://img.shields.io/npm/v/navigation-stack.svg?style=flat-square)](https://www.npmjs.com/package/navigation-stack)
 [![npm downloads](https://img.shields.io/npm/dm/navigation-stack.svg?style=flat-square)](https://www.npmjs.com/package/navigation-stack)
 
-Handles web browser navigation in a web application.
+Handles navigation in a web browser. Represents web browser navigation history as a "stack" data structure. Provides operations to perform programmatic navigation such as "push" (go to new URL), "replace" (redirect to new URL), "shift" (rewind to a previously visited URL). Provides a subscription mechanism to get notified on current location change.
 
 Originally forked from [`farce`](http://npmjs.com/package/farce) package to fix a [bug](https://github.com/4Catalyzer/farce/issues/483).
 
@@ -102,9 +84,11 @@ function reducer(state, action) {
 }
 ```
 
-Calling `store.dispatch(Actions.init())` will trigger the initial `ActionTypes.UPDATE` action which will set the current location. From then on, the current location will always stay in sync with the web browser's URL bar.
+With this reducer, `store.getState()` will return the current location.
 
-The current location will also "magically" be updated when the user clicks "Back" or "Forward" button in the web browser.
+Calling `store.dispatch(Actions.init())` will trigger the initial `ActionTypes.UPDATE` action which will set the initial current location. From then on, the current location will always stay in sync with the web browser's URL bar, including "Back"/"Forward" navigation.
+
+One could use Redux'es standard [subscription mechanisms](https://redux.js.org/api/store#subscribelistener) to immediately get notified of current location changes.
 
 ## Why Redux?
 
