@@ -111,7 +111,7 @@ function onBeforeDestroy() {
   return true;
 }
 
-export function addNavigationBlocker(listener, { environment }) {
+export function addNavigationBlocker(environment, listener) {
   onlyAllowedOnClientSide();
 
   // All navigation blockers also run on `beforeDestroy` event.

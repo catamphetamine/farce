@@ -1,5 +1,15 @@
 import MemoryEnvironment from '../../src/environment/MemoryEnvironment';
 
+const STATE_KEY = '@@navigation-stack/environment-state';
+
+function save(state) {
+  window.sessionStorage.setItem(STATE_KEY, state);
+}
+
+function load() {
+  return window.sessionStorage.getItem(STATE_KEY);
+}
+
 describe('MemoryEnvironment', () => {
   it('should parse the initial location', () => {
     const environment = new MemoryEnvironment('/foo?bar=baz#qux');
@@ -8,6 +18,9 @@ describe('MemoryEnvironment', () => {
       action: 'POP',
       pathname: '/foo',
       search: '?bar=baz',
+      query: {
+        bar: 'baz',
+      },
       hash: '#qux',
       index: 0,
       delta: 0,
@@ -170,7 +183,7 @@ describe('MemoryEnvironment', () => {
     });
 
     it('should support persistence', () => {
-      const environment1 = new MemoryEnvironment('/foo', { persistent: true });
+      const environment1 = new MemoryEnvironment('/foo', { save, load });
       expect(environment1.init()).to.include({
         pathname: '/foo',
       });
@@ -179,7 +192,7 @@ describe('MemoryEnvironment', () => {
       environment1.navigate({ action: 'PUSH', pathname: '/baz' });
       environment1.shift(-1);
 
-      const environment2 = new MemoryEnvironment('/foo', { persistent: true });
+      const environment2 = new MemoryEnvironment('/foo', { save, load });
       expect(environment2.init()).to.include({
         pathname: '/bar',
       });
@@ -196,7 +209,7 @@ describe('MemoryEnvironment', () => {
         JSON.stringify({ stack: [], index: 2 }),
       );
 
-      const environment = new MemoryEnvironment('/foo', { persistent: true });
+      const environment = new MemoryEnvironment('/foo', { save, load });
       expect(environment.init()).to.include({
         pathname: '/foo',
       });

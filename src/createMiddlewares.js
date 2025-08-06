@@ -3,9 +3,8 @@ import createEnvironmentMiddleware from './middleware/createEnvironmentMiddlewar
 import createNavigationBlockerMiddleware from './middleware/createNavigationBlockerMiddleware';
 import navigationActionMiddleware from './middleware/navigationActionMiddleware';
 import normalizeInputLocationMiddleware from './middleware/normalizeInputLocationMiddleware';
-import queryMiddleware from './middleware/queryMiddleware';
 
-export default function createMiddlewares({ environment, options }) {
+export default function createMiddlewares(environment, options) {
   // Allows temporarily ignoring certain environment location updates.
   let shouldIgnoreEnvironmentLocationUpdates = false;
   const ignoreEnvironmentLocationUpdates = (func) => {
@@ -19,8 +18,6 @@ export default function createMiddlewares({ environment, options }) {
     normalizeInputLocationMiddleware,
     // Transforms a "PUSH" / "REPLACE" action into a "NAVIGATE" action.
     navigationActionMiddleware,
-    // Parses `location.search` string into `location.query` object.
-    queryMiddleware,
     // If a website is hosted under a certain path (`basePath`)
     // then this middleware will automatically strip that starting segment from the `pathname` of `location`s.
     createBasePathMiddleware(options && options.basePath),

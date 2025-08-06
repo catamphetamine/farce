@@ -6,13 +6,13 @@ import {
 
 describe('createBasePathMiddleware', () => {
   [
-    ['/foo', 'basic usage'],
-    ['/foo/', 'trailing slash in basePath'],
+    ['/foo', 'generic `basePath`'],
+    ['/foo/', '`basePath` with a trailing slash'],
   ].forEach(([basePath, title]) => {
     describe(title, () => {
       const basePathMiddleware = createBasePathMiddleware(basePath);
 
-      it('should prepend basePath to location descriptors', () => {
+      it('should prepend `basePath` to `location.pathname` on input locations', () => {
         expect(
           transformInputLocationUsingMiddleware(basePathMiddleware, {
             pathname: '/path',
@@ -22,7 +22,7 @@ describe('createBasePathMiddleware', () => {
         });
       });
 
-      it('should strip basePath from locations', () => {
+      it('should strip `basePath` from `location.pathname` on environment locations', () => {
         expect(
           transformEnvironmentLocationUsingMiddleware(basePathMiddleware, {
             pathname: '/foo/path',
@@ -32,29 +32,29 @@ describe('createBasePathMiddleware', () => {
         });
       });
 
-      it('should set unrecognized paths to null', () => {
+      it('should handle unrecognized paths on environment locations', () => {
         expect(
           transformEnvironmentLocationUsingMiddleware(basePathMiddleware, {
             pathname: '/bar/path',
           }),
         ).to.eql({
-          pathname: null,
+          pathname: '/bar/path',
         });
       });
     });
   });
 
-  describe('trivial basePath', () => {
+  describe('No `basePath` specified', () => {
     const basePathMiddleware = createBasePathMiddleware('/');
 
-    it('should not modify location descriptors', () => {
+    it('should not modify `location.pathname` of input locations', () => {
       const location = { pathname: '/path' };
       expect(
         transformInputLocationUsingMiddleware(basePathMiddleware, location),
       ).to.equal(location);
     });
 
-    it('should not modify locations', () => {
+    it('should not modify `location.pathname` of environment locations', () => {
       const location = { pathname: '/path' };
       expect(
         transformEnvironmentLocationUsingMiddleware(

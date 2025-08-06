@@ -1,37 +1,38 @@
 import getLocationUrl from './getLocationUrl';
 
-export default class StateStorage {
-  constructor(namespace) {
+export default class LocationStateStorage {
+  constructor(environment, { namespace } = {}) {
+    this._environment = environment;
     this._getFallbackLocationKey = getLocationUrl;
-    this._stateKeyPrefix = `${namespace}|`;
+    this._stateKeyPrefix = namespace ? `${namespace}|` : '';
   }
 
-  read(location, key) {
+  get(location, key) {
     const stateKey = this._getStateKey(location, key);
 
     try {
-      const value = window.sessionStorage.getItem(stateKey);
+      const value = this._environment.getState(stateKey);
       // === null is probably sufficient.
-      if (value == null) {
+      if (value === null) {
         return undefined;
       }
 
       // We want to catch JSON parse errors in case someone separately threw
       // junk into sessionStorage under our namespace.
       return JSON.parse(value);
-    } catch (e) {
+    } catch (error) {
       // Pretend that the entry doesn't exist.
       return undefined;
     }
   }
 
-  save(location, key, value) {
+  set(location, key, value) {
     const stateKey = this._getStateKey(location, key);
 
     if (value === undefined) {
       try {
-        window.sessionStorage.removeItem(stateKey);
-      } catch (e) {
+        this._environment.removeState(stateKey);
+      } catch (error) {
         // No need to handle errors here.
       }
 
@@ -43,8 +44,8 @@ export default class StateStorage {
     const valueString = JSON.stringify(value);
 
     try {
-      window.sessionStorage.setItem(stateKey, valueString);
-    } catch (e) {
+      this._environment.setState(stateKey, valueString);
+    } catch (error) {
       // No need to handle errors here either. If it didn't work, it didn't
       // work. We make no guarantees about actually saving the value.
     }
@@ -52,7 +53,7 @@ export default class StateStorage {
 
   _getStateKey(location, key) {
     const locationKey = location.key || this._getFallbackLocationKey(location);
-    const stateKeyBase = `${this._stateKeyPrefix}${locationKey}`;
-    return key == null ? stateKeyBase : `${stateKeyBase}|${key}`;
+    const keyPrefix = `${this._stateKeyPrefix}${locationKey}`;
+    return `${keyPrefix}|${key}`;
   }
 }

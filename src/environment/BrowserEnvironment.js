@@ -1,4 +1,5 @@
 import getLocationUrl from '../getLocationUrl';
+import parseQueryFromSearch from '../parseQueryFromSearch';
 
 export default class BrowserEnvironment {
   constructor() {
@@ -19,6 +20,7 @@ export default class BrowserEnvironment {
       action: 'POP',
       pathname,
       search,
+      query: search && parseQueryFromSearch(search),
       hash,
       key,
       index,
@@ -89,5 +91,19 @@ export default class BrowserEnvironment {
       key: `${this._keyPrefix}:${keyIndex.toString(36)}`,
       index: this._index,
     };
+  }
+
+  // Returns either a `string` value or `null` if the key doesn't exist.
+  getState(key) {
+    // FYI: `sessionStorage` persists across page reloads.
+    return window.sessionStorage.getItem(key);
+  }
+
+  removeState(key) {
+    window.sessionStorage.removeItem(key);
+  }
+
+  setState(key, value) {
+    window.sessionStorage.setItem(key, value);
   }
 }

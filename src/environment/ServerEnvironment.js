@@ -41,4 +41,14 @@ export default class ServerEnvironment {
   addBeforeDestroyListener() {
     return () => {};
   }
+
+  // It doesn't seem to make any sense to store anything on server side.
+  // Hence, state management methods are "no op" stubs.
+  getState() {
+    return null;
+  }
+
+  removeState() {}
+
+  setState() {}
 }

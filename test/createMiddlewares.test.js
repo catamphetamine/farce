@@ -11,9 +11,7 @@ describe('createMiddlewares', () => {
   beforeEach(() => {
     store = createStore(
       locationReducer,
-      applyMiddleware(
-        ...createMiddlewares({ environment: new MemoryEnvironment('/foo') }),
-      ),
+      applyMiddleware(...createMiddlewares(new MemoryEnvironment('/foo'))),
     );
     store.dispatch(Actions.init());
   });

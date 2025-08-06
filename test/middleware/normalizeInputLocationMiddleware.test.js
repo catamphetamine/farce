@@ -9,7 +9,7 @@ describe('normalizeInputLocationMiddleware', () => {
     dispatch = normalizeInputLocationMiddleware()(next);
   });
 
-  it('should transform input location of PUSH action', () => {
+  it('should transform input location of PUSH action (`string` to `object`)', () => {
     dispatch({
       type: ActionTypes.PUSH,
       payload: '/foo?bar=baz#qux',
@@ -20,12 +20,15 @@ describe('normalizeInputLocationMiddleware', () => {
       payload: {
         pathname: '/foo',
         search: '?bar=baz',
+        query: {
+          bar: 'baz',
+        },
         hash: '#qux',
       },
     });
   });
 
-  it('should transform input location of REPLACE action', () => {
+  it('should transform input location of REPLACE action (`string` to `object`)', () => {
     dispatch({
       type: ActionTypes.REPLACE,
       payload: '/foo?bar=baz#qux',
@@ -36,6 +39,9 @@ describe('normalizeInputLocationMiddleware', () => {
       payload: {
         pathname: '/foo',
         search: '?bar=baz',
+        query: {
+          bar: 'baz',
+        },
         hash: '#qux',
       },
     });

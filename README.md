@@ -1,5 +1,6 @@
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
 - [navigation-stack](#navigation-stack)
   - [Install](#install)
@@ -8,7 +9,9 @@
   - [Why Redux?](#why-redux)
   - [Environment](#environment)
   - [Base Path](#base-path)
+  - [Location State Storage](#location-state-storage)
   - [Block Navigation](#block-navigation)
+  - [Utility](#utility)
   - [Development](#development)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -20,7 +23,7 @@
 
 Handles web browser navigation in a web application.
 
-Originally forked from [`farce`](http://npmjs.com/package/farce) package.
+Originally forked from [`farce`](http://npmjs.com/package/farce) package to fix a [bug](https://github.com/4Catalyzer/farce/issues/483).
 
 ## Install
 
@@ -33,38 +36,37 @@ npm install navigation-stack
 `navigation-stack` provides "middlewares", "actions" and a "reducer" that could be used with `redux` or any other `redux`-compatible package such as [`mini-redux`](https://www.npmjs.com/package/mini-redux).
 
 ```js
-import { createStore, applyMiddleware } from 'redux';
+import { createStore, applyMiddleware } from 'redux'
+
 import {
   createMiddlewares,
   locationReducer,
   Actions,
-  BrowserEnvironment,
-} from 'navigation-stack';
+  BrowserEnvironment
+} from 'navigation-stack'
 
 const store = createStore(
-  locationReducer, // optional
-  applyMiddleware(
-    ...createMiddlewares({ environment: new BrowserEnvironment() }),
-  ),
-);
+  locationReducer, // Reducer function. For example, `locationReducer()`.
+  applyMiddleware(...createMiddlewares(new BrowserEnvironment()))
+)
 
-store.dispatch(Actions.init());
+store.dispatch(Actions.init())
 ```
 
 After that, dispatch any of the `Actions` in order to navigate.
 
 ```js
 // To navigate to a new page.
-store.dispatch(Actions.push('/new/location'));
+store.dispatch(Actions.push('/new/location'))
 
 // To redirect to a new page.
-store.dispatch(Actions.replace('/new/location'));
+store.dispatch(Actions.replace('/new/location'))
 
 // To go back.
-store.dispatch(Actions.shift(-1));
+store.dispatch(Actions.shift(-1))
 
 // To go forward.
-store.dispatch(Actions.shift(1));
+store.dispatch(Actions.shift(1))
 ```
 
 To view the current location:
@@ -72,13 +74,13 @@ To view the current location:
 ```js
 // When `locationReducer()` is used,
 // `store.getState()` is the current location.
-console.log(store.getState());
+console.log(store.getState())
 ```
 
 (optional) (advanced) Stop and clean up:
 
 ```js
-store.dispatch(Actions.dispose());
+store.dispatch(Actions.dispose())
 ```
 
 ## Current Location
@@ -88,15 +90,15 @@ To track the current location, the application could listen to `ActionTypes.UPDA
 For example, below is the source code for the default `locationReducer`.
 
 ```js
-import { ActionTypes } from 'navigation-stack';
+import { ActionTypes } from 'navigation-stack'
 
 // With this reducer, `state` would always tell the current location.
 function reducer(state, action) {
   if (action.type === ActionTypes.UPDATE) {
     // `action.payload` is the current location.
-    return action.payload;
+    return action.payload
   }
-  return state;
+  return state
 }
 ```
 
@@ -116,64 +118,125 @@ If it was just about dispatching the `Actions` then of course it wouldn't requir
 import {
   BrowserEnvironment,
   ServerEnvironment,
-  MemoryEnvironment,
-} from 'navigation-stack';
+  MemoryEnvironment
+} from 'navigation-stack'
+
+new BrowserEnvironment()
+new ServerEnvironment('/location-url')
+new MemoryEnvironment('/location-url')
 ```
 
 - Use `BrowserEnvironment` in a web browser.
 - Use `ServerEnvironment` in server-side rendering.
 - Use `MemoryEnvironment` in tests.
+  - `MemoryEnvironment` supports an optional second argument — an `options` object with properties:
+    - `save(state)` — Saves the environment state.
+    - `load()` — Loads a previously-saved environment state.
 
 ## Base Path
 
 If the web application is hosted under a certain URL prefix, it should be specified in `createMiddlewares()` call as `basePath` parameter.
 
 ```js
-createMiddlewares({ environment, basePath: '/parent/path' });
+createMiddlewares(environment, { basePath?: '/base/path' })
 ```
+
+## Location State Storage
+
+One could use an environment-specific `LocationStateStorage` in order to store location-specific state. For example, one could store scroll position of a page and then restore that scroll position when the user decides to navigate "Back" to the page.
+
+```js
+import { BrowserEnvironment, LocationStateStorage } from 'navigation-stack'
+
+const environment = new BrowserEnvironment()
+
+const storage = new LocationStateStorage(environment, { namespace?: 'optional-namespace' })
+
+const location = { pathname: '/abc' }
+
+storage.set(location, 'key', 123)
+storage.get(location, 'key') === 123
+```
+
+`LocationStateStorage` doesn't provide any guarantees about actually storing the data: if it encounters any errors in the process, it simply ignores them. This simplifies the API in a way that the application doesn't have to wrap `.get()`/`.set()` calls in a `try/catch` block. And judging by the nature of location-specific state, that type of data is inherently non-essential and rather "nice-to-have".
 
 ## Block Navigation
 
 ```js
-import { createStore, applyMiddleware } from 'redux';
+import { createStore, applyMiddleware } from 'redux'
+
 import {
   createMiddlewares,
   locationReducer,
   Actions,
   BrowserEnvironment,
-  addNavigationBlocker,
-} from 'navigation-stack';
+  addNavigationBlocker
+} from 'navigation-stack'
 
-const environment = new BrowserEnvironment();
+const environment = new BrowserEnvironment()
 
 const store = createStore(
-  locationReducer,
-  applyMiddleware(...createMiddlewares({ environment })),
-);
+  locationReducer, // Reducer function. For example, `locationReducer()`.
+  applyMiddleware(...createMiddlewares(environment))
+)
 
-store.dispatch(Actions.init());
+store.dispatch(Actions.init())
 
 const removeNavigationBlocker = addNavigationBlocker(
+  environment,
   (newLocation) => {
-    // Returning `true` blocks navigation.
-    return true;
-  },
-  { environment },
+    // Returning `true` means "block this navigation".
+    return true
+  }
 );
 
 // This navigation won't be performed.
-store.dispatch(Actions.push('/new/location'));
+store.dispatch(Actions.push('/new/location'))
 
 // Disable the navigation blocker.
-removeNavigationBlocker();
+removeNavigationBlocker()
 
 // This navigation now will be performed.
-store.dispatch(Actions.push('/new/location'));
+store.dispatch(Actions.push('/new/location'))
 ```
 
 Navigation blocker should be a function that receives a `newLocation` argument and could be "synchronous" or "asynchronous" (i.e. return a `Promise`, aka `async`/`await`).
 
 Navigation blockers fire both when navigating from one page to another and when closing the current browser tab. In the latter case, `newLocation` argument will be `null`, the function can't return a `Promise`, and returning `true` will cause the web browser to show a confirmation modal with a non-customizable browser-specific text.
+
+## Utility
+
+This package exports a couple of utility functions.
+
+```js
+import {
+  addBasePath,
+  removeBasePath,
+  getLocationUrl,
+  parseLocationUrl
+} from 'navigation-stack'
+
+// Parses a location URL to a location object.
+// If there're no query parameters, `query` property will not be added.
+parseLocationUrl('/abc?d=e') === {
+  pathname: '/abc',
+  search: '?d=e',
+  query: { d: 'e' },
+  hash: ''
+}
+
+// Converts a location object to a location URL.
+getLocationUrl({ pathname: '/abc', search: '?d=e', hash: '' }) === '/abc?d=e'
+
+// Adds `basePath` to a location object or a location URL.
+addBasePath('/abc', '/base-path') === '/base-path/abc'
+addBasePath({ pathname: '/abc' }, '/base-path') === { pathname: '/base-path/abc' }
+
+// Removes `basePath` from a location object or a location URL.
+// If `basePath` is not present in location, it won't do anything.
+removeBasePath('/base-path/abc', '/base-path') === '/abc';
+removeBasePath({ pathname: '/base-path/abc' }, '/base-path') === { pathname: '/abc' }
+```
 
 ## Development
 

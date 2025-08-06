@@ -8,6 +8,9 @@ describe('ServerEnvironment', () => {
       action: 'POP',
       pathname: '/foo',
       search: '?bar=baz',
+      query: {
+        bar: 'baz',
+      },
       hash: '#qux',
     });
   });

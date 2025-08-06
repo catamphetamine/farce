@@ -8,7 +8,7 @@ export type Query = Record<string, string>;
 // Those values will later be converted to strings.
 export type InputLocationQuery = Record<
   string,
-  string | number | boolean | Record<string, unknown> | null | undefined
+  string | number | boolean | null | undefined
 >;
 
 export interface Location<TState = any> {
@@ -61,21 +61,18 @@ export interface Location<TState = any> {
  */
 export interface InputLocationObject {
   pathname: Location['pathname'];
-  query?: InputLocationQuery;
   search?: Location['search'];
+  query?: InputLocationQuery;
   hash?: Location['hash'];
   state?: Location['state'];
 }
 
-export interface NormalizedInputLocation {
+export interface LocationBase {
   pathname: Location['pathname'];
   search: Location['search'];
+  query?: Query;
   hash: Location['hash'];
   state?: Location['state'];
-}
-
-interface TransformedInputLocation extends NormalizedInputLocation {
-  query?: Query;
 }
 
 /**
@@ -103,15 +100,7 @@ export interface InputLocationTypes {
 export type InputLocation = InputLocationTypes[keyof InputLocationTypes];
 
 export interface CreateMiddlewaresOptions {
-  environment: Environment;
-  options?: {
-    basePath?: string,
-  };
-}
-
-export interface NavigationBlockerOptions {
-  // beforeUnload?: boolean;
-  environment: EnvironmentBase;
+  basePath?: string;
 }
 
 export type NavigationBlockerSyncResult = boolean | undefined;
@@ -126,18 +115,29 @@ export type NavigationBlockerResult =
  * The `location` argument is `null` when the web browser tab is about to be closed.
  */
 export interface NavigationBlocker {
-  (
-    location: Location | TransformedInputLocation | null,
-  ): NavigationBlockerResult;
+  (location: Location | LocationBase | null): NavigationBlockerResult;
 }
 
+export function addBasePath<L extends InputLocation>(
+  location: L,
+  basePath?: string,
+): L;
+export function removeBasePath<L extends InputLocation>(
+  location: L,
+  basePath?: string,
+): L;
+
+export function getLocationUrl(location: InputLocationObject): string;
+export function parseLocationUrl(locationUrl: string): LocationBase;
+
 export function createMiddlewares(
-  options: CreateMiddlewaresOptions,
+  environment: Environment,
+  options?: CreateMiddlewaresOptions,
 ): Middleware[];
 
 export function addNavigationBlocker(
+  environment: EnvironmentBase,
   blocker: NavigationBlocker,
-  options: NavigationBlockerOptions,
 ): () => void;
 
 export const ActionTypes: {
@@ -151,26 +151,26 @@ export const ActionTypes: {
 };
 
 export interface InitAction {
-  type: typeof ActionTypes['INIT'];
+  type: (typeof ActionTypes)['INIT'];
 }
 
 export interface PushAction {
-  type: typeof ActionTypes['PUSH'];
+  type: (typeof ActionTypes)['PUSH'];
   payload: InputLocation;
 }
 
 export interface ReplaceAction {
-  type: typeof ActionTypes['REPLACE'];
+  type: (typeof ActionTypes)['REPLACE'];
   payload: InputLocation;
 }
 
 export interface RewindAction {
-  type: typeof ActionTypes['SHIFT'];
+  type: (typeof ActionTypes)['SHIFT'];
   payload: number;
 }
 
 export interface DisposeAction {
-  type: typeof ActionTypes['DISPOSE'];
+  type: (typeof ActionTypes)['DISPOSE'];
 }
 
 export type Action =
@@ -197,11 +197,15 @@ export interface Environment {
   // excluding ones that happened as a result of calling `.navigate()`.
   subscribe(listener: (location: Location) => void): () => void;
 
-  navigate(location: TransformedInputLocation): Location;
+  navigate(location: LocationBase): Location;
 
   go(delta: number): void;
 
   addBeforeDestroyListener(listener: BeforeDestroyListener): void;
+
+  getState(key: string): string | null;
+  removeState(key: string): void;
+  setState(key: string, value: string): void;
 }
 
 // This is just a copy-paste of the `Environment` interface above.
@@ -212,17 +216,22 @@ declare abstract class EnvironmentBase implements Environment {
   // excluding ones that happened as a result of calling `.navigate()`.
   subscribe(listener: (location: Location) => void): () => void;
 
-  navigate(location: TransformedInputLocation): Location;
+  navigate(location: LocationBase): Location;
 
   go(delta: number): void;
 
   addBeforeDestroyListener(listener: BeforeDestroyListener): void;
+
+  getState(key: string): string | null;
+  removeState(key: string): void;
+  setState(key: string, value: string): void;
 }
 
 export class BrowserEnvironment extends EnvironmentBase {}
 
-export interface MemoryEnvironmentOptions {
-  persistent?: boolean;
+export interface MemoryEnvironmentOptions<MemoryEnvironmentState = any> {
+  save?: (state: MemoryEnvironmentState) => void;
+  load?: () => MemoryEnvironmentState | undefined | null;
 }
 
 export class ServerEnvironment extends EnvironmentBase {
@@ -247,18 +256,15 @@ export function createQueryMiddleware(
 
 export const queryMiddleware: Middleware;
 
-export function createBasePathMiddleware(
-  basePath?: string,
-): Middleware;
+export function createBasePathMiddleware(basePath?: string): Middleware;
 
 export const locationReducer: Reducer<Location, Action>;
 
-export class StateStorage {
-  constructor(namespace: string);
+export class LocationStateStorage {
+  constructor(environment: Environment, options?: { namespace?: string });
 
-  read(location: Location, key: string | null): any;
-
-  save(location: Location, key: string | null, value: any): void;
+  get(location: Location, key: string): any;
+  set(location: Location, key: string, value: any): void;
 }
 
 // The following types are copy-pasted from `redux`.
@@ -284,14 +290,12 @@ interface MiddlewareAPI<D extends Dispatch = Dispatch, S = any> {
 interface Middleware<
   DispatchExt = {},
   S = any,
-  D extends Dispatch = Dispatch
+  D extends Dispatch = Dispatch,
 > {
-  (api: MiddlewareAPI<D, S>): (
-    next: Dispatch
-  ) => (action: any) => any;
+  (api: MiddlewareAPI<D, S>): (next: Dispatch) => (action: any) => any;
 }
 
 type Reducer<S = any, A extends Action = AnyAction> = (
   state: S | undefined,
-  action: A
+  action: A,
 ) => S;

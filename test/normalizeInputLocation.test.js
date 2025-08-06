@@ -1,7 +1,7 @@
 import normalizeInputLocation from '../src/normalizeInputLocation';
 
 describe('normalizeInputLocation', () => {
-  it('should preserve fully-defined location descriptor objects', () => {
+  it('should create `query` from `search`', () => {
     expect(
       normalizeInputLocation({
         pathname: '/foo',
@@ -11,11 +11,14 @@ describe('normalizeInputLocation', () => {
     ).to.eql({
       pathname: '/foo',
       search: '?bar=baz',
+      query: {
+        bar: 'baz',
+      },
       hash: '#qux',
     });
   });
 
-  it('should add default search and hash', () => {
+  it('should add default `search` and `hash`', () => {
     expect(
       normalizeInputLocation({
         pathname: '/new/pathname',
@@ -27,7 +30,7 @@ describe('normalizeInputLocation', () => {
     });
   });
 
-  it('should parse full path strings', () => {
+  it('should parse location URL', () => {
     expect(normalizeInputLocation('/foo')).to.eql({
       pathname: '/foo',
       search: '',
@@ -37,6 +40,9 @@ describe('normalizeInputLocation', () => {
     expect(normalizeInputLocation('/foo?bar=baz')).to.eql({
       pathname: '/foo',
       search: '?bar=baz',
+      query: {
+        bar: 'baz',
+      },
       hash: '',
     });
 
@@ -49,11 +55,14 @@ describe('normalizeInputLocation', () => {
     expect(normalizeInputLocation('/foo?bar=baz#qux')).to.eql({
       pathname: '/foo',
       search: '?bar=baz',
+      query: {
+        bar: 'baz',
+      },
       hash: '#qux',
     });
   });
 
-  it('should transform `query` object into a `search` string', () => {
+  it('should create `search` from `query` when `search` is not present', () => {
     expect(
       normalizeInputLocation({
         pathname: '/foo',
@@ -63,6 +72,9 @@ describe('normalizeInputLocation', () => {
     ).to.eql({
       pathname: '/foo',
       search: '?bar=baz',
+      query: {
+        bar: 'baz',
+      },
       hash: '#qux',
     });
   });

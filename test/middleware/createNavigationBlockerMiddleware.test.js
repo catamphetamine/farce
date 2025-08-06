@@ -16,7 +16,7 @@ describe('createNavigationBlockerMiddleware', () => {
   let store;
 
   function addNavigationBlocker(listener) {
-    return addNavigationBlockerOriginal(listener, { environment });
+    return addNavigationBlockerOriginal(environment, listener);
   }
 
   beforeEach(() => {
@@ -24,7 +24,7 @@ describe('createNavigationBlockerMiddleware', () => {
 
     store = createStore(
       locationReducer,
-      applyMiddleware(...createMiddlewares({ environment })),
+      applyMiddleware(...createMiddlewares(environment)),
     );
     store.dispatch(Actions.init());
 
@@ -279,9 +279,7 @@ describe('createNavigationBlockerMiddleware', () => {
 
       store = createStore(
         locationReducer,
-        applyMiddleware(
-          ...createMiddlewares({ environment: new MemoryEnvironment('/foo') }),
-        ),
+        applyMiddleware(...createMiddlewares(new MemoryEnvironment('/foo'))),
       );
       addNavigationBlocker(() => true);
 
@@ -402,7 +400,7 @@ describe('createNavigationBlockerMiddleware', () => {
 
       store = createStore(
         () => null,
-        applyMiddleware(...createMiddlewares({ environment })),
+        applyMiddleware(...createMiddlewares(environment)),
       );
 
       store.dispatch(Actions.init());

@@ -1,18 +1,19 @@
 import normalizeInputLocation from '../normalizeInputLocation';
 
-const STATE_KEY = '@@navigation-stack/state';
-
 export default class MemoryEnvironment {
-  constructor(initialLocation, { persistent = false } = {}) {
-    this._persistent = persistent;
+  constructor(initialLocation, { save, load } = {}) {
+    this._save = save;
+    this._load = load;
 
-    const initialState = persistent ? this._loadState() : null;
+    const initialState = load ? this._loadState() : null;
     if (initialState) {
       this._stack = initialState.stack;
       this._index = initialState.index;
+      this._state = initialState.state;
     } else {
       this._stack = [normalizeInputLocation(initialLocation)];
       this._index = 0;
+      this._state = {};
     }
 
     this._keyPrefix = Math.random().toString(36).slice(2, 8);
@@ -23,16 +24,21 @@ export default class MemoryEnvironment {
 
   _loadState() {
     try {
-      const { stack, index } = JSON.parse(
-        window.sessionStorage.getItem(STATE_KEY),
-      );
+      const { stack, index, state } = JSON.parse(this._load());
 
       // Check that the stack and index at least seem reasonable before using
       // them as state. This isn't foolproof, but it might prevent mistakes.
-      if (Array.isArray(stack) && typeof index === 'number' && stack[index]) {
-        return { stack, index };
+      // Also perform a basic validation of `state`.
+      if (
+        Array.isArray(stack) &&
+        typeof index === 'number' &&
+        stack[index] &&
+        typeof state === 'object' &&
+        state !== null
+      ) {
+        return { stack, index, state };
       }
-    } catch (e) {} // eslint-disable-line no-empty
+    } catch (error) {} // eslint-disable-line no-empty
 
     return null;
   }
@@ -55,7 +61,7 @@ export default class MemoryEnvironment {
   }
 
   navigate(location) {
-    const { action, pathname, search, hash, state } = location;
+    const { action, pathname, search, query, hash, state } = location;
 
     const push = action === 'PUSH';
 
@@ -68,12 +74,12 @@ export default class MemoryEnvironment {
     const keyIndex = this._keyIndex++;
     const key = `${this._keyPrefix}:${keyIndex.toString(36)}`;
 
-    this._stack[this._index] = { pathname, search, hash, state, key };
+    this._stack[this._index] = { pathname, search, query, hash, state, key };
     if (push) {
       this._stack.length = this._index + 1;
     }
 
-    if (this._persistent) {
+    if (this._save) {
       this._saveState();
     }
 
@@ -92,7 +98,7 @@ export default class MemoryEnvironment {
       return;
     }
 
-    if (this._persistent) {
+    if (this._save) {
       this._saveState();
     }
 
@@ -115,13 +121,31 @@ export default class MemoryEnvironment {
 
   _saveState() {
     try {
-      window.sessionStorage.setItem(
-        STATE_KEY,
+      this._save(
         JSON.stringify({
           stack: this._stack,
           index: this._index,
+          state: this._state,
         }),
       );
     } catch (error) {} // eslint-disable-line no-empty
+  }
+
+  // Returns either a `string` value or `null` if the key doesn't exist.
+  getState(key) {
+    if (key in this._state) {
+      return this._state[key];
+    }
+    return null;
+  }
+
+  removeState(key) {
+    if (key in this._state) {
+      delete this._state[key];
+    }
+  }
+
+  setState(key, value) {
+    this._state[key] = value;
   }
 }

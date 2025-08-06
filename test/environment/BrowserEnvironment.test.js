@@ -15,6 +15,9 @@ describe('BrowserEnvironment', () => {
       action: 'POP',
       pathname: '/foo',
       search: '?bar=baz',
+      query: {
+        bar: 'baz',
+      },
       hash: '#qux',
       key: undefined,
       index: 0,
