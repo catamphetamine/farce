@@ -184,7 +184,7 @@ export const Actions: {
   init(): InitAction;
   push(location: InputLocation): PushAction;
   replace(location: InputLocation): ReplaceAction;
-  go(delta: number): RewindAction;
+  shift(delta: number): RewindAction;
   dispose(): DisposeAction;
 };
 
@@ -199,7 +199,7 @@ export interface Environment {
 
   navigate(location: LocationBase): Location;
 
-  go(delta: number): void;
+  shift(delta: number): void;
 
   addBeforeDestroyListener(listener: BeforeDestroyListener): void;
 
@@ -218,7 +218,7 @@ declare abstract class EnvironmentBase implements Environment {
 
   navigate(location: LocationBase): Location;
 
-  go(delta: number): void;
+  shift(delta: number): void;
 
   addBeforeDestroyListener(listener: BeforeDestroyListener): void;
 
