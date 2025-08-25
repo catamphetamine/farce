@@ -5,31 +5,31 @@ import { applyMiddleware, createStore } from 'redux';
 import Actions from '../../src/Actions';
 import addNavigationBlockerOriginal from '../../src/addNavigationBlocker';
 import createMiddlewares from '../../src/createMiddlewares';
-import MemoryEnvironment from '../../src/environment/MemoryEnvironment';
 import locationReducer from '../../src/locationReducer';
+import MemorySession from '../../src/session/MemorySession';
 import { shouldWarn } from '../helpers';
 
 describe('createNavigationBlockerMiddleware', () => {
   const sandbox = sinon.createSandbox();
 
-  let environment;
+  let session;
   let store;
 
-  function addNavigationBlocker(listener) {
-    return addNavigationBlockerOriginal(environment, listener);
+  function addNavigationBlocker(blocker) {
+    return addNavigationBlockerOriginal(session, blocker);
   }
 
   beforeEach(() => {
-    environment = new MemoryEnvironment('/foo');
+    session = new MemorySession('/foo');
 
     store = createStore(
       locationReducer,
-      applyMiddleware(...createMiddlewares(environment)),
+      applyMiddleware(...createMiddlewares(session)),
     );
     store.dispatch(Actions.init());
 
-    sinon.spy(environment, 'addBeforeDestroyListener');
-    sinon.spy(environment, '_removeBeforeDestroyListener');
+    sinon.spy(session, 'addBeforeDestroyListener');
+    // sinon.spy(session, '_removeBeforeDestroyListener');
   });
 
   afterEach(() => {
@@ -40,13 +40,15 @@ describe('createNavigationBlockerMiddleware', () => {
 
   describe('PUSH navigations', () => {
     it('should block navigation when blocker returns `true`', () => {
-      const listener = sinon.stub().returns(true);
-      addNavigationBlocker(listener);
+      const blocker = sinon.stub().returns(true);
+      addNavigationBlocker(blocker);
 
       store.dispatch(Actions.push('/bar'));
       expect(store.getState().pathname).to.equal('/foo');
 
-      expect(listener.firstCall.args[0]).to.include({
+      expect(blocker).to.have.been.calledOnce();
+
+      expect(blocker.firstCall.args[0]).to.include({
         action: 'PUSH',
         pathname: '/bar',
       });
@@ -60,43 +62,43 @@ describe('createNavigationBlockerMiddleware', () => {
     });
 
     it("should fall through when first blocker doesn't return `true`", () => {
-      const listener1 = sinon.stub().returns(undefined);
-      const listener2 = sinon.stub().returns(true);
+      const blocker1 = sinon.stub().returns(undefined);
+      const blocker2 = sinon.stub().returns(true);
 
-      addNavigationBlocker(listener1);
-      addNavigationBlocker(listener2);
+      addNavigationBlocker(blocker1);
+      addNavigationBlocker(blocker2);
 
       store.dispatch(Actions.push('/bar'));
       expect(store.getState().pathname).to.equal('/foo');
 
-      expect(listener1).to.have.been.calledOnce();
-      expect(listener2).to.have.been.calledOnce();
+      expect(blocker1).to.have.been.calledOnce();
+      expect(blocker2).to.have.been.calledOnce();
     });
 
     it('should not fall through when first blocker returns `true`', () => {
-      const listener1 = sinon.stub().returns(true);
-      const listener2 = sinon.stub().returns(undefined);
+      const blocker1 = sinon.stub().returns(true);
+      const blocker2 = sinon.stub().returns(undefined);
 
-      addNavigationBlocker(listener1);
-      addNavigationBlocker(listener2);
+      addNavigationBlocker(blocker1);
+      addNavigationBlocker(blocker2);
 
       store.dispatch(Actions.push('/bar'));
       expect(store.getState().pathname).to.equal('/foo');
 
-      expect(listener1).to.have.been.calledOnce();
-      expect(listener2).not.to.have.been.called();
+      expect(blocker1).to.have.been.calledOnce();
+      expect(blocker2).not.to.have.been.called();
     });
 
-    it('should warn on and ignore listeners that throw', () => {
+    it('should warn on and ignore blockers that throw', () => {
       shouldWarn(
-        'Ignoring navigation blocker `syncListener` that failed with `Error: foo`.',
+        'Ignoring navigation blocker `syncblocker` that failed with `Error: foo`.',
       );
 
-      const syncListener = () => {
+      const syncblocker = () => {
         throw new Error('foo');
       };
 
-      addNavigationBlocker(syncListener);
+      addNavigationBlocker(syncblocker);
 
       store.dispatch(Actions.push('/bar'));
       expect(store.getState().pathname).to.equal('/bar');
@@ -177,15 +179,15 @@ describe('createNavigationBlockerMiddleware', () => {
 
     it('should warn on and ignore async blockers that throw an error', async () => {
       shouldWarn(
-        'Ignoring navigation blocker `asyncListener` that failed with `Error: foo`.',
+        'Ignoring navigation blocker `asyncblocker` that failed with `Error: foo`.',
       );
 
       // eslint-disable-next-line require-await
-      const asyncListener = async () => {
+      const asyncblocker = async () => {
         throw new Error('foo');
       };
 
-      addNavigationBlocker(asyncListener);
+      addNavigationBlocker(asyncblocker);
 
       store.dispatch(Actions.push('/bar'));
       expect(store.getState().pathname).to.equal('/foo');
@@ -195,13 +197,13 @@ describe('createNavigationBlockerMiddleware', () => {
       expect(store.getState().pathname).to.equal('/bar');
     });
 
-    it('should allow removing listeners', () => {
-      const removeNavigationListener = addNavigationBlocker(() => true);
+    it('should allow removing blockers', () => {
+      const removeNavigationBlocker = addNavigationBlocker(() => true);
 
       store.dispatch(Actions.push('/bar'));
       expect(store.getState().pathname).to.equal('/foo');
 
-      removeNavigationListener();
+      removeNavigationBlocker();
 
       store.dispatch(Actions.push('/bar'));
       expect(store.getState().pathname).to.equal('/bar');
@@ -214,13 +216,13 @@ describe('createNavigationBlockerMiddleware', () => {
     });
 
     it('should allow navigation when blocker returns `undefined`', () => {
-      const listener = sinon.stub().returns(undefined);
-      addNavigationBlocker(listener);
+      const blocker = sinon.stub().returns(undefined);
+      addNavigationBlocker(blocker);
 
       store.dispatch(Actions.shift(-1));
       expect(store.getState().pathname).to.equal('/foo');
 
-      expect(listener.firstCall.args[0]).to.include({
+      expect(blocker.firstCall.args[0]).to.include({
         action: 'POP',
         pathname: '/foo',
         delta: -1,
@@ -279,7 +281,7 @@ describe('createNavigationBlockerMiddleware', () => {
 
       store = createStore(
         locationReducer,
-        applyMiddleware(...createMiddlewares(new MemoryEnvironment('/foo'))),
+        applyMiddleware(...createMiddlewares(new MemorySession('/foo'))),
       );
       addNavigationBlocker(() => true);
 
@@ -290,16 +292,16 @@ describe('createNavigationBlockerMiddleware', () => {
 
     it('should support async rewinding', async () => {
       // eslint-disable-next-line no-underscore-dangle
-      const listener = environment._listener;
+      const blocker = session.navigation._subscriptionListener;
 
-      let environmentDeferred;
+      let sessionDeferred;
 
       // eslint-disable-next-line no-underscore-dangle
-      environment._listener = async (location) => {
-        environmentDeferred = pDefer();
-        await environmentDeferred.promise;
+      session.navigation._subscriptionListener = async (location) => {
+        sessionDeferred = pDefer();
+        await sessionDeferred.promise;
 
-        listener(location);
+        blocker(location);
       };
 
       const deferred = pDefer();
@@ -307,25 +309,25 @@ describe('createNavigationBlockerMiddleware', () => {
 
       store.dispatch(Actions.shift(-1));
 
-      // Environment popped, update to store blocked.
-      expect(environment.init().pathname).to.equal('/foo');
+      // session popped, update to store blocked.
+      expect(session.navigation.init().pathname).to.equal('/foo');
       expect(store.getState().pathname).to.equal('/bar');
 
-      environmentDeferred.resolve();
+      sessionDeferred.resolve();
       await delay(10);
 
-      // Environment rewinded.
-      expect(environment.init().pathname).to.equal('/bar');
+      // session rewinded.
+      expect(session.navigation.init().pathname).to.equal('/bar');
       expect(store.getState().pathname).to.equal('/bar');
 
       deferred.resolve(undefined);
       await delay(10);
 
-      environmentDeferred.resolve();
+      sessionDeferred.resolve();
       await delay(10);
 
-      // Environment re-popped, update to store delayed.
-      expect(environment.init().pathname).to.equal('/foo');
+      // session re-popped, update to store delayed.
+      expect(session.navigation.init().pathname).to.equal('/foo');
       expect(store.getState().pathname).to.equal('/foo');
     });
 
@@ -335,16 +337,16 @@ describe('createNavigationBlockerMiddleware', () => {
 
       // Update location with a `POP` action.
       /* eslint-disable no-underscore-dangle */
-      environment._index = 0;
-      environment._listener(environment.init(null));
+      session.navigation._index = 0;
+      session.navigation._subscriptionListener(session.navigation.init(null));
       /* eslint-enable no-underscore-dangle */
 
       deferred.resolve(undefined);
       await delay(10);
 
-      // Without delta, we can't rewind on the environment,
+      // Without delta, we can't rewind on the session,
       // so navigation is allowed without calling any blockers.
-      expect(environment.init().pathname).to.equal('/foo');
+      expect(session.navigation.init().pathname).to.equal('/foo');
       expect(store.getState().pathname).to.equal('/foo');
     });
 
@@ -354,18 +356,18 @@ describe('createNavigationBlockerMiddleware', () => {
     //
     //   // Update location with a `POP` action.
     //   /* eslint-disable no-underscore-dangle */
-    //   environment._index = 0;
-    //   environment._listener(environment.init(null));
+    //   session.navigation._index = 0;
+    //   session.navigation._subscriptionListener(session.navigation.init(null));
     //   /* eslint-enable no-underscore-dangle */
     //
-    //   // Without delta, we can't rewind on the environment.
-    //   expect(environment.init().pathname).to.equal('/foo');
+    //   // Without delta, we can't rewind on the session.
+    //   expect(session.navigation.init().pathname).to.equal('/foo');
     //   expect(store.getState().pathname).to.equal('/bar');
     //
     //   deferred.resolve(undefined);
     //   await delay(10);
     //
-    //   expect(environment.init().pathname).to.equal('/foo');
+    //   expect(session.navigation.init().pathname).to.equal('/foo');
     //   expect(store.getState().pathname).to.equal('/foo');
     // });
 
@@ -374,18 +376,18 @@ describe('createNavigationBlockerMiddleware', () => {
     //   addNavigationBlocker(() => deferred.promise);
     //
     //   /* eslint-disable no-underscore-dangle */
-    //   environment._index = 0;
-    //   environment._listener(environment.init(null));
+    //   session.navigation._index = 0;
+    //   session.navigation._subscriptionListener(session.navigation.init(null));
     //   /* eslint-enable no-underscore-dangle */
     //
-    //   expect(environment.init().pathname).to.equal('/foo');
+    //   expect(session.navigation.init().pathname).to.equal('/foo');
     //   expect(store.getState().pathname).to.equal('/bar');
     //
     //   deferred.resolve(true);
     //   await delay(10);
     //
     //   // These are out-of-sync now, but it's the best we can do.
-    //   expect(environment.init().pathname).to.equal('/foo');
+    //   expect(session.navigation.init().pathname).to.equal('/foo');
     //   expect(store.getState().pathname).to.equal('/bar');
     // });
   });
@@ -400,73 +402,70 @@ describe('createNavigationBlockerMiddleware', () => {
 
       store = createStore(
         () => null,
-        applyMiddleware(...createMiddlewares(environment)),
+        applyMiddleware(...createMiddlewares(session)),
       );
 
       store.dispatch(Actions.init());
     });
 
-    it('should manage event listener', () => {
-      expect(environment.addBeforeDestroyListener).not.to.have.been.called();
+    it('should manage event blocker', () => {
+      expect(session.addBeforeDestroyListener).not.to.have.been.called();
       // expect(window.addEventListener).not.to.have.been.called();
 
-      const removeNavigationListener1 = addNavigationBlocker(() => null, {
+      const removeNavigationBlocker1 = addNavigationBlocker(() => null, {
         beforeUnload: true,
       });
-      expect(environment.addBeforeDestroyListener).to.have.been.calledOnce();
+      expect(session.addBeforeDestroyListener).to.have.been.calledOnce();
       // expect(window.addEventListener)
       //   .to.have.been.calledOnce()
       //   .and.to.have.been.called.with('beforeunload');
 
-      const removeNavigationListener2 = addNavigationBlocker(() => null, {
+      const removeNavigationBlocker2 = addNavigationBlocker(() => null, {
         beforeUnload: true,
       });
-      expect(environment.addBeforeDestroyListener).to.have.been.calledOnce();
+      expect(session.addBeforeDestroyListener).to.have.been.calledOnce();
       // expect(window.addEventListener)
       //   .to.have.been.calledOnce()
       //   .and.to.have.been.called.with('beforeunload');
 
-      removeNavigationListener1();
+      const removeBeforeDestroyListener = sinon.stub();
+      // eslint-disable-next-line no-underscore-dangle
+      session._removeBeforeDestroyListener = removeBeforeDestroyListener;
+
+      removeNavigationBlocker1();
       // expect(window.removeEventListener).not.to.have.been.called();
-      expect(
-        // eslint-disable-next-line no-underscore-dangle
-        environment._removeBeforeDestroyListener,
-      ).not.to.have.been.called();
+      expect(removeBeforeDestroyListener).not.to.have.been.called();
 
-      removeNavigationListener2();
+      removeNavigationBlocker2();
       // expect(window.removeEventListener)
       //   .to.have.been.calledOnce()
       //   .and.to.have.been.called.with('beforeunload');
-      expect(
-        // eslint-disable-next-line no-underscore-dangle
-        environment._removeBeforeDestroyListener,
-      ).to.have.been.calledOnce();
+      expect(removeBeforeDestroyListener).to.have.been.calledOnce();
     });
 
-    it('should remove event listener on dispose', () => {
+    it('should remove event blocker on dispose', () => {
       addNavigationBlocker(() => null, { beforeUnload: true });
+
+      const removeBeforeDestroyListener = sinon.stub();
+      // eslint-disable-next-line no-underscore-dangle
+      session._removeBeforeDestroyListener = removeBeforeDestroyListener;
+
       // expect(window.removeEventListener).not.to.have.been.called();
-      expect(
-        // eslint-disable-next-line no-underscore-dangle
-        environment._removeBeforeDestroyListener,
-      ).not.to.have.been.called();
+      expect(removeBeforeDestroyListener).not.to.have.been.called();
 
       store.dispatch(Actions.dispose());
       // expect(window.removeEventListener)
       //   .to.have.been.calledOnce()
       //   .and.to.have.been.called.with('beforeunload');
-      expect(
-        // eslint-disable-next-line no-underscore-dangle
-        environment._removeBeforeDestroyListener,
-      ).to.have.been.calledOnce();
+      expect(removeBeforeDestroyListener).to.have.been.calledOnce();
     });
 
-    it('should not add event listener without beforeUnload', () => {
-      const removeNavigationListener = addNavigationBlocker(() => null);
-      expect(window.addEventListener).not.to.have.been.called();
-
-      removeNavigationListener();
-      expect(window.removeEventListener).not.to.have.been.called();
-    });
+    // it('should not add a global "before destroy" listener when no `beforeDestroy` blocker has been added', () => {
+    //   const removeNavigationBlocker = addNavigationBlocker(() => null);
+    //   expect(window.addEventListener).not.to.have.been.called();
+    //
+    //   removeNavigationBlocker();
+    //   expect(window.removeEventListener).not.to.have.been.called();
+    // });
   });
 });

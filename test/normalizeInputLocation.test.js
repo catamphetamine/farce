@@ -26,6 +26,7 @@ describe('normalizeInputLocation', () => {
     ).to.eql({
       pathname: '/new/pathname',
       search: '',
+      query: {},
       hash: '',
     });
   });
@@ -34,6 +35,7 @@ describe('normalizeInputLocation', () => {
     expect(normalizeInputLocation('/foo')).to.eql({
       pathname: '/foo',
       search: '',
+      query: {},
       hash: '',
     });
 
@@ -49,6 +51,7 @@ describe('normalizeInputLocation', () => {
     expect(normalizeInputLocation('/foo#qux')).to.eql({
       pathname: '/foo',
       search: '',
+      query: {},
       hash: '#qux',
     });
 

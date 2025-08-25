@@ -2,8 +2,8 @@ import { applyMiddleware, createStore } from 'redux';
 
 import Actions from '../src/Actions';
 import createMiddlewares from '../src/createMiddlewares';
-import MemoryEnvironment from '../src/environment/MemoryEnvironment';
 import locationReducer from '../src/locationReducer';
+import MemorySession from '../src/session/MemorySession';
 
 describe('createMiddlewares', () => {
   let store;
@@ -11,7 +11,7 @@ describe('createMiddlewares', () => {
   beforeEach(() => {
     store = createStore(
       locationReducer,
-      applyMiddleware(...createMiddlewares(new MemoryEnvironment('/foo'))),
+      applyMiddleware(...createMiddlewares(new MemorySession('/foo'))),
     );
     store.dispatch(Actions.init());
   });

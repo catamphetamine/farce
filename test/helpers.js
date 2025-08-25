@@ -23,7 +23,7 @@ export function transformInputLocationUsingMiddleware(middleware, location) {
   }).payload;
 }
 
-export function transformEnvironmentLocationUsingMiddleware(
+export function transformSubscriptionLocationUsingMiddleware(
   middleware,
   location,
 ) {

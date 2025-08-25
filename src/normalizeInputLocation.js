@@ -38,6 +38,7 @@ export default function normalizeInputLocation(location) {
   // if those properties are not present.
   return {
     ...location,
+    query: location.query || {},
     search: location.search || '',
     hash: location.hash || '',
   };

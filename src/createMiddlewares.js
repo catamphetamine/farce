@@ -1,16 +1,17 @@
 import createBasePathMiddleware from './middleware/createBasePathMiddleware';
-import createEnvironmentMiddleware from './middleware/createEnvironmentMiddleware';
+import createBeforeLocationChangeListenerMiddleware from './middleware/createBeforeLocationChangeListenerMiddleware';
+import createLocationMiddleware from './middleware/createLocationMiddleware';
 import createNavigationBlockerMiddleware from './middleware/createNavigationBlockerMiddleware';
 import navigationActionMiddleware from './middleware/navigationActionMiddleware';
 import normalizeInputLocationMiddleware from './middleware/normalizeInputLocationMiddleware';
 
-export default function createMiddlewares(environment, options) {
-  // Allows temporarily ignoring certain environment location updates.
-  let shouldIgnoreEnvironmentLocationUpdates = false;
-  const ignoreEnvironmentLocationUpdates = (func) => {
-    shouldIgnoreEnvironmentLocationUpdates = true;
+export default function createMiddlewares(session, options) {
+  // Allows temporarily ignoring location update events.
+  let shouldIgnoreLocationSubscriptionEvents = false;
+  const ignoreLocationSubscriptionEvents = (func) => {
+    shouldIgnoreLocationSubscriptionEvents = true;
     func();
-    shouldIgnoreEnvironmentLocationUpdates = false;
+    shouldIgnoreLocationSubscriptionEvents = false;
   };
 
   return [
@@ -23,19 +24,22 @@ export default function createMiddlewares(environment, options) {
     createBasePathMiddleware(options && options.basePath),
     // Allows blocking navigation.
     // Handles `NAVIGATE` actions dispatched by the application itself.
-    createNavigationBlockerMiddleware(environment, {
-      ignoreEnvironmentLocationUpdates,
+    createNavigationBlockerMiddleware(session, {
+      ignoreLocationSubscriptionEvents,
     }),
-    // This "middleware" performs the actual navigation according to the `environment` being used.
-    // For example, when `BrowserEnvironment` is used, it calls methods of the `history` object.
-    createEnvironmentMiddleware(environment, {
-      shouldIgnoreEnvironmentLocationUpdates: () =>
-        shouldIgnoreEnvironmentLocationUpdates,
+    // This "middleware" performs the actual navigation according to the `session` being used.
+    // For example, when `BrowserSession` is used, it calls methods of the `history` object.
+    createLocationMiddleware(session, {
+      shouldIgnoreLocationSubscriptionEvents: () =>
+        shouldIgnoreLocationSubscriptionEvents,
     }),
     // Allows blocking navigation.
-    // Handles location `UPDATE` actions dispatched by the environment.
-    createNavigationBlockerMiddleware(environment, {
-      ignoreEnvironmentLocationUpdates,
+    // Handles location `UPDATE` actions dispatched in response to location update events.
+    createNavigationBlockerMiddleware(session, {
+      ignoreLocationSubscriptionEvents,
     }),
+    // Allows subscribing to upcoming location changes
+    // before those changes are applied in the `location` object in the state.
+    createBeforeLocationChangeListenerMiddleware(session),
   ];
 }

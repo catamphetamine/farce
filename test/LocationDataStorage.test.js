@@ -1,8 +1,8 @@
-import LocationStateStorage from '../src/LocationStateStorage';
-import MemoryEnvironment from '../src/environment/MemoryEnvironment';
+import LocationDataStorage from '../src/LocationDataStorage';
+import MemorySession from '../src/session/MemorySession';
 
-describe('LocationStateStorage', () => {
-  let environment;
+describe('LocationDataStorage', () => {
+  let session;
   let stateStorage;
 
   const location = {
@@ -12,8 +12,8 @@ describe('LocationStateStorage', () => {
   beforeEach(() => {
     window.sessionStorage.clear();
 
-    environment = new MemoryEnvironment('/initial-location');
-    stateStorage = new LocationStateStorage(environment, {
+    session = new MemorySession('/initial-location');
+    stateStorage = new LocationDataStorage(session, {
       namespace: 'test',
     });
   });

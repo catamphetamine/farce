@@ -1,6 +1,6 @@
 {
   "name": "navigation-stack",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "description": "Handles navigation in a web browser",
   "keywords": [
     "history",
@@ -92,8 +92,8 @@
     "webpack": "^5.72.1"
   },
   "resolutions": {
-    "dtslint/@definitelytyped/header-parser": "^0.0.41",
-    "dtslint/@definitelytyped/typescript-versions": "^0.0.41",
-    "dtslint/@definitelytyped/utils": "^0.0.41"
+    "@definitelytyped/header-parser": "^0.0.41",
+    "@definitelytyped/typescript-versions": "^0.0.41",
+    "@definitelytyped/utils": "^0.0.41"
   }
 }

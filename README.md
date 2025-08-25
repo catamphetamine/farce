@@ -24,14 +24,16 @@ import {
   createMiddlewares,
   locationReducer,
   Actions,
-  BrowserEnvironment
+  BrowserSession
 } from 'navigation-stack'
 
+// Create a Redux store.
 const store = createStore(
   locationReducer, // Reducer function. For example, `locationReducer()`.
-  applyMiddleware(...createMiddlewares(new BrowserEnvironment()))
+  applyMiddleware(...createMiddlewares(new BrowserSession()))
 )
 
+// Initialize navigation.
 store.dispatch(Actions.init())
 ```
 
@@ -88,7 +90,52 @@ With this reducer, `store.getState()` will return the current location.
 
 Calling `store.dispatch(Actions.init())` will trigger the initial `ActionTypes.UPDATE` action which will set the initial current location. From then on, the current location will always stay in sync with the web browser's URL bar, including "Back"/"Forward" navigation.
 
+A `location` object has all the properties of a [standard web browser location](https://developer.mozilla.org/en-US/docs/Web/API/Window/location) with the addition of:
+* `query: object` — URL query parameters.
+* `index: number` — The index of the location in the navigation history, starting with `0` for the initial location.
+* `action: string` — The type of navigation that led to the location.
+  * `INIT` in case of the initial location before any navigation has taken place.
+  * `POP` when the user performs a "Back" or "Forward" navigation, or after a `.shift()` navigation which is essentially a "back or forward navigation".
+  * `PUSH` in case of a `.push()` navigation, i.e. "normal navigation via a hyperlink".
+  * `REPLACE` in case of a `.replace()` navigation, i.e. "redirect".
+* `delta: number` — the difference between the `index` of the current location and the `index` of the previous location.
+  * `0` for the initial location before any navigation has taken place.
+  * `1` after a `.push()` navigation, i.e. "normal navigation via a hyperlink".
+  * `0` after a `.replace()` navigation, i.e. "redirect".
+  * `delta: number` after a `.shift(delta)` navigation, i.e. "back or forward navigation".
+  * `-1` after the user clicks a "Back" button in their web browser.
+  * `1` after the user clicks a "Forward" button in their web browser.
+* `key: string` — a unique ID of the `location` object within the navigation history.
+
+## Subscribe to Location Changes
+
 One could use Redux'es standard [subscription mechanisms](https://redux.js.org/api/store#subscribelistener) to immediately get notified of current location changes.
+
+```js
+let currentLocation
+
+// Create a Redux store.
+const store = createStore(
+  locationReducer, // Reducer function. For example, `locationReducer()`.
+  applyMiddleware(...createMiddlewares(new BrowserSession()))
+)
+
+// Subscribe to any potential Redux state changes.
+const unsubscribe = store.subscribe(() => {
+  const previousLocation = currentLocation
+  currentLocation = store.getState() // In case of using `locationReducer()`.
+  if (currentLocation !== previousLocation) {
+    console.log('Location has changed')
+  }
+})
+
+// Initialize navigation.
+// Emitting a Redux action will trigger the listener.
+store.dispatch(Actions.init())
+
+// Stop listening to current location changes.
+unsubscribe()
+```
 
 ## Why Redux?
 
@@ -96,45 +143,47 @@ Why complicate things by providing "middlewares", "actions" and a "reducer" when
 
 If it was just about dispatching the `Actions` then of course it wouldn't require any "state management". But it's the "get current location" piece that changes the whole picture. One could say that using Redux for such a simple task is an overkill but actually reinventing a wheel is what I would consider "overkill". It's like crafting your own screwdriver just because the one from Walmart feels too bulky.
 
-## Environment
+## Session
+
+Navigation is performed within a given "session". A "session" sets the boundaries within a given navigation session exists, so that each user (and then each their browser tab) would have a separate navigation session. A specific "session" implementation maps `navigation-stack` concepts to their physical execution, such as web browser API. Three different "session" implementations are shipped with this package: `BrowserSession`, `ServerSession` and `MemorySession`.
 
 ```js
 import {
-  BrowserEnvironment,
-  ServerEnvironment,
-  MemoryEnvironment
+  BrowserSession,
+  ServerSession,
+  MemorySession
 } from 'navigation-stack'
 
-new BrowserEnvironment()
-new ServerEnvironment('/location-url')
-new MemoryEnvironment('/location-url')
+new BrowserSession()
+new ServerSession('/initial-location-url')
+new MemorySession('/initial-location-url')
 ```
 
-- Use `BrowserEnvironment` in a web browser.
-- Use `ServerEnvironment` in server-side rendering.
-- Use `MemoryEnvironment` in tests.
-  - `MemoryEnvironment` supports an optional second argument — an `options` object with properties:
-    - `save(state)` — Saves the environment state.
-    - `load()` — Loads a previously-saved environment state.
+- Use `BrowserSession` in a web browser. The navigation session is automatically limited to a given web browser tab and survives a page refresh.
+- Use `ServerSession` in server-side rendering. Create a separate `ServerSession` for each incoming HTTP request.
+- Use `MemorySession` in tests to mimick a `BrowserSession`. Create a separate `MemorySession` for each separate navigation session.
+  - `MemorySession` supports saving and restoring its state, althrough there doesn't seem to be any real-world use for this feature. Yet, it exists. To enable state restoration, pass an optional second argument — an `options` object with properties:
+    - `save(key: string, data: string)` — Saves `data` under the `key`.
+    - `load(key: string)` — Loads the data stored under the `key`.
 
 ## Base Path
 
 If the web application is hosted under a certain URL prefix, it should be specified in `createMiddlewares()` call as `basePath` parameter.
 
 ```js
-createMiddlewares(environment, { basePath?: '/base/path' })
+createMiddlewares(session, { basePath?: '/base/path' })
 ```
 
 ## Location State Storage
 
-One could use an environment-specific `LocationStateStorage` in order to store location-specific state. For example, one could store scroll position of a page and then restore that scroll position when the user decides to navigate "Back" to the page.
+One could use `LocationDataStorage` in order to store location-specific data. For example, one could store scroll position of a page and then restore that scroll position when the user decides to navigate "Back" to the page.
 
 ```js
-import { BrowserEnvironment, LocationStateStorage } from 'navigation-stack'
+import { BrowserSession, LocationDataStorage } from 'navigation-stack'
 
-const environment = new BrowserEnvironment()
+const session = new BrowserSession()
 
-const storage = new LocationStateStorage(environment, { namespace?: 'optional-namespace' })
+const storage = new LocationDataStorage(session, { namespace?: 'optional-namespace' })
 
 const location = { pathname: '/abc' }
 
@@ -142,9 +191,13 @@ storage.set(location, 'key', 123)
 storage.get(location, 'key') === 123
 ```
 
-`LocationStateStorage` doesn't provide any guarantees about actually storing the data: if it encounters any errors in the process, it simply ignores them. This simplifies the API in a way that the application doesn't have to wrap `.get()`/`.set()` calls in a `try/catch` block. And judging by the nature of location-specific state, that type of data is inherently non-essential and rather "nice-to-have".
+`LocationDataStorage` doesn't provide any guarantees about actually storing the data: if it encounters any errors in the process, it simply ignores them. This simplifies the API in a way that the application doesn't have to wrap `.get()`/`.set()` calls in a `try/catch` block. And judging by the nature of location-specific data, that type of data is inherently non-essential and rather "nice-to-have".
 
-## Block Navigation
+One might ask: Why use `LocationDataStorage` when one could simply store the data in a usual variable? The answer is that a usual variable doesn't survive if the user decides to refresh the page. But the entire navigation history does survive because that's how web browsers work. So if the user decides to go "Back" after refreshing the current page, the data associated to that previous location would already be lost and can't be recovered. In contrast, when using a `LocationDataStorage` with a `BrowserSession`, the stored data does survive a page refresh, which feels more consistent and coherent with the persistence behavior of the navigation history itself.
+
+## Get Notified Before Location Changes
+
+One could subscribe to "before change" events of the current location by calling `addBeforeLocationChangeListener()` exported function. The listener function will be called before the `location` object in Redux state is updated. This might be a suitable opportunity to save location-specific state such as the scroll position.
 
 ```js
 import { createStore, applyMiddleware } from 'redux'
@@ -153,21 +206,67 @@ import {
   createMiddlewares,
   locationReducer,
   Actions,
-  BrowserEnvironment,
+  BrowserSession,
+  addBeforeLocationChangeListener
+} from 'navigation-stack'
+
+const session = new BrowserSession()
+
+// Create a Redux store.
+const store = createStore(
+  locationReducer, // Reducer function. For example, `locationReducer()`.
+  applyMiddleware(...createMiddlewares(session))
+)
+
+// Subscribe to "before location change" events.
+const removeBeforeLocationChangeListener = addBeforeLocationChangeListener(
+  session,
+  (newLocation) => {
+    console.log(newLocation)
+  }
+);
+
+// Initialize navigation.
+// This will not trigger the listener because it's not a navigation.
+store.dispatch(Actions.init())
+
+// This navigation event will trigger the listener.
+// `newLocation.action` will be "PUSH".
+store.dispatch(Actions.push('/new/location'))
+
+// Unsubscribe from "before location change" events.
+removeBeforeLocationChangeListener()
+```
+
+## Block Navigation
+
+`navigation-stack` provides the ability to block navigation. Call `addNavigationBlocker()` exported function to set up a navigation blocker.
+
+```js
+import { createStore, applyMiddleware } from 'redux'
+
+import {
+  createMiddlewares,
+  locationReducer,
+  Actions,
+  BrowserSession,
   addNavigationBlocker
 } from 'navigation-stack'
 
-const environment = new BrowserEnvironment()
+const session = new BrowserSession()
 
+// Create a Redux store.
 const store = createStore(
   locationReducer, // Reducer function. For example, `locationReducer()`.
-  applyMiddleware(...createMiddlewares(environment))
+  applyMiddleware(...createMiddlewares(session))
 )
 
+// Initialize navigation.
 store.dispatch(Actions.init())
 
+// Add navigation blocker.
 const removeNavigationBlocker = addNavigationBlocker(
-  environment,
+  session,
   (newLocation) => {
     // Returning `true` means "block this navigation".
     return true
@@ -177,7 +276,7 @@ const removeNavigationBlocker = addNavigationBlocker(
 // This navigation won't be performed.
 store.dispatch(Actions.push('/new/location'))
 
-// Disable the navigation blocker.
+// Remove the navigation blocker.
 removeNavigationBlocker()
 
 // This navigation now will be performed.
@@ -185,6 +284,8 @@ store.dispatch(Actions.push('/new/location'))
 ```
 
 Navigation blocker should be a function that receives a `newLocation` argument and could be "synchronous" or "asynchronous" (i.e. return a `Promise`, aka `async`/`await`).
+
+The `newLocation` argument of a blocker function won't necessarily have a `key` or `index` property but other properties are present.
 
 Navigation blockers fire both when navigating from one page to another and when closing the current browser tab. In the latter case, `newLocation` argument will be `null`, the function can't return a `Promise`, and returning `true` will cause the web browser to show a confirmation modal with a non-customizable browser-specific text.
 
@@ -201,7 +302,7 @@ import {
 } from 'navigation-stack'
 
 // Parses a location URL to a location object.
-// If there're no query parameters, `query` property will not be added.
+// If there're no query parameters, `query` property will be an empty object.
 parseLocationUrl('/abc?d=e') === {
   pathname: '/abc',
   search: '?d=e',

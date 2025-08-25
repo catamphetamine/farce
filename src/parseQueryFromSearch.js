@@ -8,5 +8,5 @@ export default function parseQueryFromSearch(search) {
       // Ignore any query parsing errors.
     }
   }
-  return undefined;
+  return {};
 }

@@ -11,9 +11,9 @@ export default function createBasePathMiddleware(basePath) {
       return addBasePath(location, basePath);
     },
 
-    // Transforms environment `Location` object:
+    // Transforms subscription `Location` object:
     // removes `basePath` from the URL.
-    transformEnvironmentLocation: (location) => {
+    transformSubscriptionLocation: (location) => {
       return removeBasePath(location, basePath);
     },
   });

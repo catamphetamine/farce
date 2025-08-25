@@ -1,67 +1,75 @@
+/* eslint-disable no-underscore-dangle */
+
 import isPromise from './isPromise';
-import onlyAllowedOnClientSide from './onlyAllowedOnClientSide';
 
-let navigationBlockersList = [];
-
-let removeBeforeDestroyListener;
-
-export function getNavigationBlockers() {
-  return navigationBlockersList;
+export function getNavigationBlockers(session) {
+  return session._navigationBlockersList || [];
 }
 
-function addNavigationBlockerToTheList(blocker) {
-  onlyAllowedOnClientSide();
-  navigationBlockersList.push(blocker);
-}
-
-function removeNavigationBlockerFromTheList(blocker) {
-  onlyAllowedOnClientSide();
-  navigationBlockersList = navigationBlockersList.filter((_) => _ !== blocker);
-}
-
-export function removeAllNavigationBlockers() {
-  onlyAllowedOnClientSide();
-  if (getNavigationBlockers().some((blocker) => blocker.beforeDestroy)) {
-    removeBeforeDestroyListener();
-    removeBeforeDestroyListener = undefined;
+function addNavigationBlockerToTheList(blocker, session) {
+  if (!session._navigationBlockersList) {
+    session._navigationBlockersList = [];
   }
-  navigationBlockersList = [];
+  session._navigationBlockersList.push(blocker);
 }
 
-// Runs the `listener` while ignoring any errors that might be thrown by it.
-function runNavigationBlocker({ listener }, location) {
+function removeNavigationBlockerFromTheList(blocker, session) {
+  if (session._navigationBlockersList) {
+    session._navigationBlockersList = session._navigationBlockersList.filter(
+      (_) => _ !== blocker,
+    );
+  }
+}
+
+export function removeAllNavigationBlockers(session) {
+  if (
+    getNavigationBlockers(session).some((blocker) => blocker.beforeDestroy)
+  ) {
+    if (!session._removeBeforeDestroyListener) {
+      throw new Error(
+        '`_removeBeforeDestroyListener` property not found in the `session`',
+      );
+    }
+    session._removeBeforeDestroyListener();
+    session._removeBeforeDestroyListener = undefined;
+  }
+  session._navigationBlockersList = [];
+}
+
+// Runs the `blocker` while ignoring any errors that might be thrown by it.
+function runNavigationBlocker({ blocker }, location) {
   let result;
   try {
-    result = listener(location);
+    result = blocker(location);
   } catch (error) {
     // eslint-disable-next-line no-console
     console.warn(
-      `Ignoring navigation blocker \`${listener.name}\` that failed with \`${error}\`.`,
+      `Ignoring navigation blocker \`${blocker.name}\` that failed with \`${error}\`.`,
     );
     // eslint-disable-next-line no-console
     console.error(error);
   }
 
-  // If the listener returned a `Promise`, await for that `Promise`
+  // If the blocker returned a `Promise`, await for that `Promise`
   // and then return the result.
   if (isPromise(result)) {
     return result.catch((error) => {
       // eslint-disable-next-line no-console
       console.warn(
-        `Ignoring navigation blocker \`${listener.name}\` that failed with \`${error}\`.`,
+        `Ignoring navigation blocker \`${blocker.name}\` that failed with \`${error}\`.`,
       );
       // eslint-disable-next-line no-console
       console.error(error);
     });
   }
-  // The listener didn't return a `Promise`.
+  // The blocker didn't return a `Promise`.
   // Return the "synchronous" result.
   return result;
 }
 
-// Runs all listeners in order.
-// If any listener returns a non-`null` result, it stops and returns the result.
-// If there's no such listener, returns `true`.
+// Runs all blockers in order.
+// If any blocker returns `true`, it stops and returns the result.
+// If there's no such blocker, returns `undefined`.
 export function runNavigationBlockers(navigationBlockers, toLocation) {
   if (navigationBlockers.length === 0) {
     return undefined;
@@ -91,17 +99,17 @@ export function runNavigationBlockers(navigationBlockers, toLocation) {
 }
 
 /* istanbul ignore next: not testable with Karma */
-function onBeforeDestroy() {
-  const result = runNavigationBlockers(getNavigationBlockers(), null);
+function onBeforeDestroy(session) {
+  const result = runNavigationBlockers(getNavigationBlockers(session), null);
 
-  // If no listener returned anything, don't prevent the "unload" event.
+  // If no blocker returned anything, don't prevent the "unload" event.
   if (!result) {
     return undefined;
   }
 
   // Web browsers don't allow displaying a custom modal in "beforeunload" phase.
   // They only allow displaying a standard one, with the default text.
-  // Hence, "asynchronous" listeners should be ignored.
+  // Hence, "asynchronous" blockers should be ignored.
   // https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeunload_event
   if (isPromise(result)) {
     return undefined;
@@ -111,48 +119,59 @@ function onBeforeDestroy() {
   return true;
 }
 
-export function addNavigationBlocker(environment, listener) {
-  onlyAllowedOnClientSide();
-
+export function addNavigationBlocker(session, blocker) {
   // All navigation blockers also run on `beforeDestroy` event.
   // If required, this could be a parameter of this function.
-  // The rationale could be that adding `beforeunload` a listener
+  // The rationale could be that adding a `beforeunload` listener
   // disables web page caching in some browsers like Firefox.
   const beforeDestroy = true;
 
-  // If it's the first "beforeDestroy" listener, add the global `onBeforeDestroy` listener.
+  // If it's the first "beforeDestroy" blocker, add the global `onBeforeDestroy` listener.
   //
   // Sidenote: Add the "beforeunload" event listener only as needed, as its presence
   // prevents the page from being added to the page navigation cache:
   //
   // "In Firefox, beforeunload is not compatible with the back/forward cache (bfcache):
-  //  that is, Firefox will not place pages in the bfcache if they have beforeunload listeners,
+  //  that is, Firefox will not place pages in the bfcache if they have "beforeunload" listeners,
   //  and this is bad for performance."
   //
   // https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeunload_event
   if (
     beforeDestroy &&
-    !getNavigationBlockers().some((blocker) => blocker.beforeDestroy)
+    !getNavigationBlockers(session).some(
+      (navigationBlocker) => navigationBlocker.beforeDestroy,
+    )
   ) {
-    removeBeforeDestroyListener =
-      environment.addBeforeDestroyListener(onBeforeDestroy);
+    if (session._removeBeforeDestroyListener) {
+      throw new Error(
+        'Unexpected `_removeBeforeDestroyListener` property found in the `session`',
+      );
+    }
+    session._removeBeforeDestroyListener = session.addBeforeDestroyListener(
+      () => onBeforeDestroy(session),
+    );
   }
 
-  const blocker = { listener, beforeDestroy };
-  addNavigationBlockerToTheList(blocker);
+  const newNavigationBlocker = { blocker, beforeDestroy };
+  addNavigationBlockerToTheList(newNavigationBlocker, session);
 
   return () => {
-    removeNavigationBlockerFromTheList(blocker);
+    removeNavigationBlockerFromTheList(newNavigationBlocker, session);
 
-    // If it was the last "beforeDestroy" listener, remove the global `onBeforeDestroy` listener.
+    // If it was the last "beforeDestroy" blocker, remove the global `onBeforeDestroy` listener.
     if (
       beforeDestroy &&
-      !getNavigationBlockers().some(
+      !getNavigationBlockers(session).some(
         (navigationBlocker) => navigationBlocker.beforeDestroy,
       )
     ) {
-      removeBeforeDestroyListener();
-      removeBeforeDestroyListener = undefined;
+      if (!session._removeBeforeDestroyListener) {
+        throw new Error(
+          '`_removeBeforeDestroyListener` property not found in the `session`',
+        );
+      }
+      session._removeBeforeDestroyListener();
+      session._removeBeforeDestroyListener = undefined;
     }
   };
 }

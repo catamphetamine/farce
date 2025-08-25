@@ -1,7 +1,7 @@
 import createBasePathMiddleware from '../../src/middleware/createBasePathMiddleware';
 import {
-  transformEnvironmentLocationUsingMiddleware,
   transformInputLocationUsingMiddleware,
+  transformSubscriptionLocationUsingMiddleware,
 } from '../helpers';
 
 describe('createBasePathMiddleware', () => {
@@ -22,9 +22,9 @@ describe('createBasePathMiddleware', () => {
         });
       });
 
-      it('should strip `basePath` from `location.pathname` on environment locations', () => {
+      it('should strip `basePath` from `location.pathname` on subscription locations', () => {
         expect(
-          transformEnvironmentLocationUsingMiddleware(basePathMiddleware, {
+          transformSubscriptionLocationUsingMiddleware(basePathMiddleware, {
             pathname: '/foo/path',
           }),
         ).to.eql({
@@ -32,9 +32,9 @@ describe('createBasePathMiddleware', () => {
         });
       });
 
-      it('should handle unrecognized paths on environment locations', () => {
+      it('should handle unrecognized paths on subscription locations', () => {
         expect(
-          transformEnvironmentLocationUsingMiddleware(basePathMiddleware, {
+          transformSubscriptionLocationUsingMiddleware(basePathMiddleware, {
             pathname: '/bar/path',
           }),
         ).to.eql({
@@ -54,10 +54,10 @@ describe('createBasePathMiddleware', () => {
       ).to.equal(location);
     });
 
-    it('should not modify `location.pathname` of environment locations', () => {
+    it('should not modify `location.pathname` of subscription locations', () => {
       const location = { pathname: '/path' };
       expect(
-        transformEnvironmentLocationUsingMiddleware(
+        transformSubscriptionLocationUsingMiddleware(
           basePathMiddleware,
           location,
         ),

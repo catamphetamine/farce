@@ -34,6 +34,8 @@ export default function parseLocationUrl(url) {
   const query = parseQueryFromSearch(search);
   if (query) {
     location.query = query;
+  } else {
+    location.query = {};
   }
 
   return location;

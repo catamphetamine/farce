@@ -1,6 +1,6 @@
 import getLocationUrl from './getLocationUrl';
 
-export default class LocationStateStorage {
+export default class LocationDataStorage {
   constructor(environment, { namespace } = {}) {
     this._environment = environment;
     this._getFallbackLocationKey = getLocationUrl;
@@ -11,7 +11,7 @@ export default class LocationStateStorage {
     const stateKey = this._getStateKey(location, key);
 
     try {
-      const value = this._environment.getState(stateKey);
+      const value = this._environment.dataStorage.get(stateKey);
       // === null is probably sufficient.
       if (value === null) {
         return undefined;
@@ -31,7 +31,7 @@ export default class LocationStateStorage {
 
     if (value === undefined) {
       try {
-        this._environment.removeState(stateKey);
+        this._environment.dataStorage.remove(stateKey);
       } catch (error) {
         // No need to handle errors here.
       }
@@ -44,7 +44,7 @@ export default class LocationStateStorage {
     const valueString = JSON.stringify(value);
 
     try {
-      this._environment.setState(stateKey, valueString);
+      this._environment.dataStorage.set(stateKey, valueString);
     } catch (error) {
       // No need to handle errors here either. If it didn't work, it didn't
       // work. We make no guarantees about actually saving the value.

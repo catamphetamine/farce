@@ -1,39 +1,54 @@
 import delay from 'delay';
 
-import BrowserEnvironment from '../../src/environment/BrowserEnvironment';
+import BrowserSession from '../../src/session/BrowserSession';
 
-describe('BrowserEnvironment', () => {
+describe('BrowserSession', () => {
   beforeEach(() => {
     window.history.replaceState(null, null, '/');
   });
 
   it('should parse the initial location', () => {
     window.history.replaceState(null, null, '/foo?bar=baz#qux');
-    const environment = new BrowserEnvironment();
+    const session = new BrowserSession();
 
-    expect(environment.init()).to.eql({
-      action: 'POP',
+    expect(session.navigation.init()).to.deep.include({
+      action: 'INIT',
       pathname: '/foo',
       search: '?bar=baz',
       query: {
         bar: 'baz',
       },
       hash: '#qux',
-      key: undefined,
       index: 0,
       delta: 0,
       state: undefined,
     });
   });
 
+  it('should require initialization', () => {
+    const session = new BrowserSession();
+
+    expect(() =>
+      session.navigation.navigate({
+        action: 'PUSH',
+        pathname: '/bar',
+        search: '?search',
+        hash: '#hash',
+        state: { the: 'state' },
+      }),
+    ).to.throw('Browser session must be initialized before navigation');
+  });
+
   it('should support basic navigation', async () => {
     window.history.replaceState(null, null, '/foo');
-    const environment = new BrowserEnvironment();
+    const session = new BrowserSession();
 
     const listener = sinon.spy();
-    environment.subscribe(listener);
+    session.navigation.subscribe(listener);
 
-    const barLocation = environment.navigate({
+    session.navigation.init();
+
+    const barLocation = session.navigation.navigate({
       action: 'PUSH',
       pathname: '/bar',
       search: '?search',
@@ -58,7 +73,7 @@ describe('BrowserEnvironment', () => {
     expect(barLocation.key).not.to.be.empty();
 
     expect(
-      environment.navigate({
+      session.navigation.navigate({
         action: 'PUSH',
         pathname: '/baz',
         search: '',
@@ -74,7 +89,7 @@ describe('BrowserEnvironment', () => {
     expect(window.location.pathname).to.equal('/baz');
 
     expect(
-      environment.navigate({
+      session.navigation.navigate({
         action: 'REPLACE',
         pathname: '/qux',
         search: '',
@@ -91,7 +106,7 @@ describe('BrowserEnvironment', () => {
     expect(window.location.pathname).to.equal('/qux');
     expect(listener).not.to.have.been.called();
 
-    environment.shift(-1);
+    session.navigation.shift(-1);
     await delay(20);
 
     expect(window.location).to.include({
@@ -124,18 +139,20 @@ describe('BrowserEnvironment', () => {
       delta: -1,
       state: undefined,
     });
+
     listener.resetHistory();
   });
 
   it('should support subscribing and unsubscribing', async () => {
-    const environment = new BrowserEnvironment();
-    environment.navigate({
+    const session = new BrowserSession();
+    session.navigation.init();
+    session.navigation.navigate({
       action: 'PUSH',
       pathname: '/bar',
       search: '',
       hash: '',
     });
-    environment.navigate({
+    session.navigation.navigate({
       action: 'PUSH',
       pathname: '/baz',
       search: '',
@@ -143,9 +160,9 @@ describe('BrowserEnvironment', () => {
     });
 
     const listener = sinon.spy();
-    const unsubscribe = environment.subscribe(listener);
+    const unsubscribe = session.navigation.subscribe(listener);
 
-    environment.shift(-1);
+    session.navigation.shift(-1);
     await delay(20);
 
     expect(listener).to.have.been.calledOnce();
@@ -157,7 +174,7 @@ describe('BrowserEnvironment', () => {
 
     unsubscribe();
 
-    environment.shift(-1);
+    session.navigation.shift(-1);
     await delay(20);
 
     expect(listener).not.to.have.been.called();

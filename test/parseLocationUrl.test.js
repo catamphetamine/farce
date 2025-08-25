@@ -16,6 +16,7 @@ describe('parseLocationUrl', () => {
     expect(parseLocationUrl('/foo?#qux')).to.deep.equal({
       pathname: '/foo',
       search: '?',
+      query: {},
       hash: '#qux',
     });
   });
@@ -24,6 +25,7 @@ describe('parseLocationUrl', () => {
     expect(parseLocationUrl('/foo')).to.deep.equal({
       pathname: '/foo',
       search: '',
+      query: {},
       hash: '',
     });
   });

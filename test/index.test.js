@@ -13,8 +13,8 @@ describe('index', () => {
     expect(exports.parseLocationUrl).to.exist();
     expect(exports.createMiddlewares).to.exist();
     expect(exports.locationReducer).to.exist();
-    expect(exports.BrowserEnvironment).to.exist();
-    expect(exports.MemoryEnvironment).to.exist();
-    expect(exports.ServerEnvironment).to.exist();
+    expect(exports.BrowserSession).to.exist();
+    expect(exports.MemorySession).to.exist();
+    expect(exports.ServerSession).to.exist();
   });
 });

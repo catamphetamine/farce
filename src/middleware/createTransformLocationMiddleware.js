@@ -3,7 +3,7 @@ import ActionTypes from '../ActionTypes';
 // Creates a "middleware" that transforms action payload (location).
 export default function createTransformLocationMiddleware({
   transformInputLocation,
-  transformEnvironmentLocation,
+  transformSubscriptionLocation,
 }) {
   return function transformLocationMiddleware() {
     return (next) => (action) => {
@@ -18,7 +18,7 @@ export default function createTransformLocationMiddleware({
         case ActionTypes.UPDATE:
           return next({
             type,
-            payload: transformEnvironmentLocation(payload),
+            payload: transformSubscriptionLocation(payload),
           });
 
         default:

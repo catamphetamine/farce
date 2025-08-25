@@ -13,12 +13,9 @@ export type InputLocationQuery = Record<
 
 export interface Location<TState = any> {
   /**
-   * 'PUSH' or 'REPLACE' if the location was reached via FarceActions.push or
-   * FarceActions.replace respectively; 'POP' on the initial location, or if
-   * the location was reached via the browser back or forward buttons or
-   * via FarceActions.shift
+   * See the README on the `action` property of `location`.
    */
-  action: 'PUSH' | 'REPLACE' | 'POP';
+  action: 'PUSH' | 'REPLACE' | 'POP' | 'INIT';
   /**
    * the path name; as on window.location e.g. '/foo'
    */
@@ -36,9 +33,9 @@ export interface Location<TState = any> {
    */
   hash: string;
   /**
-   * if present, a unique key identifying the current history entry
+   * a unique key identifying the current history entry
    */
-  key?: string;
+  key: string;
   /**
    * the current index of the history entry, starting at 0 for the initial
    * entry; this increments on FarceActions.push but not on
@@ -46,12 +43,11 @@ export interface Location<TState = any> {
    */
   index: number;
   /**
-   * the difference between the current index and the index of the previous
-   * location
+   * the difference between the current index and the index of the previous location
    */
   delta: number;
   /**
-   * additional location state that is not part of the URL
+   * any additional location state that the application might explicitly define and store
    */
   state: TState;
 }
@@ -70,9 +66,13 @@ export interface InputLocationObject {
 export interface LocationBase {
   pathname: Location['pathname'];
   search: Location['search'];
-  query?: Query;
+  query: Query;
   hash: Location['hash'];
   state?: Location['state'];
+}
+
+export interface NavigationLocation extends LocationBase {
+  action: 'PUSH' | 'REPLACE';
 }
 
 /**
@@ -109,13 +109,20 @@ export type NavigationBlockerResult =
   | Promise<NavigationBlockerSyncResult>;
 
 /**
- * The navigation listener function receives the `location` to which the user
- * is attempting to navigate.
+ * Navigation blocker function receives a `location` to which the application (or the user) is attempting to navigate.
  *
- * The `location` argument is `null` when the web browser tab is about to be closed.
+ * * The `location` argument is `null` when the web browser tab is about to be closed.
+ * * The `location` argument is of type `NavigationLocation` when a `.push()` or `.replace()` action is blocked.
+ * * The `location` argument is of type `Location` when blocking a navigation that was initiated outside of the application code.
+ *   For example, when the user clicks "Back" or "Forward" button in a web browser.
  */
 export interface NavigationBlocker {
-  (location: Location | LocationBase | null): NavigationBlockerResult;
+  (location: Location | NavigationLocation | null): NavigationBlockerResult;
+}
+
+// I dunno why did they use an `interface` here.
+export interface BeforeLocationChangeListener {
+  (location: Location): void;
 }
 
 export function addBasePath<L extends InputLocation>(
@@ -131,13 +138,18 @@ export function getLocationUrl(location: InputLocationObject): string;
 export function parseLocationUrl(locationUrl: string): LocationBase;
 
 export function createMiddlewares(
-  environment: Environment,
+  session: SessionBase,
   options?: CreateMiddlewaresOptions,
 ): Middleware[];
 
 export function addNavigationBlocker(
-  environment: EnvironmentBase,
+  session: SessionBase,
   blocker: NavigationBlocker,
+): () => void;
+
+export function addBeforeLocationChangeListener(
+  session: SessionBase,
+  listener: BeforeLocationChangeListener,
 ): () => void;
 
 export const ActionTypes: {
@@ -190,78 +202,71 @@ export const Actions: {
 
 type BeforeDestroyListener = () => boolean | undefined;
 
-export interface Environment {
+interface SessionNavigation {
   init(): void;
 
   // Subscribes to changes in location,
   // excluding ones that happened as a result of calling `.navigate()`.
   subscribe(listener: (location: Location) => void): () => void;
 
-  navigate(location: LocationBase): Location;
+  navigate(location: NavigationLocation): Location;
 
   shift(delta: number): void;
+}
 
+interface SessionDataStorage {
+  get(key: string): string | null;
+  remove(key: string): void;
+  set(key: string, value: string): void;
+}
+
+export interface Session {
+  navigation: SessionNavigation;
+  dataStorage: SessionDataStorage;
   addBeforeDestroyListener(listener: BeforeDestroyListener): void;
 
-  getState(key: string): string | null;
-  removeState(key: string): void;
-  setState(key: string, value: string): void;
+  // These're internal variables that're manually set under the hood.
+  // _beforeLocationChangeListenersList?: Array<BeforeLocationChangeListener>;
+  // _navigationBlockersList?: Array<NavigationBlocker>;
+  // _removeBeforeDestroyListener?: () => void;
+  // _navigationBlockersEvaluationStatus?: { cancelled?: boolean };
 }
 
-// This is just a copy-paste of the `Environment` interface above.
-declare abstract class EnvironmentBase implements Environment {
-  init(): void;
-
-  // Subscribes to changes in location,
-  // excluding ones that happened as a result of calling `.navigate()`.
-  subscribe(listener: (location: Location) => void): () => void;
-
-  navigate(location: LocationBase): Location;
-
-  shift(delta: number): void;
-
+// This is just a copy-paste of the `session` interface above.
+declare abstract class SessionBase implements Session {
+  navigation: SessionNavigation;
+  dataStorage: SessionDataStorage;
   addBeforeDestroyListener(listener: BeforeDestroyListener): void;
 
-  getState(key: string): string | null;
-  removeState(key: string): void;
-  setState(key: string, value: string): void;
+  // These're internal variables that're manually set under the hood.
+  // _beforeLocationChangeListenersList?: Array<BeforeLocationChangeListener>;
+  // _navigationBlockersList?: Array<NavigationBlocker>;
+  // _removeBeforeDestroyListener?: () => void;
+  // _navigationBlockersEvaluationStatus?: { cancelled?: boolean };
 }
 
-export class BrowserEnvironment extends EnvironmentBase {}
+export class BrowserSession extends SessionBase {}
 
-export interface MemoryEnvironmentOptions<MemoryEnvironmentState = any> {
-  save?: (state: MemoryEnvironmentState) => void;
-  load?: () => MemoryEnvironmentState | undefined | null;
+export interface MemorySessionOptions {
+  save?: (data: string) => void;
+  load?: () => string | undefined | null;
 }
 
-export class ServerEnvironment extends EnvironmentBase {
+export class ServerSession extends SessionBase {
   constructor(initialLocation: InputLocation);
 }
 
-export class MemoryEnvironment extends EnvironmentBase {
+export class MemorySession extends SessionBase {
   constructor(
     initialLocation: InputLocation,
-    options?: MemoryEnvironmentOptions,
+    options?: MemorySessionOptions,
   );
 }
 
-export interface QueryMiddlewareOptions {
-  stringify(query: InputLocationQuery): string;
-  parse(str: string): Query;
-}
-
-export function createQueryMiddleware(
-  options: QueryMiddlewareOptions,
-): Middleware;
-
-export const queryMiddleware: Middleware;
-
-export function createBasePathMiddleware(basePath?: string): Middleware;
-
 export const locationReducer: Reducer<Location, Action>;
 
-export class LocationStateStorage {
-  constructor(environment: Environment, options?: { namespace?: string });
+export class LocationDataStorage {
+  constructor(session: Session, options?: { namespace?: string });
 
   get(location: Location, key: string): any;
   set(location: Location, key: string, value: any): void;

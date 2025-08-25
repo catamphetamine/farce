@@ -4,7 +4,7 @@ import createTransformLocationMiddleware from '../../src/middleware/createTransf
 describe('createTransformLocationMiddleware', () => {
   const middleware = createTransformLocationMiddleware({
     transformInputLocation: (locationInput) => ({ locationInput }),
-    transformEnvironmentLocation: (location) => ({ location }),
+    transformSubscriptionLocation: (location) => ({ location }),
   });
 
   const dispatch = middleware()((action) => action.payload);
