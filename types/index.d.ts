@@ -235,7 +235,9 @@ export interface Session {
 // This is just a copy-paste of the `session` interface above.
 declare abstract class SessionBase implements Session {
   navigation: SessionNavigation;
+
   dataStorage: SessionDataStorage;
+
   addBeforeDestroyListener(listener: BeforeDestroyListener): void;
 
   // These're internal variables that're manually set under the hood.
@@ -257,10 +259,7 @@ export class ServerSession extends SessionBase {
 }
 
 export class MemorySession extends SessionBase {
-  constructor(
-    initialLocation: InputLocation,
-    options?: MemorySessionOptions,
-  );
+  constructor(initialLocation: InputLocation, options?: MemorySessionOptions);
 }
 
 export const locationReducer: Reducer<Location, Action>;
@@ -269,6 +268,7 @@ export class LocationDataStorage {
   constructor(session: Session, options?: { namespace?: string });
 
   get(location: Location, key: string): any;
+
   set(location: Location, key: string, value: any): void;
 }
 
@@ -292,11 +292,7 @@ interface MiddlewareAPI<D extends Dispatch = Dispatch, S = any> {
   getState(): S;
 }
 
-interface Middleware<
-  DispatchExt = {},
-  S = any,
-  D extends Dispatch = Dispatch,
-> {
+interface Middleware<S = any, D extends Dispatch = Dispatch> {
   (api: MiddlewareAPI<D, S>): (next: Dispatch) => (action: any) => any;
 }
 
