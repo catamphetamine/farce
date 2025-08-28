@@ -118,7 +118,7 @@ class MemoryNavigation {
     if (this._subscriptionListener) {
       this._subscriptionListener(
         this._createLocationObject({
-          action: 'POP',
+          action: 'SHIFT',
           delta: this._index - prevIndex,
         }),
       );

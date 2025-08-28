@@ -58,13 +58,23 @@ class BrowserNavigation {
   }
 
   init() {
-    return this._createEntryFromCurrentLocation();
+    return this._createEntryFromCurrentLocation('INIT');
   }
 
-  _createEntryFromCurrentLocation() {
+  _createEntryFromCurrentLocation(action) {
     const { pathname, search, hash } = window.location;
 
     const isSettingInitialLocation = this._index === INITIAL_INDEX;
+
+    if (action === 'INIT' && !isSettingInitialLocation) {
+      throw Error('Browser session has already been initialized');
+    }
+
+    if (isSettingInitialLocation && action !== 'INIT') {
+      throw Error(
+        'Browser session must be initialized before reacting to location changes',
+      );
+    }
 
     const { key, index, delta, state } = isSettingInitialLocation
       ? this._createAdditionalPropertiesForNewLocation({
@@ -74,7 +84,7 @@ class BrowserNavigation {
       : this._restoreAdditionalPropertiesForCurrentLocation();
 
     return {
-      action: isSettingInitialLocation ? 'INIT' : 'POP',
+      action,
       pathname,
       search,
       query: parseQueryFromSearch(search),
@@ -90,7 +100,7 @@ class BrowserNavigation {
   // excluding ones that happened as a result of calling `.navigate()`.
   subscribe(listener) {
     const onPopState = () => {
-      listener(this._createEntryFromCurrentLocation());
+      listener(this._createEntryFromCurrentLocation('SHIFT'));
     };
 
     window.addEventListener('popstate', onPopState);

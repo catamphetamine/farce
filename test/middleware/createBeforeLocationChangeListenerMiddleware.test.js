@@ -94,7 +94,7 @@ describe('createBeforeLocationChangeListenerMiddleware', () => {
     });
   });
 
-  describe('POP navigations', () => {
+  describe('SHIFT navigations', () => {
     beforeEach(() => {
       store.dispatch(Actions.push('/bar'));
     });
@@ -109,7 +109,7 @@ describe('createBeforeLocationChangeListenerMiddleware', () => {
       expect(listener).to.have.been.calledOnce();
 
       expect(listener.firstCall.args[0]).to.include({
-        action: 'POP',
+        action: 'SHIFT',
         pathname: '/foo',
         delta: -1,
       });

@@ -116,7 +116,7 @@ describe('BrowserSession', () => {
     });
     expect(listener).to.have.been.calledOnce();
     expect(listener.firstCall.args[0]).to.deep.include({
-      action: 'POP',
+      action: 'SHIFT',
       pathname: '/bar',
       search: '?search',
       hash: '#hash',
@@ -133,7 +133,7 @@ describe('BrowserSession', () => {
     expect(window.location.pathname).to.equal('/foo');
     expect(listener).to.have.been.calledOnce();
     expect(listener.firstCall.args[0]).to.deep.include({
-      action: 'POP',
+      action: 'SHIFT',
       pathname: '/foo',
       index: 0,
       delta: -1,
@@ -167,7 +167,7 @@ describe('BrowserSession', () => {
 
     expect(listener).to.have.been.calledOnce();
     expect(listener.firstCall.args[0]).to.include({
-      action: 'POP',
+      action: 'SHIFT',
       pathname: '/bar',
     });
     listener.resetHistory();

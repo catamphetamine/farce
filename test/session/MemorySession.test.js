@@ -62,7 +62,7 @@ describe('MemorySession', () => {
 
     expect(listener).to.have.been.calledOnce();
     expect(listener.firstCall.args[0]).to.deep.include({
-      action: 'POP',
+      action: 'SHIFT',
       pathname: '/bar',
       key: barLocation.key,
       index: 1,
@@ -83,7 +83,7 @@ describe('MemorySession', () => {
 
     expect(listener).to.have.been.calledOnce();
     expect(listener.firstCall.args[0]).to.include({
-      action: 'POP',
+      action: 'SHIFT',
       pathname: '/bar',
     });
     listener.resetHistory();
@@ -107,7 +107,7 @@ describe('MemorySession', () => {
 
     expect(listener).to.have.been.calledOnce();
     expect(listener.firstCall.args[0]).to.include({
-      action: 'POP',
+      action: 'SHIFT',
       pathname: '/foo',
       delta: -2,
     });
@@ -121,7 +121,7 @@ describe('MemorySession', () => {
 
     expect(listener).to.have.been.calledOnce();
     expect(listener.firstCall.args[0]).to.include({
-      action: 'POP',
+      action: 'SHIFT',
       pathname: '/baz',
       delta: 2,
     });
@@ -146,7 +146,7 @@ describe('MemorySession', () => {
 
     expect(listener).to.have.been.calledOnce();
     expect(listener.firstCall.args[0]).to.include({
-      action: 'POP',
+      action: 'SHIFT',
       pathname: '/bar',
       delta: 1,
     });

@@ -95,7 +95,7 @@ A `location` object has all the properties of a [standard web browser location](
 * `index: number` — The index of the location in the navigation history, starting with `0` for the initial location.
 * `action: string` — The type of navigation that led to the location.
   * `INIT` in case of the initial location before any navigation has taken place.
-  * `POP` when the user performs a "Back" or "Forward" navigation, or after a `.shift()` navigation which is essentially a "back or forward navigation".
+  * `SHIFT` when the user performs a "Back" or "Forward" navigation, or after a `.shift()` navigation which is essentially a "back or forward navigation".
   * `PUSH` in case of a `.push()` navigation, i.e. "normal navigation via a hyperlink".
   * `REPLACE` in case of a `.replace()` navigation, i.e. "redirect".
 * `delta: number` — the difference between the `index` of the current location and the `index` of the previous location.

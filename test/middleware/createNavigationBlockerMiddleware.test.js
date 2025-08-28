@@ -210,7 +210,7 @@ describe('createNavigationBlockerMiddleware', () => {
     });
   });
 
-  describe('POP navigations', () => {
+  describe('SHIFT navigations', () => {
     beforeEach(() => {
       store.dispatch(Actions.push('/bar'));
     });
@@ -223,7 +223,7 @@ describe('createNavigationBlockerMiddleware', () => {
       expect(store.getState().pathname).to.equal('/foo');
 
       expect(blocker.firstCall.args[0]).to.include({
-        action: 'POP',
+        action: 'SHIFT',
         pathname: '/foo',
         delta: -1,
       });
@@ -309,7 +309,7 @@ describe('createNavigationBlockerMiddleware', () => {
 
       store.dispatch(Actions.shift(-1));
 
-      // session popped, update to store blocked.
+      // session shifted, update to store blocked.
       expect(session.navigation.init().pathname).to.equal('/foo');
       expect(store.getState().pathname).to.equal('/bar');
 
@@ -326,7 +326,7 @@ describe('createNavigationBlockerMiddleware', () => {
       sessionDeferred.resolve();
       await delay(10);
 
-      // session re-popped, update to store delayed.
+      // session re-shifted (the rewind was undone), update to store delayed.
       expect(session.navigation.init().pathname).to.equal('/foo');
       expect(store.getState().pathname).to.equal('/foo');
     });
@@ -335,7 +335,7 @@ describe('createNavigationBlockerMiddleware', () => {
       const deferred = pDefer();
       addNavigationBlocker(() => deferred.promise);
 
-      // Update location with a `POP` action.
+      // Update location with a `SHIFT` action.
       /* eslint-disable no-underscore-dangle */
       session.navigation._index = 0;
       session.navigation._subscriptionListener(session.navigation.init(null));
@@ -354,7 +354,7 @@ describe('createNavigationBlockerMiddleware', () => {
     //   const deferred = pDefer();
     //   addNavigationBlocker(() => deferred.promise);
     //
-    //   // Update location with a `POP` action.
+    //   // Update location with a `SHIFT` action.
     //   /* eslint-disable no-underscore-dangle */
     //   session.navigation._index = 0;
     //   session.navigation._subscriptionListener(session.navigation.init(null));

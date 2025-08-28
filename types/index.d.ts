@@ -15,7 +15,7 @@ export interface Location<TState = any> {
   /**
    * See the README on the `action` property of `location`.
    */
-  action: 'PUSH' | 'REPLACE' | 'POP' | 'INIT';
+  action: 'PUSH' | 'REPLACE' | 'SHIFT' | 'INIT';
   /**
    * the path name; as on window.location e.g. '/foo'
    */
