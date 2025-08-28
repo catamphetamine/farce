@@ -183,7 +183,7 @@ import { BrowserSession, LocationDataStorage } from 'navigation-stack'
 
 const session = new BrowserSession()
 
-const storage = new LocationDataStorage(session, { namespace?: 'optional-namespace' })
+const storage = new LocationDataStorage(session, { namespace: 'my-namespace' })
 
 const location = { pathname: '/abc' }
 

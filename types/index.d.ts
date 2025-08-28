@@ -265,7 +265,7 @@ export class MemorySession extends SessionBase {
 export const locationReducer: Reducer<Location, Action>;
 
 export class LocationDataStorage {
-  constructor(session: Session, options?: { namespace?: string });
+  constructor(session: Session, options: { namespace: string });
 
   get(location: Location, key: string): any;
 

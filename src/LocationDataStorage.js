@@ -1,10 +1,11 @@
 import getLocationUrl from './getLocationUrl';
 
 export default class LocationDataStorage {
-  constructor(environment, { namespace } = {}) {
+  constructor(environment, { namespace }) {
     this._environment = environment;
     this._getFallbackLocationKey = getLocationUrl;
-    this._stateKeyPrefix = namespace ? `${namespace}|` : '';
+    this._stateKeyPrefix = `${namespace}|`;
+    // this._stateKeyPrefix = namespace ? `${namespace}|` : '';
   }
 
   get(location, key) {
