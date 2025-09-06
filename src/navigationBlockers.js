@@ -23,15 +23,15 @@ function removeNavigationBlockerFromTheList(blocker, session) {
 
 export function removeAllNavigationBlockers(session) {
   if (
-    getNavigationBlockers(session).some((blocker) => blocker.beforeDestroy)
+    getNavigationBlockers(session).some((blocker) => blocker.beforeTermination)
   ) {
-    if (!session._removeBeforeDestroyListener) {
+    if (!session._removeTerminationBlocker) {
       throw new Error(
-        '`_removeBeforeDestroyListener` property not found in the `session`',
+        '`_removeTerminationBlocker` property not found in the `session`',
       );
     }
-    session._removeBeforeDestroyListener();
-    session._removeBeforeDestroyListener = undefined;
+    session._removeTerminationBlocker();
+    session._removeTerminationBlocker = undefined;
   }
   session._navigationBlockersList = [];
 }
@@ -99,34 +99,34 @@ export function runNavigationBlockers(navigationBlockers, toLocation) {
 }
 
 /* istanbul ignore next: not testable with Karma */
-function onBeforeDestroy(session) {
+function terminationBlocker(session) {
   const result = runNavigationBlockers(getNavigationBlockers(session), null);
 
-  // If no blocker returned anything, don't prevent the "unload" event.
+  // If no blocker returned anything, so don't prevent the navigation.
   if (!result) {
     return undefined;
   }
 
   // Web browsers don't allow displaying a custom modal in "beforeunload" phase.
   // They only allow displaying a standard one, with the default text.
-  // Hence, "asynchronous" blockers should be ignored.
+  // Hence, "asynchronous" blockers should be ignored because web browsers won't wait for those to finish anyway.
   // https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeunload_event
   if (isPromise(result)) {
     return undefined;
   }
 
-  // Prevent the "unload" event.
+  // Block the navigation.
   return true;
 }
 
 export function addNavigationBlocker(session, blocker) {
-  // All navigation blockers also run on `beforeDestroy` event.
+  // All navigation blockers also run on `beforeTermination` event.
   // If required, this could be a parameter of this function.
   // The rationale could be that adding a `beforeunload` listener
   // disables web page caching in some browsers like Firefox.
-  const beforeDestroy = true;
+  const beforeTermination = true;
 
-  // If it's the first "beforeDestroy" blocker, add the global `onBeforeDestroy` listener.
+  // If it's the first "beforeTermination" blocker, add a `terminationBlocker`.
   //
   // Sidenote: Add the "beforeunload" event listener only as needed, as its presence
   // prevents the page from being added to the page navigation cache:
@@ -137,41 +137,42 @@ export function addNavigationBlocker(session, blocker) {
   //
   // https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeunload_event
   if (
-    beforeDestroy &&
+    beforeTermination &&
     !getNavigationBlockers(session).some(
-      (navigationBlocker) => navigationBlocker.beforeDestroy,
+      (navigationBlocker) => navigationBlocker.beforeTermination,
     )
   ) {
-    if (session._removeBeforeDestroyListener) {
+    if (session._removeTerminationBlocker) {
       throw new Error(
-        'Unexpected `_removeBeforeDestroyListener` property found in the `session`',
+        'Unexpected `_removeTerminationBlocker` property found in the `session`',
       );
     }
-    session._removeBeforeDestroyListener = session.addBeforeDestroyListener(
-      () => onBeforeDestroy(session),
-    );
+    session._removeTerminationBlocker =
+      session.lifecycle.addTerminationBlocker(() => {
+        return terminationBlocker(session);
+      });
   }
 
-  const newNavigationBlocker = { blocker, beforeDestroy };
+  const newNavigationBlocker = { blocker, beforeTermination };
   addNavigationBlockerToTheList(newNavigationBlocker, session);
 
   return () => {
     removeNavigationBlockerFromTheList(newNavigationBlocker, session);
 
-    // If it was the last "beforeDestroy" blocker, remove the global `onBeforeDestroy` listener.
+    // If it was the last "beforeTermination" blocker, remove navigation blocker.
     if (
-      beforeDestroy &&
+      beforeTermination &&
       !getNavigationBlockers(session).some(
-        (navigationBlocker) => navigationBlocker.beforeDestroy,
+        (navigationBlocker) => navigationBlocker.beforeTermination,
       )
     ) {
-      if (!session._removeBeforeDestroyListener) {
+      if (!session._removeTerminationBlocker) {
         throw new Error(
-          '`_removeBeforeDestroyListener` property not found in the `session`',
+          '`_removeTerminationBlocker` property not found in the `session`',
         );
       }
-      session._removeBeforeDestroyListener();
-      session._removeBeforeDestroyListener = undefined;
+      session._removeTerminationBlocker();
+      session._removeTerminationBlocker = undefined;
     }
   };
 }

@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "forceConsistentCasingInFileNames": true,
-    "lib": ["es2016"],
+    "lib": ["es2020", "dom"],
     "module": "commonjs",
     "strict": true,
     "types": [],

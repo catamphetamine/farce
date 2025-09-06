@@ -14,7 +14,7 @@ module.exports = (config) => {
   const { env } = process;
 
   config.set({
-    frameworks: ['mocha', 'webpack', 'sinon-chai'],
+    frameworks: ['webpack', 'mocha', 'sinon-chai'],
 
     files: ['test/index.js', { pattern: 'test/**/*.test.js', watched: false }],
 
@@ -26,14 +26,30 @@ module.exports = (config) => {
       mode: 'development',
       module: {
         rules: [
-          { test: /\.js$/, exclude: /node_modules/, use: 'babel-loader' },
+          {
+            test: /\.js$/,
+            exclude: /node_modules/,
+            use: {
+              loader: 'babel-loader',
+            },
+          },
         ],
       },
       plugins: [
         new webpack.DefinePlugin({
           __DEV__: true,
         }),
+        new webpack.ProvidePlugin({
+          process: 'process/browser',
+        }),
       ],
+    },
+
+    resolve: {
+      fallback: {
+        process: require.resolve('process/browser'),
+        util: require.resolve('util/'),
+      },
     },
 
     webpackMiddleware: {
@@ -53,11 +69,12 @@ module.exports = (config) => {
 
     customLaunchers: {
       ChromeCi: {
-        base: 'ChromeHeadless',
+        // base: 'ChromeHeadless',
+        base: 'Chrome',
         flags: ['--no-sandbox'],
       },
     },
 
-    browsers: env.BROWSER ? env.BROWSER.split(',') : ['Chrome'],
+    browsers: env.BROWSER ? env.BROWSER.split(',') : ['Chrome', 'Firefox'],
   });
 };

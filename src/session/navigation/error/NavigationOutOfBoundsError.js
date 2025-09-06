@@ -1,0 +1,7 @@
+export default class NavigationOutOfBoundsError extends Error {
+  constructor(index) {
+    super(`Location index ${index} is out of navigation history bounds`);
+
+    this.index = index;
+  }
+}

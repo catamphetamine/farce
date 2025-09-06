@@ -1,0 +1,6 @@
+{
+  "private": true,
+  "name": "navigation-stack/scroll-position",
+  "main": "./../lib/cjs/scroll-position/index.js",
+  "module": "./../lib/esm/scroll-position/index.js"
+}

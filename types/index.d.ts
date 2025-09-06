@@ -11,11 +11,7 @@ export type InputLocationQuery = Record<
   string | number | boolean | null | undefined
 >;
 
-export interface Location<TState = any> {
-  /**
-   * See the README on the `action` property of `location`.
-   */
-  action: 'PUSH' | 'REPLACE' | 'SHIFT' | 'INIT';
+export interface LocationBase {
   /**
    * the path name; as on window.location e.g. '/foo'
    */
@@ -32,61 +28,52 @@ export interface Location<TState = any> {
    * the location hash; as on window.location e.g. '#qux'
    */
   hash: string;
+}
+
+export interface Location extends LocationBase {
   /**
    * a unique key identifying the current history entry
    */
   key: string;
+}
+
+type PushOrReplaceOperation = 'PUSH' | 'REPLACE';
+
+export interface LocationInternal extends Location {
+  /**
+   * `navigation-stack` operation.
+   */
+  operation: PushOrReplaceOperation | 'SHIFT' | 'INIT';
   /**
    * the current index of the history entry, starting at 0 for the initial
-   * entry; this increments on FarceActions.push but not on
-   * FarceActions.replace
+   * entry; this increments on `.push()` but not on `.replace()`
    */
   index: number;
   /**
    * the difference between the current index and the index of the previous location
    */
   delta: number;
-  /**
-   * any additional location state that the application might explicitly define and store
-   */
-  state: TState;
 }
 
 /**
  * Location descriptor object used in #push and #replace.
  */
 export interface InputLocationObject {
-  pathname: Location['pathname'];
-  search?: Location['search'];
+  pathname: LocationBase['pathname'];
+  search?: LocationBase['search'];
   query?: InputLocationQuery;
-  hash?: Location['hash'];
-  state?: Location['state'];
-}
-
-export interface LocationBase {
-  pathname: Location['pathname'];
-  search: Location['search'];
-  query: Query;
-  hash: Location['hash'];
-  state?: Location['state'];
-}
-
-export interface NavigationLocation extends LocationBase {
-  action: 'PUSH' | 'REPLACE';
+  hash?: LocationBase['hash'];
 }
 
 /**
- * Location descriptor string:
- *  store.dispatch(FarceActions.push('/foo?bar=baz#qux'));
+ * Location input string: "/foo?bar=baz#qux"
  *
- * Equivalent location descriptor object:
- *    store.dispatch(FarceActions.push({
- *     pathname: '/foo',
- *     search: '?bar=baz',
- *     hash: '#qux',
- *   }));
- *
- * https://github.com/4Catalyzer/farce#locations-and-location-descriptors
+ * Equivalent location input object:
+ * {
+ *   pathname: '/foo',
+ *   search: '?bar=baz',
+ *   hash: '#qux'
+ * }
  */
 export type InputLocationString = string;
 
@@ -99,10 +86,6 @@ export interface InputLocationTypes {
 
 export type InputLocation = InputLocationTypes[keyof InputLocationTypes];
 
-export interface CreateMiddlewaresOptions {
-  basePath?: string;
-}
-
 export type NavigationBlockerSyncResult = boolean | undefined;
 export type NavigationBlockerResult =
   | NavigationBlockerSyncResult
@@ -112,13 +95,13 @@ export type NavigationBlockerResult =
  * Navigation blocker function receives a `location` to which the application (or the user) is attempting to navigate.
  *
  * * The `location` argument is `null` when the web browser tab is about to be closed.
- * * The `location` argument is of type `NavigationLocation` when a `.push()` or `.replace()` action is blocked.
+ * * The `location` argument is of type `LocationBase` when a `.push()` or `.replace()` navigation is blocked.
  * * The `location` argument is of type `Location` when blocking a navigation that was initiated outside of the application code.
  *   For example, when the user clicks "Back" or "Forward" button in a web browser.
  */
-export interface NavigationBlocker {
-  (location: Location | NavigationLocation | null): NavigationBlockerResult;
-}
+export type NavigationBlocker = (
+  location: Location | LocationBase | null,
+) => NavigationBlockerResult;
 
 // I dunno why did they use an `interface` here.
 export interface BeforeLocationChangeListener {
@@ -137,166 +120,204 @@ export function removeBasePath<L extends InputLocation>(
 export function getLocationUrl(location: InputLocationObject): string;
 export function parseLocationUrl(locationUrl: string): LocationBase;
 
-export function createMiddlewares(
-  session: SessionBase,
-  options?: CreateMiddlewaresOptions,
-): Middleware[];
+export function parseInputLocation(location: InputLocation): LocationBase;
 
 export function addNavigationBlocker(
-  session: SessionBase,
+  session: Session,
   blocker: NavigationBlocker,
 ): () => void;
 
-export function addBeforeLocationChangeListener(
-  session: SessionBase,
-  listener: BeforeLocationChangeListener,
-): () => void;
-
-export const ActionTypes: {
-  INIT: '@@navigation-stack/INIT';
-  PUSH: '@@navigation-stack/PUSH';
-  REPLACE: '@@navigation-stack/REPLACE';
-  NAVIGATE: '@@navigation-stack/NAVIGATE';
-  SHIFT: '@@navigation-stack/SHIFT';
-  UPDATE: '@@navigation-stack/UPDATE';
-  DISPOSE: '@@navigation-stack/DISPOSE';
-};
-
-export interface InitAction {
-  type: (typeof ActionTypes)['INIT'];
+export interface NavigationStackOptions {
+  basePath?: string;
+  maintainScrollPosition?: boolean;
 }
 
-export interface PushAction {
-  type: (typeof ActionTypes)['PUSH'];
-  payload: InputLocation;
-}
+export class NavigationStack<ScrollableContainer = any, Anchor = any> {
+  constructor(
+    session: Session<ScrollableContainer, Anchor>,
+    options?: NavigationStackOptions,
+  );
 
-export interface ReplaceAction {
-  type: (typeof ActionTypes)['REPLACE'];
-  payload: InputLocation;
-}
+  addScrollableContainer(
+    scrollableContainerKey: string,
+    scrollableContainer: ScrollableContainer,
+  ): () => void;
 
-export interface RewindAction {
-  type: (typeof ActionTypes)['SHIFT'];
-  payload: number;
-}
-
-export interface DisposeAction {
-  type: (typeof ActionTypes)['DISPOSE'];
-}
-
-export type Action =
-  | InitAction
-  | PushAction
-  | ReplaceAction
-  | RewindAction
-  | DisposeAction;
-
-export const Actions: {
-  init(): InitAction;
-  push(location: InputLocation): PushAction;
-  replace(location: InputLocation): ReplaceAction;
-  shift(delta: number): RewindAction;
-  dispose(): DisposeAction;
-};
-
-type BeforeDestroyListener = () => boolean | undefined;
-
-interface SessionNavigation {
-  init(): void;
-
-  // Subscribes to changes in location,
-  // excluding ones that happened as a result of calling `.navigate()`.
   subscribe(listener: (location: Location) => void): () => void;
 
-  navigate(location: NavigationLocation): Location;
+  current(): Location;
+
+  init(initialLocation?: InputLocation): void;
+
+  push(location: InputLocation): void;
+
+  replace(location: InputLocation): void;
 
   shift(delta: number): void;
+
+  locationRendered(): void;
+
+  stop(): void;
 }
 
-interface SessionDataStorage {
+export type SessionTerminationBlocker = () => boolean | undefined;
+
+interface SessionExecutionStatusListenerParameters {
+  running: boolean;
+}
+
+export type SessionExecutionStatusListener = (
+  parameters: SessionExecutionStatusListenerParameters,
+) => void;
+
+export type ScrollListener = () => void;
+
+export class ServerSideNavigationError extends Error {
+  constructor(location: LocationBase);
+
+  location: LocationBase;
+}
+
+export class NavigationOutOfBoundsError extends Error {
+  constructor(index: number);
+
+  index: number;
+}
+
+export class Navigation {
+  // Subscribes to "location change" events.
+  subscribe(listener: (location: LocationInternal) => void): () => void;
+
+  init(
+    initialLocation: LocationBase,
+    parameters: Pick<
+      LocationInternal,
+      'operation' | 'key' | 'index' | 'delta'
+    >,
+  ): LocationInternal | undefined;
+
+  navigate(
+    location: LocationBase,
+    parameters: Pick<
+      LocationInternal,
+      'operation' | 'key' | 'index' | 'delta'
+    >,
+  ): LocationInternal | undefined;
+
+  shift(
+    parameters: Pick<LocationInternal, 'operation' | 'index' | 'delta'>,
+  ): LocationInternal | undefined;
+
+  getInitialLocation(): InputLocation | undefined;
+}
+
+export interface EnvironmentDataStorage {
   get(key: string): string | null;
   remove(key: string): void;
   set(key: string, value: string): void;
 }
 
-export interface Session {
-  navigation: SessionNavigation;
-  dataStorage: SessionDataStorage;
-  addBeforeDestroyListener(listener: BeforeDestroyListener): void;
+export interface SessionLifecycle {
+  addTerminationBlocker(blocker: SessionTerminationBlocker): () => void;
+  addExecutionStatusListener(
+    listener: SessionExecutionStatusListener,
+  ): () => void;
+}
 
-  // These're internal variables that're manually set under the hood.
-  // _beforeLocationChangeListenersList?: Array<BeforeLocationChangeListener>;
-  // _navigationBlockersList?: Array<NavigationBlocker>;
-  // _removeBeforeDestroyListener?: () => void;
-  // _navigationBlockersEvaluationStatus?: { cancelled?: boolean };
+// Manages scroll position in an environment such as a web browser.
+export interface EnvironmentScrollPosition<ScrollableContainer, Anchor> {
+  // Gets numeric scroll position of a page.
+  getPageScrollPosition(): [number, number];
+  // Sets numeric scroll position of a page.
+  setPageScrollPosition(scrollPosition: [number, number]): void;
+  // Sets scroll position of a page to be at an "anchor".
+  setPageScrollPositionAtAnchor(anchor: Anchor): void;
+  // Gets numeric scroll position of a scrollable element.
+  getScrollableContainerScrollPosition(
+    scrollableContainer: ScrollableContainer,
+  ): [number, number];
+  // Sets numeric scroll position of a scrollable element.
+  setScrollableContainerScrollPosition(
+    scrollableContainer: ScrollableContainer,
+    scrollPosition: [number, number],
+  ): void;
+  // Adds "on scroll" listeners.
+  addPageScrollListener(listener: ScrollListener): () => void;
+  addScrollableContainerScrollListener(listener: ScrollListener): () => void;
+  // These methods could be used to disable environment's automatic scroll position restoration feature,
+  // such as the one present in web browsers, so that the code could control it manually.
+  enableAutomaticScrollRestoration(): void;
+  disableAutomaticScrollRestoration(): void;
+  // `init()` is called every time when a new page is rendered.
+  init(): void;
+}
+
+export interface Environment<ScrollableContainer, Anchor> {
+  dataStorage: EnvironmentDataStorage;
+  scrollPosition: EnvironmentScrollPosition<ScrollableContainer, Anchor>;
+}
+
+export interface Session<ScrollableContainer = any, Anchor = any> {
+  // `key` should be unique within `environment.dataStorage`.
+  // For example, `BrowserEnvironment` uses `window.sessionStorage`
+  // that is shared across different sessions within a given web browser tab,
+  // hence the uniqueness requirement.
+  key: string;
+
+  // Private varibles. Not public API.
+  environment: Environment<ScrollableContainer, Anchor>;
+
+  lifecycle: SessionLifecycle;
+
+  subscribe(listener: (location: LocationInternal) => void): () => void;
+
+  start(initialLocation?: LocationBase): void;
+
+  stop(): void;
+
+  navigate(operation: PushOrReplaceOperation, location: LocationBase): void;
+
+  shift(delta: number): void;
 }
 
 // This is just a copy-paste of the `session` interface above.
-declare abstract class SessionBase implements Session {
-  navigation: SessionNavigation;
+declare abstract class SessionBaseClass<
+  ScrollableContainer = any,
+  Anchor = any,
+> implements Session<ScrollableContainer, Anchor>
+{
+  constructor(parameters: { navigation: Navigation });
 
-  dataStorage: SessionDataStorage;
+  // `key` should be unique within `environment.dataStorage`.
+  // For example, `BrowserEnvironment` uses `window.sessionStorage`
+  // that is shared across different sessions within a given web browser tab,
+  // hence the uniqueness requirement.
+  key: string;
 
-  addBeforeDestroyListener(listener: BeforeDestroyListener): void;
+  // Private varibles. Not public API.
+  environment: Environment<ScrollableContainer, Anchor>;
 
-  // These're internal variables that're manually set under the hood.
-  // _beforeLocationChangeListenersList?: Array<BeforeLocationChangeListener>;
-  // _navigationBlockersList?: Array<NavigationBlocker>;
-  // _removeBeforeDestroyListener?: () => void;
-  // _navigationBlockersEvaluationStatus?: { cancelled?: boolean };
+  lifecycle: SessionLifecycle;
+
+  subscribe(listener: (location: LocationInternal) => void): () => void;
+
+  start(initialLocation?: LocationBase): void;
+
+  stop(): void;
+
+  navigate(operation: PushOrReplaceOperation, location: LocationBase): void;
+
+  shift(delta: number): void;
 }
 
-export class BrowserSession extends SessionBase {}
-
-export interface MemorySessionOptions {
-  save?: (data: string) => void;
-  load?: () => string | undefined | null;
+export class WebBrowserSession extends SessionBaseClass<HTMLElement, string> {
+  constructor();
 }
 
-export class ServerSession extends SessionBase {
-  constructor(initialLocation: InputLocation);
+export class ServerSideRenderSession extends SessionBaseClass<string, string> {
+  constructor();
 }
 
-export class MemorySession extends SessionBase {
-  constructor(initialLocation: InputLocation, options?: MemorySessionOptions);
+export class InMemorySession extends SessionBaseClass<string, string> {
+  constructor();
 }
-
-export const locationReducer: Reducer<Location, Action>;
-
-export class LocationDataStorage {
-  constructor(session: Session, options: { namespace: string });
-
-  get(location: Location, key: string): any;
-
-  set(location: Location, key: string, value: any): void;
-}
-
-// The following types are copy-pasted from `redux`.
-
-interface ReduxAction<T = any> {
-  type: T;
-}
-
-interface AnyAction extends ReduxAction {
-  // Allows any extra properties to be defined in an action.
-  [extraProps: string]: any;
-}
-
-interface Dispatch<A extends Action = AnyAction> {
-  <T extends A>(action: T): T;
-}
-
-interface MiddlewareAPI<D extends Dispatch = Dispatch, S = any> {
-  dispatch: D;
-  getState(): S;
-}
-
-interface Middleware<S = any, D extends Dispatch = Dispatch> {
-  (api: MiddlewareAPI<D, S>): (next: Dispatch) => (action: any) => any;
-}
-
-type Reducer<S = any, A extends Action = AnyAction> = (
-  state: S | undefined,
-  action: A,
-) => S;

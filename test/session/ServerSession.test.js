@@ -1,11 +1,19 @@
-import ServerSession from '../../src/session/ServerSession';
+import parseInputLocation from '../../src/parseInputLocation';
+import ServerSideRenderSession from '../../src/session/ServerSideRenderSession';
 
-describe('ServerSession', () => {
+describe('ServerSideRenderSession', () => {
   it('should parse the initial location', () => {
-    const session = new ServerSession('/foo?bar=baz#qux');
+    const session = new ServerSideRenderSession();
 
-    expect(session.navigation.init()).to.deep.include({
-      action: 'INIT',
+    let location;
+    session.subscribe((newLocation) => {
+      location = newLocation;
+    });
+
+    session.start(parseInputLocation('/foo?bar=baz#qux'));
+
+    expect(location).to.deep.include({
+      operation: 'INIT',
       pathname: '/foo',
       search: '?bar=baz',
       query: {
@@ -15,9 +23,9 @@ describe('ServerSession', () => {
     });
   });
 
-  it('should have dummy support for subscriptions', () => {
-    const session = new ServerSession('/foo?bar=baz#qux');
-    const unsubscribe = session.navigation.subscribe();
-    expect(unsubscribe).to.not.throw();
+  it('should support subscriptions', () => {
+    const session = new ServerSideRenderSession();
+    // eslint-disable-next-line no-unused-vars
+    expect(() => session.subscribe((location) => {})).to.not.throw();
   });
 });
