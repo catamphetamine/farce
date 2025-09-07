@@ -34,7 +34,7 @@ export class ScrollPositionRestoration<
       // Using this option, a developer could theoretically provide their own implementation
       // of setting a scroll position. For example, it could use "smooth" (animated) scrolling, etc.
       // This could be part of the public API if anyone provided a sensible real-world use case for it.
-      _pageScrollPositionSetter: ScrollPositionSetter<
+      _pageScrollPositionSetter?: ScrollPositionSetter<
         ScrollableContainer,
         Anchor
       >;
