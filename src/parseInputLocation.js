@@ -2,6 +2,13 @@ import createSearchFromQuery from './createSearchFromQuery';
 import parseLocationUrl from './parseLocationUrl';
 import parseQueryFromSearch from './parseQueryFromSearch';
 
+function stringifyQueryParameterValue(value) {
+  if (value === null || value === undefined) {
+    return value;
+  }
+  return String(value);
+}
+
 // * If `location` is a string, it parses it into a `LocationBase`.
 // * If `location` is an object, it ensures that `search` and `hash` properties aren't `undefined`,
 //   i.e. it "ensures" that the `location` object can be used as a `LocationBase`.
@@ -18,7 +25,7 @@ export default function parseInputLocation(location) {
           ...location,
           query: {
             ...location.query,
-            [key]: String(location.query[key]),
+            [key]: stringifyQueryParameterValue(location.query[key]),
           },
         };
       }

@@ -775,7 +775,7 @@ yarn format
 yarn test
 ```
 
-It runs tests in two web browsers (for no particular reason) — Chrome and Firefox (configurable in `karma.conf.cjs`). When running `yarn test`, it opens Chome and Firefox browser windows. Don't unfocus those windows, otherwise the tests won't finish.
+It runs tests in two web browsers (for no particular reason) — Chrome and Firefox (configurable in `karma.conf.cjs`). When running `yarn test`, it opens Chome and Firefox browser windows. Don't unfocus those windows, otherwise the tests will finish with errors.
 
 ## GitHub
 
