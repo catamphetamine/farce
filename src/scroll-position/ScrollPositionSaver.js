@@ -2,6 +2,7 @@
 
 import ScrollPositionAutoSaver from './ScrollPositionAutoSaver';
 import { PAGE_SCROLLABLE_CONTAINER_KEY } from './constants';
+import debug from '../debug';
 
 export default class ScrollPositionSaver {
   constructor({
@@ -43,6 +44,8 @@ export default class ScrollPositionSaver {
       return;
     }
 
+    debug('save scroll position', this._getLocation().pathname);
+
     // Get scrollable containers.
     const scrollableContainers = this._getScrollableContainers();
 
@@ -60,12 +63,19 @@ export default class ScrollPositionSaver {
   }
 
   savePageScrollPosition() {
+    debug(
+      'save scroll position',
+      this._getLocation().pathname,
+      PAGE_SCROLLABLE_CONTAINER_KEY,
+      this._scrollPosition.getPageScrollPosition(),
+    );
+
     // * If this is not a scheduled "auto-save" of scroll position
     //   and there already exists any scheduled "auto-save" of scroll position,
     //   cancel it and save scroll position right now instead.
     // * If this is a scheduled "auto-save" of scroll position,
     //   clear the "cancel" function because it's no longer of use.
-    this._scrollPositionAutoSaver.cancelSavePageScrollPosition();
+    this._scrollPositionAutoSaver.cancelSavePageScrollPosition(true);
 
     // Save scroll position.
     this._saveScrollPositionForLocation(
@@ -79,6 +89,15 @@ export default class ScrollPositionSaver {
     scrollableContainerKey,
     scrollableContainer,
   ) {
+    debug(
+      'save scroll position',
+      this._getLocation().pathname,
+      scrollableContainerKey,
+      this._scrollPosition.getScrollableContainerScrollPosition(
+        scrollableContainer,
+      ),
+    );
+
     // * If this is not a scheduled "auto-save" of scroll position
     //   and there already exists any scheduled "auto-save" of scroll position,
     //   cancel it and save scroll position right now instead.
@@ -86,6 +105,7 @@ export default class ScrollPositionSaver {
     //   clear the "cancel" function because it's no longer of use.
     this._scrollPositionAutoSaver.cancelSaveScrollableContainerScrollPosition(
       scrollableContainerKey,
+      true,
     );
 
     // Save scroll position.

@@ -5,11 +5,12 @@ import WebBrowserSession from '../../src/session/WebBrowserSession';
 // Creates a website with `ScrollPositionRestoration`.
 export default function createApp({
   sessionKey,
-  shouldUpdatePageScrollPositionForLocation,
-  getPageScrollPositionForLocation,
+  shouldSetPageScrollPositionOnLocationChange,
+  getSavedPageScrollPositionOnLocationChange,
 } = {}) {
   let currentLocation = null;
 
+  let locationRenderedListeners = [];
   let listeners = [];
   let scrollPositionRestoration = null;
   let navigationStack = null;
@@ -24,6 +25,22 @@ export default function createApp({
     });
 
     scrollPositionRestoration.locationRendered(location);
+
+    for (const locationRenderedListener of locationRenderedListeners) {
+      locationRenderedListener(location);
+    }
+  }
+
+  // Adds a "location rendered" listener.
+  function whenRenderedLocation(listener) {
+    locationRenderedListeners.push(listener);
+
+    // Returns a "remove listener" function.
+    return () => {
+      locationRenderedListeners = locationRenderedListeners.filter(
+        (_) => _ !== listener,
+      );
+    };
   }
 
   // Removes a "location change" event listener.
@@ -48,9 +65,10 @@ export default function createApp({
     }
     navigationStack = new NavigationStack(session);
     scrollPositionRestoration = new ScrollPositionRestoration(session, {
-      _shouldUpdatePageScrollPositionForLocation:
-        shouldUpdatePageScrollPositionForLocation,
-      _getPageScrollPositionForLocation: getPageScrollPositionForLocation,
+      _shouldSetPageScrollPositionOnLocationChange:
+        shouldSetPageScrollPositionOnLocationChange,
+      _getSavedPageScrollPositionOnLocationChange:
+        getSavedPageScrollPositionOnLocationChange,
     });
 
     unlisten = navigationStack.subscribe(onLocationDidChange);
@@ -75,8 +93,10 @@ export default function createApp({
   // Registers a scrollable container on a page.
   function registerScrollableContainer(key, element, options) {
     return scrollPositionRestoration.addScrollableContainer(key, element, {
-      _shouldUpdateScrollPositionForLocation:
-        options && options.shouldUpdateScrollPositionForLocation,
+      _shouldSetScrollPositionOnLocationChange:
+        options && options.shouldSetScrollPositionOnLocationChange,
+      _getSavedScrollPositionOnLocationChange:
+        options && options.getSavedScrollPositionOnLocationChange,
     });
   }
 
@@ -108,5 +128,6 @@ export default function createApp({
     disableSavingScrollPosition,
     enableSavingScrollPosition,
     getSessionKey: () => session.key,
+    whenRenderedLocation,
   };
 }

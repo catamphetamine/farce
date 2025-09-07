@@ -13,7 +13,7 @@ describe('ServerSideRenderSession', () => {
     session.start(parseInputLocation('/foo?bar=baz#qux'));
 
     expect(location).to.deep.include({
-      operation: 'INIT',
+      operation: 'init',
       pathname: '/foo',
       search: '?bar=baz',
       query: {

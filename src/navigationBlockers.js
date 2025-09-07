@@ -1,5 +1,6 @@
 /* eslint-disable no-underscore-dangle */
 
+import debug from './debug';
 import isPromise from './isPromise';
 
 export function getNavigationBlockers(session) {
@@ -86,6 +87,7 @@ export function runNavigationBlockers(navigationBlockers, toLocation) {
   if (isPromise(result)) {
     return result.then((resultValue) => {
       if (resultValue) {
+        debug('Navigation blocked', toLocation.pathname);
         return resultValue;
       }
       return next();
@@ -93,6 +95,7 @@ export function runNavigationBlockers(navigationBlockers, toLocation) {
   }
 
   if (result) {
+    debug('Navigation blocked', toLocation.pathname);
     return result;
   }
   return next();

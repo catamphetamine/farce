@@ -13,7 +13,7 @@ describe('InMemorySession', () => {
     session.start(parseInputLocation('/initial?bar=baz#qux'));
 
     expect(location).to.deep.include({
-      operation: 'INIT',
+      operation: 'init',
       pathname: '/initial',
       search: '?bar=baz',
       query: {
@@ -42,21 +42,21 @@ describe('InMemorySession', () => {
 
     expect(listener).to.have.been.calledOnce();
     expect(listener.firstCall.args[0]).to.deep.include({
-      operation: 'INIT',
+      operation: 'init',
       pathname: '/initial',
       index: 0,
       delta: 0,
     });
     listener.resetHistory();
 
-    session.navigate('PUSH', {
+    session.navigate('push', {
       pathname: '/new',
     });
 
     const newLocation = location;
 
     expect(newLocation).to.deep.include({
-      operation: 'PUSH',
+      operation: 'push',
       pathname: '/new',
       index: 1,
       delta: 1,
@@ -65,17 +65,17 @@ describe('InMemorySession', () => {
 
     expect(listener).to.have.been.calledOnce();
     expect(listener.firstCall.args[0]).to.deep.include({
-      operation: 'PUSH',
+      operation: 'push',
       pathname: '/new',
       index: 1,
       delta: 1,
     });
     listener.resetHistory();
 
-    session.navigate('PUSH', { pathname: '/new-2' });
+    session.navigate('push', { pathname: '/new-2' });
 
     expect(location).to.include({
-      operation: 'PUSH',
+      operation: 'push',
       pathname: '/new-2',
       index: 2,
       delta: 1,
@@ -83,17 +83,17 @@ describe('InMemorySession', () => {
 
     expect(listener).to.have.been.calledOnce();
     expect(listener.firstCall.args[0]).to.deep.include({
-      operation: 'PUSH',
+      operation: 'push',
       pathname: '/new-2',
       index: 2,
       delta: 1,
     });
     listener.resetHistory();
 
-    session.navigate('REPLACE', { pathname: '/new-3' });
+    session.navigate('replace', { pathname: '/new-3' });
 
     expect(location).to.include({
-      operation: 'REPLACE',
+      operation: 'replace',
       pathname: '/new-3',
       index: 2,
       delta: 0,
@@ -101,7 +101,7 @@ describe('InMemorySession', () => {
 
     expect(listener).to.have.been.calledOnce();
     expect(listener.firstCall.args[0]).to.deep.include({
-      operation: 'REPLACE',
+      operation: 'replace',
       pathname: '/new-3',
       index: 2,
       delta: 0,
@@ -112,7 +112,7 @@ describe('InMemorySession', () => {
 
     expect(listener).to.have.been.calledOnce();
     expect(listener.firstCall.args[0]).to.deep.include({
-      operation: 'SHIFT',
+      operation: 'shift',
       pathname: '/new',
       key: newLocation.key,
       index: 1,
@@ -126,8 +126,8 @@ describe('InMemorySession', () => {
   it('should support subscribing and unsubscribing', () => {
     const session = new InMemorySession();
     session.start(parseInputLocation('/initial'));
-    session.navigate('PUSH', { pathname: '/new' });
-    session.navigate('PUSH', { pathname: '/new-2' });
+    session.navigate('push', { pathname: '/new' });
+    session.navigate('push', { pathname: '/new-2' });
 
     const listener = sinon.spy();
     const unsubscribe = session.subscribe(listener);
@@ -136,7 +136,7 @@ describe('InMemorySession', () => {
 
     expect(listener).to.have.been.calledOnce();
     expect(listener.firstCall.args[0]).to.include({
-      operation: 'SHIFT',
+      operation: 'shift',
       pathname: '/new',
     });
     listener.resetHistory();
@@ -153,8 +153,8 @@ describe('InMemorySession', () => {
   it('should respect stack bounds', () => {
     const session = new InMemorySession();
     session.start(parseInputLocation('/initial'));
-    session.navigate('PUSH', { pathname: '/new' });
-    session.navigate('PUSH', { pathname: '/new-2' });
+    session.navigate('push', { pathname: '/new' });
+    session.navigate('push', { pathname: '/new-2' });
 
     const listener = sinon.spy();
     session.subscribe(listener);
@@ -169,7 +169,7 @@ describe('InMemorySession', () => {
 
     expect(listener).to.have.been.calledOnce();
     expect(listener.firstCall.args[0]).to.include({
-      operation: 'SHIFT',
+      operation: 'shift',
       pathname: '/initial',
       delta: -2,
     });
@@ -189,7 +189,7 @@ describe('InMemorySession', () => {
 
     expect(listener).to.have.been.calledOnce();
     expect(listener.firstCall.args[0]).to.include({
-      operation: 'SHIFT',
+      operation: 'shift',
       pathname: '/new-2',
       delta: 2,
     });
@@ -207,10 +207,10 @@ describe('InMemorySession', () => {
   it('should not reset forward entries on replace', () => {
     const session = new InMemorySession();
     session.start(parseInputLocation('/initial'));
-    session.navigate('PUSH', { pathname: '/new' });
-    session.navigate('PUSH', { pathname: '/new-2' });
+    session.navigate('push', { pathname: '/new' });
+    session.navigate('push', { pathname: '/new-2' });
     session.shift(-2);
-    session.navigate('REPLACE', { pathname: '/new-3' });
+    session.navigate('replace', { pathname: '/new-3' });
 
     const listener = sinon.spy();
     session.subscribe(listener);
@@ -219,7 +219,7 @@ describe('InMemorySession', () => {
 
     expect(listener).to.have.been.calledOnce();
     expect(listener.firstCall.args[0]).to.include({
-      operation: 'SHIFT',
+      operation: 'shift',
       pathname: '/new',
       delta: 1,
     });
@@ -231,10 +231,10 @@ describe('InMemorySession', () => {
     const session = new InMemorySession();
 
     session.start(parseInputLocation('/initial'));
-    session.navigate('PUSH', { pathname: '/new' });
-    session.navigate('PUSH', { pathname: '/new-2' });
+    session.navigate('push', { pathname: '/new' });
+    session.navigate('push', { pathname: '/new-2' });
     session.shift(-2);
-    session.navigate('PUSH', { pathname: '/new-3' });
+    session.navigate('push', { pathname: '/new-3' });
 
     const listener = sinon.spy();
     session.subscribe(listener);
@@ -297,8 +297,8 @@ describe('InMemorySession', () => {
   //       pathname: '/initial',
   //     });
   //
-  //     session1._navigation.navigate('PUSH', { pathname: '/new' });
-  //     session1._navigation.navigate('PUSH', { pathname: '/new-2' });
+  //     session1._navigation.navigate('push', { pathname: '/new' });
+  //     session1._navigation.navigate('push', { pathname: '/new-2' });
   //     session1._navigation.shift(-1);
   //
   //     const session2 = new InMemorySession({ save, load });

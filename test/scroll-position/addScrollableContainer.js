@@ -16,14 +16,17 @@ export default function addScrollableContainer(app) {
   // Add the scrollable container to the website.
   document.body.appendChild(container);
 
-  // This function will only be called once, so no need to guard.
   function listen(listener) {
     const unlisten = app.listen(listener);
 
-    app.registerScrollableContainer('container', container);
+    const unregisterScrollableContainer = app.registerScrollableContainer(
+      'container',
+      container,
+    );
 
     return () => {
       unlisten();
+      unregisterScrollableContainer();
       document.body.removeChild(container);
     };
   }

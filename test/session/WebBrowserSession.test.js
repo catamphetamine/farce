@@ -62,7 +62,7 @@ describe('WebBrowserSession', () => {
     session.start(parseInputLocation(window.location));
 
     expect(location).to.deep.include({
-      operation: 'INIT',
+      operation: 'init',
       pathname: '/initial',
       search: '?bar=baz',
       query: {
@@ -78,7 +78,7 @@ describe('WebBrowserSession', () => {
     session = new WebBrowserSession();
 
     expect(() =>
-      session.navigate('PUSH', {
+      session.navigate('push', {
         pathname: '/new',
         search: '?search',
         hash: '#hash',
@@ -103,14 +103,14 @@ describe('WebBrowserSession', () => {
 
     expect(listener).to.have.been.calledOnce();
     expect(listener.firstCall.args[0]).to.deep.include({
-      operation: 'INIT',
+      operation: 'init',
       pathname: '/initial',
       index: 0,
       delta: 0,
     });
     listener.resetHistory();
 
-    session.navigate('PUSH', {
+    session.navigate('push', {
       pathname: '/new',
       search: '?search',
       hash: '#hash',
@@ -124,7 +124,7 @@ describe('WebBrowserSession', () => {
       hash: '#hash',
     });
     expect(newLocation).to.deep.include({
-      operation: 'PUSH',
+      operation: 'push',
       pathname: '/new',
       search: '?search',
       hash: '#hash',
@@ -135,21 +135,21 @@ describe('WebBrowserSession', () => {
 
     expect(listener).to.have.been.calledOnce();
     expect(listener.firstCall.args[0]).to.deep.include({
-      operation: 'PUSH',
+      operation: 'push',
       pathname: '/new',
       index: 1,
       delta: 1,
     });
     listener.resetHistory();
 
-    session.navigate('PUSH', {
+    session.navigate('push', {
       pathname: '/new-2',
       search: '',
       hash: '',
     });
 
     expect(location).to.include({
-      operation: 'PUSH',
+      operation: 'push',
       pathname: '/new-2',
       index: 2,
       delta: 1,
@@ -157,7 +157,7 @@ describe('WebBrowserSession', () => {
 
     expect(listener).to.have.been.calledOnce();
     expect(listener.firstCall.args[0]).to.deep.include({
-      operation: 'PUSH',
+      operation: 'push',
       pathname: '/new-2',
       index: 2,
       delta: 1,
@@ -166,14 +166,14 @@ describe('WebBrowserSession', () => {
 
     expect(window.location.pathname).to.equal('/new-2');
 
-    session.navigate('REPLACE', {
+    session.navigate('replace', {
       pathname: '/new-3',
       search: '',
       hash: '',
     });
 
     expect(location).to.include({
-      operation: 'REPLACE',
+      operation: 'replace',
       pathname: '/new-3',
       index: 2,
       delta: 0,
@@ -184,7 +184,7 @@ describe('WebBrowserSession', () => {
 
     expect(listener).to.have.been.calledOnce();
     expect(listener.firstCall.args[0]).to.deep.include({
-      operation: 'REPLACE',
+      operation: 'replace',
       pathname: '/new-3',
       index: 2,
       delta: 0,
@@ -202,7 +202,7 @@ describe('WebBrowserSession', () => {
 
     expect(listener).to.have.been.calledOnce();
     expect(listener.firstCall.args[0]).to.deep.include({
-      operation: 'SHIFT',
+      operation: 'shift',
       pathname: '/new',
       search: '?search',
       hash: '#hash',
@@ -219,7 +219,7 @@ describe('WebBrowserSession', () => {
 
     expect(listener).to.have.been.calledOnce();
     expect(listener.firstCall.args[0]).to.deep.include({
-      operation: 'SHIFT',
+      operation: 'shift',
       pathname: '/initial',
       index: 0,
       delta: -1,
@@ -231,12 +231,12 @@ describe('WebBrowserSession', () => {
     window.history.replaceState(null, null, '/');
     session = new WebBrowserSession();
     session.start(parseInputLocation(window.location));
-    session.navigate('PUSH', {
+    session.navigate('push', {
       pathname: '/new',
       search: '',
       hash: '',
     });
-    session.navigate('PUSH', {
+    session.navigate('push', {
       pathname: '/new-2',
       search: '',
       hash: '',
@@ -250,7 +250,7 @@ describe('WebBrowserSession', () => {
 
     expect(listener).to.have.been.calledOnce();
     expect(listener.firstCall.args[0]).to.include({
-      operation: 'SHIFT',
+      operation: 'shift',
       pathname: '/new',
     });
     listener.resetHistory();

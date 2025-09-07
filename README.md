@@ -65,7 +65,8 @@ navigationStack.push('/new-location')
 navigationStack.replace('/new-location')
 
 // Sets the `location` to be a previous one (if there is one).
-// If there's no such `location` in the navigation history, throws a `NavigationOutOfBoundsError`.
+// If there's no such `location` in the navigation history,
+// throws a `NavigationOutOfBoundsError` error that has an `index` property.
 //
 // One could think of it as an equivalent of clicking a "Back" button in a web browser.
 //
@@ -76,7 +77,8 @@ navigationStack.replace('/new-location')
 navigationStack.shift(-1)
 
 // Sets the `location` to be a next one (if there is one).
-// If there's no such `location` in the navigation history, throws a `NavigationOutOfBoundsError`.
+// If there's no such `location` in the navigation history,
+// throws a `NavigationOutOfBoundsError` error that has an `index` property.
 //
 // One could think of it as an equivalent of clicking a "Forward" button in a web browser.
 //
@@ -134,7 +136,8 @@ To get the current location, use `navigationStack.current()`.
 
 Current `location` object has all the properties of a [standard web browser location](https://developer.mozilla.org/en-US/docs/Web/API/Window/location) with the addition of:
 * `query: object` — URL query parameters.
-* `key: string` — a unique ID of the `location` object within the session.
+* `key: string` — A string ID of the location that is guaranteed to be unique within the session's limits and could be used as a "key" to store any supplementary data associated to this location.
+* `index: number` — The index of the location in the navigation stack, starting with `0` for the initial location.
 
 <!-- ## Subscribe to Location Changes -->
 
@@ -224,7 +227,7 @@ navigationStack.init()
 // Render the initial location.
 document.body.innerHTML = '<div> Initial Location </div>'
 
-// When a page has been rendered, tell `NavigationStack` to restore
+// As soon as a page has been rendered, without any delay, tell `NavigationStack` to restore
 // a previously-saved scroll position, if there's any.
 //
 // This method must be called both for the initial location and any subsequent location.
@@ -244,6 +247,7 @@ navigationStack.push('/new-location')
 document.body.innerHTML = '<div> New Location </div>'
 
 // The new location is now rendered.
+// Immediately after it has been rendered, call `.locationRenered()`.
 // There's no scroll position to restore because it's not a previously-visited location.
 navigationStack.locationRendered()
 
@@ -260,6 +264,7 @@ navigationStack.shift(-1)
 document.body.innerHTML = '<div> Initial Location </div>'
 
 // The initial location is now rendered.
+// Immediately after it has been rendered, call `.locationRenered()`.
 // Restores the scroll position at the initial location.
 navigationStack.locationRendered()
 
@@ -276,7 +281,7 @@ navigationStack.stop()
 `NavigationStack` provides methods:
 
 * `addScrollableContainer(key: string, element: Element)` — Use it in cases when it should restore not only the page scroll position but also the scroll position(s) of any other scrollable container(s). Returns a "remove scrollable container" function.
-* `locationRendered()` — Call it every time a different location has been rendered, i.e. immediately after a different location has been rendered, including the initial location.
+* `locationRendered()` — Call it every time a different location has been rendered, including the initial location, without any delay, i.e. immediately after a different location has been rendered.
 
 <details>
 <summary>Using scroll position restoration feature without <code>NavigationStack</code></summary>
@@ -309,8 +314,8 @@ window.history.replaceState({ key: '123' }, '', '/initial-location')
 // Render the initial location.
 document.body.innerHTML = '<div> Initial Location </div>'
 
-// When a page has been rendered, call "did render location" listener
-// with the "current location" object as the argument.
+// Immediately after a page has been rendered, without any delay,
+// call `.locationRendered()` method with the "current location" object as the argument.
 scrollPositionRestoration.locationRendered({ key: '123', pathname: '/initial-location' })
 
 //----------------------------------------------------------------------------------------
@@ -329,6 +334,7 @@ window.history.pushState({ key: '456' }, '', '/new-location')
 document.body.innerHTML = '<div> New Location </div>'
 
 // The new location is now rendered.
+// Call `.locationRendered()` immediately after it has been rendered, i.e. without any delay.
 // There's no scroll position to restore because it's not a previously-visited location.
 // The "current location" object must have a `key`.
 scrollPositionRestoration.locationRendered({ key: '456', pathname: '/new-location' })
@@ -349,7 +355,8 @@ window.history.go(-1)
 document.body.innerHTML = '<div> Initial Location </div>'
 
 // The initial location is now rendered.
-// Restores the scroll position at the initial location.
+// Call `.locationRendered()` immediately after it has been rendered, i.e. without any delay.
+// It will restore the scroll position at the initial location.
 // The "current location" object must have a `key`.
 scrollPositionRestoration.locationRendered({ key: '123', pathname: '/initial-location' })
 
@@ -372,7 +379,7 @@ scrollPositionRestoration.stop()
 `ScrollPositionRestoration` provides methods:
 
 * `addScrollableContainer(key: string, element: Element)` — Use it in cases when it should restore not only the page scroll position but also the scroll position(s) of any other scrollable container(s). Returns a "remove scrollable container" function.
-* `locationRendered(location)` — Call it every time a different location has been rendered, i.e. immediately after a different location has been rendered, including the initial location. The location argument should be a `navigation-stack` location.
+* `locationRendered(location)` — Call it every time a different location has been rendered, including the initial location, without any delay, i.e. immediately after a different location has been rendered. The location argument must have a `key`.
 * `stop()` — Stops scroll position restoration and clears any listeners or timers.
 </details>
 
@@ -449,6 +456,8 @@ navigationStack.push('/new-location')
 
 ######
 
+Every "session" has a unique `key`.
+
 Once created, a "session" is simply passed to the `NavigationStack` constructor and then you don't have to deal with it anymore — `NavigationStack` will pull all the strings for you.
 
 However, if someone prefers to completely bypass `NavigationStack` and interact with a "session" object directly, they could do so.
@@ -460,7 +469,6 @@ However, if someone prefers to completely bypass `NavigationStack` and interact 
 
 * `key: string` — A unique ID of the session.
 * `subscribe(listener: (location) => {}): () => {}` — Subscribes to location changes, including setting the initial location. Returns an "unsubscribe" function. The `location` argument of the listener function is an "extended" location object having additional properties:
-  * `index: number` — The index of the location in the session's navigation history, starting with `0` for the initial location.
   * `operation: string` — The type of navigation that led to the location.
     * `INIT` in case of the initial location before any navigation has taken place.
     * `SHIFT` when the user performs a "Back" or "Forward" navigation, or after a `.shift()` navigation which is essentially a "back or forward navigation".
@@ -474,7 +482,7 @@ However, if someone prefers to completely bypass `NavigationStack` and interact 
     * `-1` after the user clicks a "Back" button in their web browser.
     * `1` after the user clicks a "Forward" button in their web browser.
 <!-- * `getInitialLocation(): object?` — Returns the initial location, if the session can get it from somewhere. For example, in a web browser, the initial location can be read from `window.location`. In other environments, such as server side, the initial location can't be read from anywhere. -->
-* `start(initialLocation?: object)` — Starts the session.
+* `start(initialLocation?: object)` — Starts the session. The `initialLocation` argument is optional when the session can read it from somewhere. For example, `WebBrowserSession` can read `initialLocation` from `window.location`.
 * `stop()` — Stops the session. Cleans up any listeners, etc.
 * `navigate(operation: string, location: object)` — Navigates to a `location` using either `"PUSH"` or `"REPLACE"` operation. The `location` argument should be a result of calling `parseInputLocation()` function.
 * `shift(delta: number)` — Navigates "back" or "forward" by skipping a specified count of pages. Negative `delta` skips backwards, positive `delta` skips forward.
@@ -586,7 +594,7 @@ navigationStack.push('/new-location')
 
 Navigation blocker should be a function that receives a `newLocation` argument and could be "synchronous" or "asynchronous" (i.e. return a `Promise`, aka `async`/`await`).
 
-The `newLocation` argument of a blocker function won't necessarily have a `key` property but other properties are present.
+The `newLocation` argument of a blocker function might not necessarily have a `key` or `index` property but other properties are present.
 
 Navigation blockers fire both when navigating from one page to another and when closing the current browser tab. In the latter case, `newLocation` argument will be `null`, and also the blocker function can't return a `Promise` (because it won't wait), and returning `true` from it will cause the web browser will to show a confirmation modal with a non-customizable generic browser-specific text like "Leave site? Changes you made might not be saved".
 

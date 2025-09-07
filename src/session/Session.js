@@ -1,3 +1,4 @@
+import debug from '../debug';
 import parseInputLocation from '../parseInputLocation';
 import createSessionKey from './key/createSessionKey';
 import NavigationOutOfBoundsError from './navigation/error/NavigationOutOfBoundsError';
@@ -48,6 +49,13 @@ export default class Session {
       // but if it was possible, this call would be required. It would also be required
       // by `navigation` to call `session.getNextKey()` function to increment `locationKeyIndex`.
       this._updateTerminalLocationIndex(location);
+
+      debug(
+        'current location',
+        location.pathname,
+        'index',
+        this._currentLocationIndex,
+      );
     });
   }
 
@@ -94,6 +102,8 @@ export default class Session {
       throw new Error('Already started');
     }
 
+    debug('▶ start session', initialLocation.pathname);
+
     this._started = true;
 
     const key = this._getNextLocationKey();
@@ -116,6 +126,8 @@ export default class Session {
     if (this._stopped) {
       throw Error('Already stopped');
     }
+
+    debug('⏹ stop session');
 
     // Once stopped, it won't be able to be restarted.
     this._stopped = true;
@@ -148,6 +160,14 @@ export default class Session {
     const key = this._getNextLocationKey();
     const index = this._currentLocationIndex + delta;
 
+    debug(
+      operation === NavigationOperations.PUSH ? '↓' : '⇅',
+      operation,
+      location.pathname,
+      'index',
+      index,
+    );
+
     // Navigate to the location.
     const locationResult = this._navigation.navigate(location, {
       operation,
@@ -172,6 +192,8 @@ export default class Session {
     }
 
     const index = this._currentLocationIndex + delta;
+
+    debug(delta > 0 ? '→' : '←', 'shift', delta, 'index', index);
 
     // Validate that the new `index` is not out of bounds.
     if (index < 0 || index > this._terminalLocationIndex) {

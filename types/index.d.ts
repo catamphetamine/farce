@@ -35,22 +35,23 @@ export interface Location extends LocationBase {
    * a unique key identifying the current history entry
    */
   key: string;
-}
 
-type PushOrReplaceOperation = 'PUSH' | 'REPLACE';
-
-export interface LocationInternal extends Location {
-  /**
-   * `navigation-stack` operation.
-   */
-  operation: PushOrReplaceOperation | 'SHIFT' | 'INIT';
   /**
    * the current index of the history entry, starting at 0 for the initial
    * entry; this increments on `.push()` but not on `.replace()`
    */
   index: number;
+}
+
+type PushOrReplaceOperation = 'push' | 'replace';
+
+export interface LocationInternal extends Location {
   /**
-   * the difference between the current index and the index of the previous location
+   * `navigation-stack` operation.
+   */
+  operation: PushOrReplaceOperation | 'shift' | 'init';
+  /**
+   * the difference between the index of the current location and the index of the previous location.
    */
   delta: number;
 }
@@ -155,7 +156,7 @@ export class NavigationStack<ScrollableContainer = any, Anchor = any> {
 
   shift(delta: number): void;
 
-  locationRendered(): void;
+  locationRendered(): Promise<void>;
 
   stop(): void;
 }

@@ -22,7 +22,7 @@ describe('navigationOperationMiddleware', () => {
     expect(next).to.be.calledWith({
       type: ActionTypes.NAVIGATE,
       payload: {
-        operation: 'PUSH',
+        operation: 'push',
         location: {
           pathname: '/foo',
           search: '?bar=baz',
@@ -45,7 +45,7 @@ describe('navigationOperationMiddleware', () => {
     expect(next).to.be.calledWith({
       type: ActionTypes.NAVIGATE,
       payload: {
-        operation: 'REPLACE',
+        operation: 'replace',
         location: {
           pathname: '/foo',
           search: '?bar=baz',

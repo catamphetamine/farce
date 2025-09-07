@@ -3,7 +3,7 @@ import locationReducer from '../../src/redux/locationReducer';
 
 describe('locationReducer', () => {
   const prevState = {
-    operation: 'PUSH',
+    operation: 'push',
     delta: 1,
     hash: '',
     index: 5,

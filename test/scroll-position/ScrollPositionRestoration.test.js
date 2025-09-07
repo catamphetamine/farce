@@ -2,12 +2,12 @@ import { offset, scrollLeft, scrollTop } from 'dom-helpers';
 import sinon from 'sinon';
 
 import addScrollableContainer from './addScrollableContainer';
-import addScrollableContainerWithHyperlink from './addScrollableContainerWithHyperlink';
+import addScrollableContainerWithAnchors from './addScrollableContainerWithAnchors';
 import createApp from './createApp';
 import delay from './delay';
 import { setEventListener, triggerEvent } from './mockPageLifecycle';
 import runApp from './runApp';
-import withScrollableContainerAtIndexPage from './withScrollableContainerAtIndexPage';
+import withScrollableContainerAtIndexPageWithDisabledAutomaticScrollPositionRestoration from './withScrollableContainerAtIndexPageWithDisabledAutomaticScrollPositionRestoration';
 import PageLifecycle from '../../src/session/lifecycle/page-lifecycle/PageLifecycleInstance';
 
 describe('ScrollPositionRestoration', () => {
@@ -59,13 +59,14 @@ describe('ScrollPositionRestoration', () => {
 
   describe('default behavior', () => {
     it('should emulate browser scroll behavior', (done) => {
-      const app = addScrollableContainerWithHyperlink(createApp());
+      const app = addScrollableContainerWithAnchors(createApp());
       const child1 = document.getElementById('child1');
       const child2 = document.getElementById('child2-id');
 
       unlisten = runApp(app, [
         () => {
-          // This will be ignored, but will exercise the throttle logic.
+          // This scroll will be ignored (overwritten by a subsequent scroll),
+          // but it will test the "throttle scroll events" code.
           scrollTop(window, 10000);
 
           setTimeout(() => {
@@ -113,7 +114,7 @@ describe('ScrollPositionRestoration', () => {
         configurable: true,
       });
 
-      const app = addScrollableContainerWithHyperlink(createApp());
+      const app = addScrollableContainerWithAnchors(createApp());
 
       unlisten = runApp(app, [
         () => {
@@ -130,9 +131,9 @@ describe('ScrollPositionRestoration', () => {
 
   describe('custom behavior', () => {
     it('should allow scroll suppression', (done) => {
-      const app = addScrollableContainerWithHyperlink(
+      const app = addScrollableContainerWithAnchors(
         createApp({
-          shouldUpdatePageScrollPositionForLocation: (
+          shouldSetPageScrollPositionOnLocationChange: (
             location,
             prevLocation,
           ) => {
@@ -167,7 +168,7 @@ describe('ScrollPositionRestoration', () => {
     });
 
     it('should ignore scroll events when `disableSavingScrollPosition()` is used', (done) => {
-      const app = addScrollableContainerWithHyperlink(createApp());
+      const app = addScrollableContainerWithAnchors(createApp());
 
       unlisten = runApp(app, [
         () => {
@@ -205,9 +206,9 @@ describe('ScrollPositionRestoration', () => {
     });
 
     it('should allow custom position', (done) => {
-      const app = addScrollableContainerWithHyperlink(
+      const app = addScrollableContainerWithAnchors(
         createApp({
-          getPageScrollPositionForLocation: () => [10, 20],
+          getSavedPageScrollPositionOnLocationChange: () => [10, 20],
         }),
       );
 
@@ -230,54 +231,66 @@ describe('ScrollPositionRestoration', () => {
       ]);
     });
 
-    it('should save scroll position even if no scroll events are dispatched', (done) => {
-      let customInitialPageScrollPosition;
-
-      const app = addScrollableContainerWithHyperlink(
-        createApp({
-          // eslint-disable-next-line no-unused-vars
-          getPageScrollPositionForLocation(location, prevLocation) {
-            if (customInitialPageScrollPosition) {
-              return [10, 20];
-            }
-            return undefined;
-          },
-        }),
-      );
-
-      unlisten = runApp(app, [
-        () => {
-          app.goTo('/detail');
-        },
-        () => {
-          customInitialPageScrollPosition = [10, 20];
-          app.goTo('/');
-        },
-        () => {
-          customInitialPageScrollPosition = undefined;
-          app.goTo('/detail');
-        },
-        () => {
-          app.goBack();
-        },
-        () => {
-          // Here, it said "expected 9.966666221618652 to equal 10".
-          // Using `.to.be.closeTo()` here instead of `.to.equal()` to work around this browser issue.
-          expect(scrollLeft(window)).to.be.closeTo(10, 0.5);
-          // Here, it said "expected 19.933332443237305 to equal 20".
-          // Using `.to.be.closeTo()` here instead of `.to.equal()` to work around this browser issue.
-          expect(scrollTop(window)).to.be.closeTo(20, 0.5);
-          done();
-        },
-      ]);
-    });
+    // This test case was disabled because `ScrollPositionRestoration` doesn't save
+    // scroll position on page load. It only saves scroll position on actual scroll events.
+    // If there were no scroll events, the scroll position doesn't get saved.
+    // The rationale is that when there were no scroll events, the scroll position
+    // is gonna be either a default one or a custom one specified by passing a custom
+    // `getSavedPageScrollPositionOnLocationChange()` function. In the latter case, the custom
+    // `getSavedPageScrollPositionOnLocationChange()` function is responsible to return a correct scroll position
+    // every time it gets called rather than just return a correct scroll position once,
+    // save it immediately and then restore it when returning to the page.
+    //
+    // it('should save scroll position even if no scroll events are dispatched', (done) => {
+    //   let customInitialPageScrollPosition;
+    //
+    //   const app = addScrollableContainerWithAnchors(
+    //     createApp({
+    //       // eslint-disable-next-line no-unused-vars
+    //       getSavedPageScrollPositionOnLocationChange(location, prevLocation) {
+    //         // Only when navigated via `.goTo()`. Ignore `.goBack()` navigation.
+    //         if (prevLocation && location.index > prevLocation.index) {
+    //           return [10, 20];
+    //         }
+    //         return undefined;
+    //       },
+    //     }),
+    //   );
+    //
+    //   unlisten = runApp(app, [
+    //     () => {
+    //       app.goTo('/detail');
+    //     },
+    //     () => {
+    //       app.goTo('/');
+    //     },
+    //     () => {
+    //       app.goTo('/detail');
+    //     },
+    //     () => {
+    //       if (customInitialPageScrollPosition === 123) {
+    //         customInitialPageScrollPosition = 456;
+    //       }
+    //       app.goBack();
+    //     },
+    //     () => {
+    //       // Here, it said "expected 9.966666221618652 to equal 10".
+    //       // Using `.to.be.closeTo()` here instead of `.to.equal()` to work around this browser issue.
+    //       expect(scrollLeft(window)).to.be.closeTo(10, 0.5);
+    //       // Here, it said "expected 19.933332443237305 to equal 20".
+    //       // Using `.to.be.closeTo()` here instead of `.to.equal()` to work around this browser issue.
+    //       expect(scrollTop(window)).to.be.closeTo(20, 0.5);
+    //       done();
+    //     },
+    //   ]);
+    // });
   });
 
   describe('scrollable container', () => {
     it('should follow browser scroll behavior', (done) => {
       const { container, ...app } = addScrollableContainer(
         createApp({
-          shouldUpdatePageScrollPositionForLocation: () => false,
+          shouldSetPageScrollPositionOnLocationChange: () => false,
         }),
       );
 
@@ -308,12 +321,13 @@ describe('ScrollPositionRestoration', () => {
       ]);
     });
 
-    it('should restore scroll on remount', (done) => {
-      const { container, ...app } = withScrollableContainerAtIndexPage(
-        createApp({
-          shouldUpdatePageScrollPositionForLocation: () => false,
-        }),
-      );
+    it('should automatically restore a previously-saved scroll position when adding a scrollable container', (done) => {
+      const { container, ...app } =
+        withScrollableContainerAtIndexPageWithDisabledAutomaticScrollPositionRestoration(
+          createApp({
+            shouldSetPageScrollPositionOnLocationChange: () => false,
+          }),
+        );
 
       unlisten = runApp(app, [
         () => {
@@ -325,6 +339,8 @@ describe('ScrollPositionRestoration', () => {
         () => {
           expect(container.scrollHeight).to.equal(100);
           expect(scrollTop(container)).to.equal(0);
+          // This `scrollTop()` won't trigger a "scroll" event
+          // because the container height is only `100` so it's not scrollable.
           scrollTop(container, 5000);
           delay(() => {
             app.goBack();
@@ -343,7 +359,7 @@ describe('ScrollPositionRestoration', () => {
     it('should save element scroll position on scroll event, i.e. before navigation is even attempted', (done) => {
       const app1 = addScrollableContainer(
         createApp({
-          shouldUpdatePageScrollPositionForLocation: () => false,
+          shouldSetPageScrollPositionOnLocationChange: () => false,
         }),
       );
 
@@ -357,8 +373,9 @@ describe('ScrollPositionRestoration', () => {
 
             const app2 = addScrollableContainer(
               createApp({
+                // Restore the data of the session of `app1`.
                 sessionKey: app1.getSessionKey(),
-                shouldUpdatePageScrollPositionForLocation: () => false,
+                shouldSetPageScrollPositionOnLocationChange: () => false,
               }),
             );
 
@@ -377,7 +394,7 @@ describe('ScrollPositionRestoration', () => {
 
     it('should ignore scroll events when `disableSavingScrollPosition` is used', (done) => {
       const app = addScrollableContainer(
-        addScrollableContainerWithHyperlink(createApp()),
+        addScrollableContainerWithAnchors(createApp()),
       );
 
       unlisten = runApp(app, [

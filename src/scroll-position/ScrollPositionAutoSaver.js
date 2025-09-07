@@ -2,6 +2,7 @@
 
 import { PAGE_SCROLLABLE_CONTAINER_KEY } from './constants';
 import scheduleNextTick from './scheduleNextTick';
+import debug from '../debug';
 
 export default class ScrollPositionAutoSaver {
   constructor({
@@ -67,17 +68,26 @@ export default class ScrollPositionAutoSaver {
     }
   }
 
-  cancelSavePageScrollPosition() {
+  cancelSavePageScrollPosition(hasRun) {
     if (this._cancelSavePageScrollPosition) {
+      if (!hasRun) {
+        debug(
+          'cancel delayed save scroll position',
+          PAGE_SCROLLABLE_CONTAINER_KEY,
+        );
+      }
       this._cancelSavePageScrollPosition();
       this._cancelSavePageScrollPosition = null;
     }
   }
 
-  cancelSaveScrollableContainerScrollPosition(scrollableContainerKey) {
+  cancelSaveScrollableContainerScrollPosition(scrollableContainerKey, hasRun) {
     const scrollableContainerEntry =
       this._getScrollableContainers()[scrollableContainerKey];
     if (scrollableContainerEntry.cancelSaveScrollPosition) {
+      if (!hasRun) {
+        debug('cancel delayed save scroll position', scrollableContainerKey);
+      }
       scrollableContainerEntry.cancelSaveScrollPosition();
       scrollableContainerEntry.cancelSaveScrollPosition = null;
     }
@@ -117,8 +127,13 @@ export default class ScrollPositionAutoSaver {
           // because there might be too many in a given short period of time
           // which could affect the performance of the application.
           if (!scrollableContainerEntry.cancelSaveScrollPosition) {
+            debug('scroll detected', scrollableContainerKey);
             scrollableContainerEntry.cancelSaveScrollPosition =
               scheduleNextTick(() => {
+                debug(
+                  'auto-save scroll position after scroll',
+                  scrollableContainerKey,
+                );
                 this._scrollPositionSaver.saveScrollableContainerScrollPosition(
                   scrollableContainerKey,
                   scrollableContainerEntry.scrollableContainer,
@@ -133,6 +148,8 @@ export default class ScrollPositionAutoSaver {
     // Set up scroll listener on the page.
     this._removePageScrollListener =
       this._scrollPosition.addPageScrollListener(() => {
+        debug('scroll detected', PAGE_SCROLLABLE_CONTAINER_KEY);
+
         // This flag is not used in real life and is only used in tests (for some reason).
         if (!this._shouldSaveScrollPosition()) {
           return;

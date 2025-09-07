@@ -23,19 +23,19 @@ describe('NavigationStack', () => {
     navigationStack.push('/new');
     expect(navigationStack.current()).to.include({
       pathname: '/new',
-      // index: 1,
+      index: 1,
     });
 
     navigationStack.shift(-1);
     expect(navigationStack.current()).to.include({
       pathname: '/initial',
-      // index: 0,
+      index: 0,
     });
 
     navigationStack.shift(+1);
     expect(navigationStack.current()).to.include({
       pathname: '/new',
-      // index: 1,
+      index: 1,
     });
   });
 
@@ -43,7 +43,7 @@ describe('NavigationStack', () => {
     navigationStack.replace('/new');
     expect(navigationStack.current()).to.include({
       pathname: '/new',
-      // index: 0,
+      index: 0,
     });
   });
 });
@@ -71,21 +71,21 @@ describe('NavigationStack (WebBrowserSession)', () => {
     await delay(20);
     expect(navigationStack.current()).to.include({
       pathname: '/new',
-      // index: 1,
+      index: 1,
     });
 
     navigationStack.shift(-1);
     await delay(20);
     expect(navigationStack.current()).to.include({
       pathname: '/initial',
-      // index: 0,
+      index: 0,
     });
 
     navigationStack.shift(+1);
     await delay(20);
     expect(navigationStack.current()).to.include({
       pathname: '/new',
-      // index: 1,
+      index: 1,
     });
   });
 
@@ -94,7 +94,7 @@ describe('NavigationStack (WebBrowserSession)', () => {
     await delay(20);
     expect(navigationStack.current()).to.include({
       pathname: '/new',
-      // index: 0,
+      index: 0,
     });
   });
 });
@@ -121,7 +121,7 @@ describe('NavigationStack.subscribe', () => {
     // `.init()` calls subscription listeners.
     expect(listener).to.have.been.calledOnce();
     expect(listener.lastCall.args[0]).to.include({
-      // operation: 'INIT',
+      // operation: 'init',
       pathname: '/initial',
     });
     listener.resetHistory();
@@ -130,7 +130,7 @@ describe('NavigationStack.subscribe', () => {
 
     expect(listener).to.have.been.calledOnce();
     expect(listener.lastCall.args[0]).to.include({
-      // operation: 'PUSH',
+      // operation: 'push',
       pathname: '/new',
     });
     listener.resetHistory();
@@ -139,7 +139,7 @@ describe('NavigationStack.subscribe', () => {
 
     expect(listener).to.have.been.calledOnce();
     expect(listener.lastCall.args[0]).to.include({
-      // operation: 'REPLACE',
+      // operation: 'replace',
       pathname: '/new-2',
     });
     listener.resetHistory();
@@ -148,7 +148,7 @@ describe('NavigationStack.subscribe', () => {
 
     expect(listener).to.have.been.calledOnce();
     expect(listener.lastCall.args[0]).to.include({
-      // operation: 'SHIFT',
+      // operation: 'shift',
       // delta: -1,
       pathname: '/initial',
     });
@@ -176,7 +176,7 @@ describe('NavigationStack.subscribe', () => {
     // `.init()` calls subscription listeners.
     expect(listener).to.have.been.calledOnce();
     expect(listener.lastCall.args[0]).to.include({
-      // operation: 'INIT',
+      // operation: 'init',
       pathname: '/initial',
     });
     listener.resetHistory();
@@ -252,8 +252,22 @@ describe('NavigationStack', () => {
 
     expect(navigationStack.current()).to.include({
       pathname: '/new',
-      // index: 1,
+      index: 1,
     });
+  });
+});
+
+describe('NavigationStack (maintainScrollPosition: true)', () => {
+  let navigationStack;
+
+  afterEach(() => {
+    // Even if a test errors, the `NavigationStack` should still be stopped
+    // in order to remove the potential "popstate" listener so that it doesn't
+    // interfere with other tests.
+    //
+    // `navigationStack.stop()` method is "idempotent", i.e. it can be called multiple times.
+    //
+    navigationStack.stop();
   });
 
   it('should support `maintainScrollPosition: true` option', async () => {
@@ -261,36 +275,125 @@ describe('NavigationStack', () => {
       maintainScrollPosition: true,
     });
 
+    // Start with the "/initial" page.
+    window.history.replaceState(null, null, '/initial');
+
+    // Initialize `NavigationStack`.
     navigationStack.init();
 
-    navigationStack.locationRendered();
+    // "/initial" page rendered.
+    // Restore scroll position (no saved scroll position to restore).
+    await navigationStack.locationRendered();
 
+    // Create a content <div/> that "overflows" the window so that it becomes scrollable.
+    const content = document.createElement('div');
+    content.style.height = '10000px';
+    content.style.width = '10000px';
+    document.body.appendChild(content);
+
+    // Scroll the page to some position.
+    // The scroll position will be saved.
+    window.scrollTo(0, 1000);
+
+    // Check that it has scrolled to that position.
+    expect(window.pageYOffset).to.be.closeTo(1000, 0.5);
+
+    // Wait a bit for `ScrollPositionRestoration` to save the scroll position
+    // because it does that "asynchronously", i.e. in an "immediate" timeout
+    // as a way of "throttling" scroll events.
+    await delay(20);
+
+    // Go to "/new" page.
     navigationStack.push('/new');
 
-    navigationStack.locationRendered();
-
+    // Create a scrollable container to test its scroll position restoration later.
     const scrollableContainer = document.createElement('div');
+    scrollableContainer.style.height = '100px';
+    scrollableContainer.style.width = '100px';
+    // With default `overflow` value, the scrollable container won't become scrollable
+    // and will simply stretch vertically according to the child content.
+    scrollableContainer.style.overflow = 'auto';
+    // "Overflow" the scrollable container with nested content so that it becomes scrollable.
+    scrollableContainer.innerHTML = '<div style="height: 10000px"></div>';
     document.body.appendChild(scrollableContainer);
 
-    const removeScrollableContainer = navigationStack.addScrollableContainer(
+    // "/new" page rendered.
+    // Restore scroll position (no saved scroll position to restore).
+    await navigationStack.locationRendered();
+
+    // It should've reset page scroll position.
+    expect(window.pageYOffset).to.equal(0);
+
+    // Scroll the page to some position.
+    // The scroll position will be saved.
+    window.scrollTo(0, 500);
+
+    // Check that it has scrolled to that position.
+    expect(window.pageYOffset).to.be.closeTo(500, 0.5);
+
+    // Scroll inside the scrollable container to see if the scroll position
+    // is restored later when revisiting this page.
+    scrollableContainer.scrollTo(0, 1000);
+
+    // Check that it has scrolled to that position.
+    expect(scrollableContainer.scrollTop).to.be.closeTo(1000, 0.5);
+
+    // Wait a bit for `ScrollPositionRestoration` to save the scroll position
+    // because it does that "asynchronously", i.e. in an "immediate" timeout
+    // as a way of "throttling" scroll events.
+    await delay(20);
+
+    // Register the scrollable container on the "/new" page.
+    const untrackScrollableContainer = navigationStack.addScrollableContainer(
       'container',
       scrollableContainer,
     );
 
-    // `PageScrollPositionSetter` works in an asynchronous fashion,
-    // so this delay lets it finish setting page scroll position
-    // before proceeding to next location.
-    await delay(20);
+    // Go to "/new-2" page to check that it resets the scroll position inside the scrollable container.
+    navigationStack.push('/new-2');
 
-    removeScrollableContainer();
+    // "/new-2" page rendered.
+    // Restore scroll position (no saved scroll position to restore).
+    await navigationStack.locationRendered();
 
+    // Check that it has reset the scroll position inside the scrollable container.
+    expect(scrollableContainer.scrollTop).to.equal(0);
+
+    // It should also reset page scroll position on any "push" navigation.
+    expect(window.pageYOffset).to.equal(0);
+
+    // Return to the "/new" page to check if it restores scroll position inside the scrollable container.
     navigationStack.shift(-1);
 
-    navigationStack.locationRendered();
-
-    // `PageScrollPositionSetter` works in an asynchronous fashion,
-    // so this delay lets it finish setting page scroll position
-    // before proceeding to next location.
+    // Wait for the web browser to emit a "popstate" event from `window.history.go(-1)` navigation.
     await delay(20);
+
+    // "/new" page rendered.
+    // Restore scroll position.
+    await navigationStack.locationRendered();
+
+    // Check that it has restored the scroll position inside the scrollable container.
+    expect(scrollableContainer.scrollTop).to.be.closeTo(1000, 0.5);
+
+    // Check that it has restored page scroll position.
+    expect(window.pageYOffset).to.be.closeTo(500, 0.5);
+
+    // Return to the "/initial" page to check if it restores scroll position.
+    navigationStack.shift(-1);
+
+    // Wait for the web browser to emit a "popstate" event from `window.history.go(-1)` navigation.
+    await delay(20);
+
+    // The scrollable container is only present at the "/new" or "/new-2" pages so remove it now.
+    document.body.removeChild(scrollableContainer);
+    // The scrollable container is only present at the "/new" or "/new-2" pages so untrack it now.
+    untrackScrollableContainer();
+
+    // "/initial" page rendered.
+    // Restore scroll position.
+    await navigationStack.locationRendered();
+
+    // Check that it has restored page scroll position.
+    expect(window.pageYOffset).to.be.closeTo(1000, 0.5);
   });
 });

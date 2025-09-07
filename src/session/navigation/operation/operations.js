@@ -1,6 +1,6 @@
 export default {
-  INIT: 'INIT',
-  PUSH: 'PUSH',
-  REPLACE: 'REPLACE',
-  SHIFT: 'SHIFT',
+  INIT: 'init',
+  PUSH: 'push',
+  REPLACE: 'replace',
+  SHIFT: 'shift',
 };

@@ -41,7 +41,7 @@ describe('createProgrammaticNavigationBlockerMiddleware', () => {
     // sandbox.restore();
   });
 
-  describe('PUSH navigation', () => {
+  describe('push navigation', () => {
     it('should block navigation when blocker returns `true`', () => {
       const blocker = sinon.stub().returns(true);
       addNavigationBlocker(blocker);
@@ -52,7 +52,7 @@ describe('createProgrammaticNavigationBlockerMiddleware', () => {
       expect(blocker).to.have.been.calledOnce();
 
       expect(blocker.firstCall.args[0]).to.include({
-        // operation: 'PUSH',
+        // operation: 'push',
         pathname: '/new',
       });
     });

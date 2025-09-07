@@ -40,7 +40,7 @@ describe('createNonProgrammaticNavigationBlockerMiddleware', () => {
     // sandbox.restore();
   });
 
-  describe('SHIFT navigation', () => {
+  describe('shift navigation', () => {
     beforeEach(() => {
       store.dispatch(Actions.push('/new'));
     });
@@ -53,7 +53,7 @@ describe('createNonProgrammaticNavigationBlockerMiddleware', () => {
       expect(store.getState().pathname).to.equal('/initial');
 
       expect(blocker.firstCall.args[0]).to.include({
-        // operation: 'SHIFT',
+        // operation: 'shift',
         pathname: '/initial',
         // delta: -1,
       });
@@ -199,7 +199,7 @@ describe('createNonProgrammaticNavigationBlockerMiddleware', () => {
     //   session._currentLocationIndex = 0;
     //   session._navigation._triggerUpdateInternalLocationMiddlewareListener(
     //     session._navigation._createLocationObject({
-    //       operation: 'SHIFT',
+    //       operation: 'shift',
     //       delta: null,
     //     }),
     //   );
@@ -222,7 +222,7 @@ describe('createNonProgrammaticNavigationBlockerMiddleware', () => {
     //   /* eslint-disable no-underscore-dangle */
     //   session._navigation._index = 0;
     //   session._navigation._subscriptionListener(session._navigation._createLocationObject({
-    //     operation: 'SHIFT',
+    //     operation: 'shift',
     //     delta: null,
     //   }));
     //   /* eslint-enable no-underscore-dangle */
@@ -245,7 +245,7 @@ describe('createNonProgrammaticNavigationBlockerMiddleware', () => {
     //   /* eslint-disable no-underscore-dangle */
     //   session._navigation._index = 0;
     //   session._navigation._subscriptionListener(session._navigation._createLocationObject({
-    //     operation: 'SHIFT',
+    //     operation: 'shift',
     //     delta: null,
     //   }));
     //   /* eslint-enable no-underscore-dangle */

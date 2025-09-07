@@ -5,6 +5,15 @@ import createMiddlewares from './redux/createMiddlewares';
 import locationReducer from './redux/locationReducer';
 import ScrollPositionRestoration from './scroll-position/ScrollPositionRestoration';
 
+function getCreateMiddlewaresOptions(navigationStackOptions) {
+  if (!navigationStackOptions) {
+    return undefined;
+  }
+  // eslint-disable-next-line no-unused-vars
+  const { maintainScrollPosition, ...restOptions } = navigationStackOptions;
+  return restOptions;
+}
+
 export default class NavigationStack {
   constructor(session, options) {
     this._session = session;
@@ -12,7 +21,9 @@ export default class NavigationStack {
     // Create a Redux store.
     this._store = createStore(
       locationReducer,
-      applyMiddleware(...createMiddlewares(session, options)),
+      applyMiddleware(
+        ...createMiddlewares(session, getCreateMiddlewaresOptions(options)),
+      ),
     );
 
     // Create `ScrollPositionRestoration`.
@@ -78,7 +89,12 @@ export default class NavigationStack {
 
   locationRendered() {
     if (this._scrollPositionRestoration) {
-      this._scrollPositionRestoration.locationRendered(this.current());
+      const location = this.current();
+      if (!location) {
+        throw new Error('Not initialized');
+      }
+      return this._scrollPositionRestoration.locationRendered(location);
     }
+    return Promise.resolve();
   }
 }

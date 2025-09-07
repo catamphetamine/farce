@@ -15,21 +15,21 @@ export class ScrollPositionRestoration<
 
     // `_options` are currently only used in tests.
     _options?: {
-      // `_options._shouldUpdatePageScrollPositionForLocation`
+      // `_options._shouldSetPageScrollPositionOnLocationChange`
       // isn't used in real life and is not part of the public API.
       // It's only used in tests.
-      _shouldUpdatePageScrollPositionForLocation?: (
+      _shouldSetPageScrollPositionOnLocationChange?: (
         location: Location,
         prevLocation: Location | undefined,
       ) => boolean;
 
-      // `_options._getPageScrollPositionForLocation`
+      // `_options._getSavedPageScrollPositionOnLocationChange`
       // isn't used in real life and is not part of the public API.
       // It's only used in tests.
-      _getPageScrollPositionForLocation?: (
+      _getSavedPageScrollPositionOnLocationChange?: (
         location: Location,
         prevLocation: Location | undefined,
-      ) => boolean;
+      ) => [number, number] | undefined;
 
       // Using this option, a developer could theoretically provide their own implementation
       // of setting a scroll position. For example, it could use "smooth" (animated) scrolling, etc.
@@ -47,21 +47,21 @@ export class ScrollPositionRestoration<
 
     // `_options` are currently only used in tests.
     _options?: {
-      // `_options._shouldUpdateScrollPositionForLocation`
+      // `_options._shouldSetScrollPositionOnLocationChange`
       // isn't used in real life and is not part of the public API.
       // It's only used in tests.
-      _shouldUpdateScrollPositionForLocation?: (
+      _shouldSetScrollPositionOnLocationChange?: (
         location: Location,
         prevLocation: Location | undefined,
       ) => boolean;
 
-      // `_options._getScrollPositionForLocation`
+      // `_options._getSavedScrollPositionOnLocationChange`
       // isn't used in real life and is not part of the public API.
       // It's only used in tests.
-      _getScrollPositionForLocation?: (
+      _getSavedScrollPositionOnLocationChange?: (
         location: Location,
         prevLocation: Location | undefined,
-      ) => boolean;
+      ) => [number, number] | undefined;
 
       // Using this option, a developer could theoretically provide their own implementation
       // of setting a scroll position. For example, it could use "smooth" (animated) scrolling, etc.
@@ -70,7 +70,7 @@ export class ScrollPositionRestoration<
     },
   ): () => void;
 
-  locationRendered: (location: Location) => void;
+  locationRendered: (location: Location) => Promise<void>;
 
   stop(): void;
 

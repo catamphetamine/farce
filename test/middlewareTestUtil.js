@@ -17,7 +17,7 @@ export function transformInputLocationUsingMiddleware(middleware, location) {
   return invokeLocationMiddleware(middleware, {
     type: ActionTypes.NAVIGATE,
     payload: {
-      operation: 'PUSH',
+      operation: 'push',
       location,
     },
   }).payload.location;
