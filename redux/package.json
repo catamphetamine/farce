@@ -2,5 +2,6 @@
   "private": true,
   "name": "navigation-stack/redux",
   "main": "./../lib/cjs/redux/index.js",
-  "module": "./../lib/esm/redux/index.js"
+  "module": "./../lib/esm/redux/index.js",
+  "types": "./../lib/redux/index.d.ts"
 }

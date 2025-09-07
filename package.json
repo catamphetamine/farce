@@ -1,6 +1,6 @@
 {
   "name": "navigation-stack",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Handles navigation in a web browser",
   "keywords": [
     "history",
