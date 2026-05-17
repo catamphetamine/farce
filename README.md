@@ -9,7 +9,7 @@ Navigation in a Single-Page Application.
 * Provides operations to perform programmatic navigation such as "push" (go to new URL), "replace" (redirect to new URL), "shift" (rewind to a previously visited URL).
 * Provides a subscription mechanism to get notified on location changes.
 * Supports automatic [scroll position restoration](#scroll-position-restoration) on "Back"/"Forward" navigation.
-* If you're using React, see [`navigation-stack-react`](http://npmjs.com/package/navigation-stack-react) package.
+<!-- * If you're using React, see [`navigation-stack-react`](http://npmjs.com/package/navigation-stack-react) package. -->
 
 ## Install
 
