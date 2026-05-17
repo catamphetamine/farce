@@ -18,9 +18,9 @@ export default function withScrollableContainerAtIndexPageWithDisabledAutomaticS
   let unregisterScrollableContainer;
 
   function listen(listener) {
-    function shouldUpdateScrollableContainerScrollPositionForLocation(
-      location,
+    function shouldChangeScrollableContainerScrollPositionOnLocationChange(
       prevLocation,
+      location,
     ) {
       // Disable the automatic scroll position restoration on "back" navigation
       // to check that it automatically restores scroll position when calling
@@ -37,8 +37,8 @@ export default function withScrollableContainerAtIndexPageWithDisabledAutomaticS
           'container',
           container,
           {
-            shouldSetScrollPositionOnLocationChange:
-              shouldUpdateScrollableContainerScrollPositionForLocation,
+            shouldChangeScrollPositionOnLocationChange:
+              shouldChangeScrollableContainerScrollPositionOnLocationChange,
           },
         );
       }

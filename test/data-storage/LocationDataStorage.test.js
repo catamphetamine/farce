@@ -1,5 +1,6 @@
 import LocationDataStorage from '../../src/data-storage/LocationDataStorage';
-import InMemorySession from '../../src/session/InMemorySession';
+import InMemoryEnvironment from '../../src/environment/InMemoryEnvironment';
+import Session from '../../src/session/Session';
 
 describe('LocationDataStorage', () => {
   let session;
@@ -12,7 +13,7 @@ describe('LocationDataStorage', () => {
   beforeEach(() => {
     window.sessionStorage.clear();
 
-    session = new InMemorySession();
+    session = new Session(InMemoryEnvironment);
     stateStorage = new LocationDataStorage(session, {
       namespace: 'test',
     });

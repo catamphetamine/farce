@@ -75,6 +75,6 @@ module.exports = (config) => {
       },
     },
 
-    browsers: env.BROWSER ? env.BROWSER.split(',') : ['Chrome', 'Firefox'],
+    browsers: env.BROWSER ? env.BROWSER.split(',') : ['Firefox', 'Chrome'],
   });
 };

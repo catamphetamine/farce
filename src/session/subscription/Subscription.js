@@ -1,18 +1,35 @@
 export default class Subscription {
-  constructor({ activateSubscription } = {}) {
-    this._activateSubscription = activateSubscription;
-
+  constructor() {
     // This property is accessed in tests.
     this._listeners = [];
+
+    // These listeners will be called when the subscription enters "active" or "inactive" state.
+    // A subscription enters "active" state when it has at least one listener rather than zero.
+    // A subscription enters "inactive" state when it has no more listeners.
+    this._subscriptionActiveStateListeners = [];
+    this._subscriptionInactiveStateListeners = [];
   }
 
-  notifySubscribers = (argument) => {
+  // Adds a subscription active state listener.
+  // Returns a function that removes the subscription active state listener.
+  onFirstSubscriber(activeStateListener) {
+    this._subscriptionActiveStateListeners.push(activeStateListener);
+    // Return a function that removes the subscription active state listener.
+    return () => {
+      this._subscriptionActiveStateListeners =
+        this._subscriptionActiveStateListeners.filter(
+          (_) => _ !== activeStateListener,
+        );
+    };
+  }
+
+  notifySubscribers(argument) {
     // `._latest` is only used in tests.
     this._latest = argument;
     for (const { listener } of this._listeners) {
       listener(argument);
     }
-  };
+  }
 
   subscribe(listener) {
     // If subscriptions are stopped, i.e. no new subscriptions are to be added,
@@ -30,9 +47,12 @@ export default class Subscription {
 
     // If it's the first listener, activate subscription.
     if (this._listeners.length === 0) {
-      this._deactivateSubscription = this._activateSubscription(
-        this.notifySubscribers,
-      );
+      // Run all subscription active state listeners.
+      // The functions returned from those will become subscription inactive state listeners.
+      this._subscriptionInactiveStateListeners =
+        this._subscriptionActiveStateListeners.map((activeStateListener) =>
+          activeStateListener(),
+        );
     }
 
     // Add the `listener` to the list.
@@ -67,10 +87,15 @@ export default class Subscription {
     // Remove the `listener` from the list.
     this._listeners = this._listeners.filter((_) => _ !== listenerEntry);
 
-    // If it was the last listener, deactivate subscription.
+    // If it was the last listener.
     if (this._listeners.length === 0) {
-      this._deactivateSubscription();
-      this._deactivateSubscription = undefined;
+      // Run any subscription inactive state listeners,
+      // after which clear the list of such listeners.
+      for (const inactiveStateListener of this
+        ._subscriptionInactiveStateListeners) {
+        inactiveStateListener();
+      }
+      this._subscriptionInactiveStateListeners = [];
     }
   }
 }

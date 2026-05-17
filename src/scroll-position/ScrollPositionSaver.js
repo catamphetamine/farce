@@ -2,16 +2,17 @@
 
 import ScrollPositionAutoSaver from './ScrollPositionAutoSaver';
 import { PAGE_SCROLLABLE_CONTAINER_KEY } from './constants';
-import debug from '../debug';
 
 export default class ScrollPositionSaver {
   constructor({
+    log,
     scrollPosition,
     getLocation,
     saveScrollPositionForLocation,
     getScrollableContainers,
     shouldSaveScrollPosition,
   }) {
+    this._log = log;
     this._scrollPosition = scrollPosition;
     this._getLocation = getLocation;
     this._saveScrollPositionForLocation = saveScrollPositionForLocation;
@@ -19,6 +20,7 @@ export default class ScrollPositionSaver {
     this._shouldSaveScrollPosition = shouldSaveScrollPosition;
 
     this._scrollPositionAutoSaver = new ScrollPositionAutoSaver({
+      log: this._log,
       scrollPosition: this._scrollPosition,
       scrollPositionSaver: this,
       getScrollableContainers,
@@ -44,7 +46,7 @@ export default class ScrollPositionSaver {
       return;
     }
 
-    debug('save scroll position', this._getLocation().pathname);
+    this._log.debug('save scroll position', this._getLocation().pathname);
 
     // Get scrollable containers.
     const scrollableContainers = this._getScrollableContainers();
@@ -63,7 +65,7 @@ export default class ScrollPositionSaver {
   }
 
   savePageScrollPosition() {
-    debug(
+    this._log.debug(
       'save scroll position',
       this._getLocation().pathname,
       PAGE_SCROLLABLE_CONTAINER_KEY,
@@ -89,7 +91,7 @@ export default class ScrollPositionSaver {
     scrollableContainerKey,
     scrollableContainer,
   ) {
-    debug(
+    this._log.debug(
       'save scroll position',
       this._getLocation().pathname,
       scrollableContainerKey,

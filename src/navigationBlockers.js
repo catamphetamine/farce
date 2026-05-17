@@ -1,30 +1,33 @@
 /* eslint-disable no-underscore-dangle */
 
-import debug from './debug';
 import isPromise from './isPromise';
 
-export function getNavigationBlockers(session) {
-  return session._navigationBlockersList || [];
+export function getNavigationBlockers(container) {
+  return container._navigationBlockersList || [];
 }
 
-function addNavigationBlockerToTheList(blocker, session) {
-  if (!session._navigationBlockersList) {
-    session._navigationBlockersList = [];
+function addNavigationBlockerToTheList(blocker, container) {
+  if (!container._navigationBlockersList) {
+    container._navigationBlockersList = [];
   }
-  session._navigationBlockersList.push(blocker);
+  container._navigationBlockersList.push(blocker);
 }
 
-function removeNavigationBlockerFromTheList(blocker, session) {
-  if (session._navigationBlockersList) {
-    session._navigationBlockersList = session._navigationBlockersList.filter(
-      (_) => _ !== blocker,
-    );
+function removeNavigationBlockerFromTheList(blocker, container) {
+  if (container._navigationBlockersList) {
+    container._navigationBlockersList =
+      container._navigationBlockersList.filter((_) => _ !== blocker);
   }
 }
 
 export function removeAllNavigationBlockers(session) {
+  // `navigationBlockers` are stored in `session`.
+  const container = session;
+
   if (
-    getNavigationBlockers(session).some((blocker) => blocker.beforeTermination)
+    getNavigationBlockers(container).some(
+      (blocker) => blocker.beforeTermination,
+    )
   ) {
     if (!session._removeTerminationBlocker) {
       throw new Error(
@@ -34,33 +37,29 @@ export function removeAllNavigationBlockers(session) {
     session._removeTerminationBlocker();
     session._removeTerminationBlocker = undefined;
   }
-  session._navigationBlockersList = [];
+  container._navigationBlockersList = [];
 }
 
 // Runs the `blocker` while ignoring any errors that might be thrown by it.
-function runNavigationBlocker({ blocker }, location) {
+function runNavigationBlocker({ blocker }, location, environment) {
   let result;
   try {
     result = blocker(location);
   } catch (error) {
-    // eslint-disable-next-line no-console
-    console.warn(
+    environment.log.warn(
       `Ignoring navigation blocker \`${blocker.name}\` that failed with \`${error}\`.`,
     );
-    // eslint-disable-next-line no-console
-    console.error(error);
+    environment.log.error(error);
   }
 
   // If the blocker returned a `Promise`, await for that `Promise`
   // and then return the result.
   if (isPromise(result)) {
     return result.catch((error) => {
-      // eslint-disable-next-line no-console
-      console.warn(
+      environment.log.warn(
         `Ignoring navigation blocker \`${blocker.name}\` that failed with \`${error}\`.`,
       );
-      // eslint-disable-next-line no-console
-      console.error(error);
+      environment.log.error(error);
     });
   }
   // The blocker didn't return a `Promise`.
@@ -71,23 +70,35 @@ function runNavigationBlocker({ blocker }, location) {
 // Runs all blockers in order.
 // If any blocker returns `true`, it stops and returns the result.
 // If there's no such blocker, returns `undefined`.
-export function runNavigationBlockers(navigationBlockers, toLocation) {
+export function runNavigationBlockers(
+  navigationBlockers,
+  toLocation,
+  environment,
+) {
   if (navigationBlockers.length === 0) {
     return undefined;
   }
 
   // Call the first blocker in the list.
-  const result = runNavigationBlocker(navigationBlockers[0], toLocation);
+  const result = runNavigationBlocker(
+    navigationBlockers[0],
+    toLocation,
+    environment,
+  );
 
   const next = () => {
     // Proceed to the next blocker.
-    return runNavigationBlockers(navigationBlockers.slice(1), toLocation);
+    return runNavigationBlockers(
+      navigationBlockers.slice(1),
+      toLocation,
+      environment,
+    );
   };
 
   if (isPromise(result)) {
     return result.then((resultValue) => {
       if (resultValue) {
-        debug('Navigation blocked', toLocation.pathname);
+        environment.log.debug('Navigation blocked', toLocation.pathname);
         return resultValue;
       }
       return next();
@@ -95,7 +106,7 @@ export function runNavigationBlockers(navigationBlockers, toLocation) {
   }
 
   if (result) {
-    debug('Navigation blocked', toLocation.pathname);
+    environment.log.debug('Navigation blocked', toLocation.pathname);
     return result;
   }
   return next();
@@ -103,7 +114,14 @@ export function runNavigationBlockers(navigationBlockers, toLocation) {
 
 /* istanbul ignore next: not testable with Karma */
 function terminationBlocker(session) {
-  const result = runNavigationBlockers(getNavigationBlockers(session), null);
+  // `navigationBlockers` are stored in `session`.
+  const container = session;
+
+  const result = runNavigationBlockers(
+    getNavigationBlockers(container),
+    null,
+    session.environment,
+  );
 
   // If no blocker returned anything, so don't prevent the navigation.
   if (!result) {
@@ -123,6 +141,9 @@ function terminationBlocker(session) {
 }
 
 export function addNavigationBlocker(session, blocker) {
+  // `navigationBlockers` are stored in `session`.
+  const container = session;
+
   // All navigation blockers also run on `beforeTermination` event.
   // If required, this could be a parameter of this function.
   // The rationale could be that adding a `beforeunload` listener
@@ -141,7 +162,7 @@ export function addNavigationBlocker(session, blocker) {
   // https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeunload_event
   if (
     beforeTermination &&
-    !getNavigationBlockers(session).some(
+    !getNavigationBlockers(container).some(
       (navigationBlocker) => navigationBlocker.beforeTermination,
     )
   ) {
@@ -151,21 +172,21 @@ export function addNavigationBlocker(session, blocker) {
       );
     }
     session._removeTerminationBlocker =
-      session.lifecycle.addTerminationBlocker(() => {
+      session.environment.lifecycle.addTerminationBlocker(() => {
         return terminationBlocker(session);
       });
   }
 
   const newNavigationBlocker = { blocker, beforeTermination };
-  addNavigationBlockerToTheList(newNavigationBlocker, session);
+  addNavigationBlockerToTheList(newNavigationBlocker, container);
 
   return () => {
-    removeNavigationBlockerFromTheList(newNavigationBlocker, session);
+    removeNavigationBlockerFromTheList(newNavigationBlocker, container);
 
     // If it was the last "beforeTermination" blocker, remove navigation blocker.
     if (
       beforeTermination &&
-      !getNavigationBlockers(session).some(
+      !getNavigationBlockers(container).some(
         (navigationBlocker) => navigationBlocker.beforeTermination,
       )
     ) {

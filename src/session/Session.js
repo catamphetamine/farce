@@ -1,9 +1,8 @@
-import debug from '../debug';
 import parseInputLocation from '../parseInputLocation';
 import createSessionKey from './key/createSessionKey';
-import NavigationOutOfBoundsError from './navigation/error/NavigationOutOfBoundsError';
-import NavigationOperations from './navigation/operation/operations';
 import Subscription from './subscription/Subscription';
+import NavigationOutOfBoundsError from '../environment/navigation/error/NavigationOutOfBoundsError';
+import NavigationOperations from '../environment/navigation/operation/operations';
 
 const INITIAL_KEY_INDEX = -1;
 const INITIAL_INDEX = -1;
@@ -11,11 +10,14 @@ const INITIAL_INDEX = -1;
 const INIT_LOCATION_DELTA = 0;
 
 export default class Session {
-  constructor({ navigation }) {
+  constructor(EnvironmentClass) {
     // `key` is used in `WebBrowserSession` to uniquely identify a session
     // when storing data in a `WebBrowserDataStorage` which uses `window.sessionStorage`
     // under the hood, and `window.sessionStorage` is shared between different sessions.
     this.key = createSessionKey();
+
+    // Create an environment instance.
+    this.environment = new EnvironmentClass();
 
     // `this._locationKeyIndex` is incremented every time the current location changes.
     this._locationKeyIndex = INITIAL_KEY_INDEX;
@@ -28,18 +30,36 @@ export default class Session {
     // In other words, this is the last location index that it can `.shift()` to.
     this._terminalLocationIndex = this._currentLocationIndex;
 
-    // Create `navigation`.
-    this._navigation = navigation;
+    // Allows subscribing to location updates.
+    this._subscription = new Subscription();
 
-    // Manages subscriptions.
-    this._subscription = new Subscription({
-      activateSubscription: (listener) => {
-        return this._navigation.subscribe(listener);
-      },
+    // Subscribing to location changes means subscribing to both "synchronous"
+    // and "asynchronous" location changes. "synchronous" location changes
+    // happen immediately when the code triggers them."asynchronous" location changes
+    // either happen after an arbitrary delay or are even triggered from outside the code.
+    //
+    // Subscribing to "asynchronous" location changes is not necessary when
+    // there're no actual subscribers, in order to not unnecessarily "waste" any resources.
+    // Of course, this statement is rather far-fetched and in reality no one would ever tell any difference.
+    // Still, I felt like randomly introducing this seemingly unnecessary minor optimization.
+    //
+    // So it only subscribes to "asynchronous" location changes if there's at least one active subscriber.
+    // And in case all subscribers get unsubscribed, it will unsubscribe from "asynchronous" location changes too.
+    // One might think of it as some form of "mental masturbation", but what can I do — I already wrote the code.
+    //
+    this._subscription.onFirstSubscriber(() => {
+      return this.environment.navigation.subscribeToAsyncrhonousLocationUpdates(
+        (location) => {
+          // Notify all subscribers about this "asynchronous" location change.
+          this._subscription.notifySubscribers(location);
+        },
+      );
     });
 
-    // Update current location index when a location change was not initiated
-    // by this session but rather by the user clicking "Back" or "Forward" button.
+    // This subscription is triggered in two cases:
+    // * Set initial current location index at initial page load.
+    // * Update current location index whenever a location change is not initiated
+    //   by this session but rather by the user clicking "Back" or "Forward" button.
     this._unsubscribe = this.subscribe((location) => {
       // Update `this._currentLocationIndex` when the location change was not initiated
       // by this session but rather by the user clicking "Back" or "Forward" button.
@@ -50,7 +70,7 @@ export default class Session {
       // by `navigation` to call `session.getNextKey()` function to increment `locationKeyIndex`.
       this._updateTerminalLocationIndex(location);
 
-      debug(
+      this.environment.log.debug(
         'current location',
         location.pathname,
         'index',
@@ -60,14 +80,18 @@ export default class Session {
   }
 
   // Subscribes to changes in location.
+  // The first subscriber is always the `Session` itself:
+  // its listener keeps the current location index up-to-date.
+  // Any additional application-specific listeners could be added, if required.
+  // Applications should prefer adding any such listeners by calling `NavigationStack.subscribe()`
+  // method instead of calling this method directly, in order to "normalize" the `location` argument.
   subscribe(listener) {
     return this._subscription.subscribe((location) => {
       if (
         !this._isStarted() &&
         location.operation !== NavigationOperations.INIT
       ) {
-        // eslint-disable-next-line no-console
-        console.error('Unexpected location change', location);
+        this.environment.log.error('Unexpected location change', location);
         throw new Error('Not started');
       } else {
         // Call the listener.
@@ -76,6 +100,17 @@ export default class Session {
     });
   }
 
+  // Starts a navigation session.
+  //
+  // When run in a web browser, it could not only "start" a new session
+  // but also "resume" a previously-started session. That could happen
+  // when the user refreshes a page in a web browser which still retains
+  // the previous session's data but at the same time restarts the javascript code
+  // from scratch.
+  //
+  // So this `start()` method handles both cases: when there's previous session's data
+  // that should be restored and when there's no previous session's data.
+  //
   start(initialLocation) {
     if (this._stopped) {
       throw new Error('Can not be restarted');
@@ -88,7 +123,7 @@ export default class Session {
     // the initial location by the time javascript code starts execution.
     //
     if (!initialLocation) {
-      initialLocation = this._navigation.getInitialLocation();
+      initialLocation = this.environment.navigation.getInitialLocation();
       if (initialLocation) {
         initialLocation = parseInputLocation(initialLocation);
       }
@@ -102,7 +137,7 @@ export default class Session {
       throw new Error('Already started');
     }
 
-    debug('▶ start session', initialLocation.pathname);
+    this.environment.log.debug('▶ start session', initialLocation.pathname);
 
     this._started = true;
 
@@ -110,7 +145,7 @@ export default class Session {
     const index = INITIAL_INDEX + 1;
     const delta = INIT_LOCATION_DELTA;
 
-    const locationResult = this._navigation.init(initialLocation, {
+    const locationResult = this.environment.navigation.init(initialLocation, {
       operation: NavigationOperations.INIT,
       key,
       index,
@@ -118,6 +153,7 @@ export default class Session {
     });
 
     if (locationResult) {
+      // Notify all subscribers about this "synchronous" location change.
       this._subscription.notifySubscribers(locationResult);
     }
   }
@@ -127,7 +163,7 @@ export default class Session {
       throw Error('Already stopped');
     }
 
-    debug('⏹ stop session');
+    this.environment.log.debug('⏹ stop session');
 
     // Once stopped, it won't be able to be restarted.
     this._stopped = true;
@@ -160,7 +196,7 @@ export default class Session {
     const key = this._getNextLocationKey();
     const index = this._currentLocationIndex + delta;
 
-    debug(
+    this.environment.log.debug(
       operation === NavigationOperations.PUSH ? '↓' : '⇅',
       operation,
       location.pathname,
@@ -169,7 +205,7 @@ export default class Session {
     );
 
     // Navigate to the location.
-    const locationResult = this._navigation.navigate(location, {
+    const locationResult = this.environment.navigation.navigate(location, {
       operation,
       key,
       index,
@@ -177,6 +213,7 @@ export default class Session {
     });
 
     if (locationResult) {
+      // Notify all subscribers about this "synchronous" location change.
       this._subscription.notifySubscribers(locationResult);
     }
   }
@@ -193,7 +230,13 @@ export default class Session {
 
     const index = this._currentLocationIndex + delta;
 
-    debug(delta > 0 ? '→' : '←', 'shift', delta, 'index', index);
+    this.environment.log.debug(
+      delta > 0 ? '→' : '←',
+      'shift',
+      delta,
+      'index',
+      index,
+    );
 
     // Validate that the new `index` is not out of bounds.
     if (index < 0 || index > this._terminalLocationIndex) {
@@ -201,13 +244,14 @@ export default class Session {
     }
 
     // Navigate to the location.
-    const locationResult = this._navigation.shift({
+    const locationResult = this.environment.navigation.shift({
       operation: NavigationOperations.SHIFT,
       index,
       delta,
     });
 
     if (locationResult) {
+      // Notify all subscribers about this "synchronous" location change.
       this._subscription.notifySubscribers(locationResult);
     }
   }

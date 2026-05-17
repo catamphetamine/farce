@@ -1,3 +1,19 @@
+# 0.6.0 / 17.05.2026
+
+- Removed Redux.
+- Renamed `maintainScrollPosition` parameter of `NavigationStack` constructor to `manageScrollPosition`.
+- Added `shouldChangePageScrollPositionOnLocationChange` parameter function to `NavigationStack` constructor.
+- Added `shouldChangeScrollPositionOnLocationChange` parameter function to the `options` of `navigationStack.addScrollableContainer()` method.
+- Renamed `ServerSideNavigationError` class to `ServerSideRedirectError`.
+- Moved `addNavigationBlocker()` function to a `NavigationStack` instance method (name's the same).
+- Changed the argument of `new NavigationStack()` from a "session" instance to an "environment" class.
+- Now it exports "environment" classes rather than "session" classes: `WebBrowserSession` → `WebBrowserEnvironment`, etc.
+- Added `navigationStack.dataStorage` property. It could be used to access the "data storage".
+- Removed `/data-storage` subpackage. Removed `DataStorage` and `LocationDataStorage` class exports. "Data storage" is now integrated in `NavigationStack` as a feature.
+- Removed `/scroll-position` subpackage. Removed `ScrollPositionRestoration` class export. Scroll position restoration is now integrated in `NavigationStack` as a feature.
+- Added `scrollPositionSetter` option to `NavigationStack` constructor.
+- Created a new package called `navigation-stack-react`. It contains the adaptation of `NavigationStack` for use in React framework.
+
 # 0.5.0 / 07.09.2025
 
 - Added `location.index` property.

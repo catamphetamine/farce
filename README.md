@@ -3,16 +3,18 @@
 [![npm version](https://img.shields.io/npm/v/navigation-stack.svg?style=flat-square)](https://www.npmjs.com/package/navigation-stack)
 [![npm downloads](https://img.shields.io/npm/dm/navigation-stack.svg?style=flat-square)](https://www.npmjs.com/package/navigation-stack)
 
-Handles navigation in a web browser. Represents web browser navigation history as a "stack" data structure. Provides operations to perform programmatic navigation such as "push" (go to new URL), "replace" (redirect to new URL), "shift" (rewind to a previously visited URL). Provides a subscription mechanism to get notified on location changes.
+Navigation in a Single-Page Application.
 
-Also supports automatic [scroll position restoration](#scroll-position-restoration) on "Back"/"Forward" navigation.
-
-Originally forked from [`farce`](http://npmjs.com/package/farce) package to fix a couple of small bugs ([1](https://github.com/4Catalyzer/farce/issues/483), [2](https://github.com/4Catalyzer/farce/issues/491)). Then merged it with [`scroll-behavior`](http://npmjs.com/package/scroll-behavior) package to fix a couple of small bugs ([1](https://github.com/taion/scroll-behavior/issues/215), [2](https://github.com/taion/scroll-behavior/pull/472)). Then decided to completely rewrite the entire code and changed the API to my liking.
+* Represents web browser navigation history as a "stack" data structure.
+* Provides operations to perform programmatic navigation such as "push" (go to new URL), "replace" (redirect to new URL), "shift" (rewind to a previously visited URL).
+* Provides a subscription mechanism to get notified on location changes.
+* Supports automatic [scroll position restoration](#scroll-position-restoration) on "Back"/"Forward" navigation.
+* If you're using React, see [`navigation-stack-react`](http://npmjs.com/package/navigation-stack-react) package.
 
 ## Install
 
 ```
-npm install navigation-stack
+npm install navigation-stack --save
 ```
 
 ## Use
@@ -22,17 +24,17 @@ Any changes to a `NavigationStack` instance are "magically" reflected in the web
 Start by creating a `NavigationStack` instance.
 
 ```js
-import { NavigationStack, WebBrowserSession } from 'navigation-stack'
+import { NavigationStack, WebBrowserEnvironment } from 'navigation-stack'
 
 // Create a `NavigationStack` instance.
-// It should be tied to a navigation "session".
-const navigationStack = new NavigationStack(new WebBrowserSession())
+const navigationStack = new NavigationStack(WebBrowserEnvironment)
 ```
 
 Then subscribe to changes:
 
 ```js
 // Subscribe to location changes.
+// The listener function will be called immediately after the current location has changed.
 // The first call happens for the initial location.
 // Next calls will happen in case of navigation.
 const unsubscribe = navigationStack.subscribe((location) => {
@@ -45,6 +47,7 @@ Now ready to perform navigation actions.
 
 ```js
 // Sets the initial location.
+// No argument when using `WebBrowserEnvironment`.
 navigationStack.init()
 
 // Sets the `location` to be a new location.
@@ -139,134 +142,62 @@ Current `location` object has all the properties of a [standard web browser loca
 * `key: string` — A string ID of the location that is guaranteed to be unique within the session's limits and could be used as a "key" to store any supplementary data associated to this location.
 * `index: number` — The index of the location in the navigation stack, starting with `0` for the initial location.
 
-<!-- ## Subscribe to Location Changes -->
-
-<!--
-One could use Redux'es standard [subscription mechanisms](https://redux.js.org/api/store#subscribelistener) to immediately get notified of current location changes.
-
-```js
-let currentLocation
-
-// Create a Redux store.
-const store = createStore(
-  locationReducer, // Reducer function. For example, `locationReducer()`.
-  applyMiddleware(...createMiddlewares(new WebBrowserSession()))
-)
-
-// Subscribe to any potential Redux state changes.
-const unsubscribe = store.subscribe(() => {
-  const previousLocation = currentLocation
-  currentLocation = store.getState() // In case of using `locationReducer()`.
-  if (currentLocation !== previousLocation) {
-    // The first time is for the initial location.
-    // Next times will happen in case of navigation.
-    console.log('Location has changed')
-  }
-})
-
-// Initialize navigation with an initial location.
-//
-// It will trigger the listener.
-//
-store.dispatch(Actions.init(window.location))
-
-// Stop listening to current location changes.
-unsubscribe()
-```
--->
-
-<!--
-One could subscribe to location changes by calling `navigationStack.subscribe()`.
-
-```js
-// Create a `NavigationStack` instance.
-// It should be tied to a navigation "session".
-const navigationStack = new NavigationStack(new WebBrowserSession())
-
-// Subscribe to location changes.
-// The first call happens for the initial location.
-// Next calls will happen in case of navigation.
-const unsubscribe = navigationStack.subscribe((location) => {
-  console.log('Current location', location)
-})
-
-// Navigate to a new location.
-// It will trigger the listener.
-navigationStack.push('/new-location')
-
-// Stop listening to location changes.
-unsubscribe()
-```
--->
-
-<!--
-## Why Redux?
-
-Why complicate things by providing "middlewares", "actions" and a "reducer" when it could be just a conventional API? That's because always knowing the "current location" means having to deal with "state management" in one way or another, and the simplest and most popular "state management" toolkit to date seems to be Redux.
-
-If it was just about dispatching the `Actions` then of course it wouldn't require any "state management". But it's the "get current location" piece that changes the whole picture. One could say that using Redux for such a simple task is an overkill but actually reinventing a wheel is what I would consider "overkill". It's like crafting your own screwdriver just because the one from Walmart feels too bulky.
--->
-
 ## Scroll Position Restoration
 
-Pass `maintainScrollPosition: true` option to keep track of scroll position on every page and then automatically restore it on "Back" or "Forward" navigation.
+By default, `NavigationStack` doesn't do anything with the scroll position when performing navigation. This means that it neither scrolls to the top of the page when calling `.push()` or `.replace()`, nor restores the previous scroll position on "Back" or "Forward" navigation, including `.shift()` navigation.
+
+To fix that, enable automatic scroll position management feature by passing `manageScrollPosition: true` parameter when creating a `NavigationStack` instance, and then call `.locationRendered(location)` every time a different location has been rendered (including the initial location) immediately after it has been rendered.
 
 ```js
-import { NavigationStack, WebBrowserSession } from 'navigation-stack'
+import { NavigationStack, WebBrowserEnvironment } from 'navigation-stack'
 
-// Create a `NavigationStack` instance with a `maintainScrollPosition: true` option.
-const navigationStack = new NavigationStack(new WebBrowserSession(), {
-  maintainScrollPosition: true
+// Create a `NavigationStack` instance with a `manageScrollPosition: true` option.
+const navigationStack = new NavigationStack(WebBrowserEnvironment, {
+  manageScrollPosition: true
 })
 
 //----------------------------------------------------------------------------------------
 
-// Sets the initial location.
-navigationStack.init()
+function onLocationChange(location) {
+  // Render the page.
+  if (location.pathname === '/initial') {
+    document.body.innerHTML = '<div> Initial Location </div>'
+  } else if (location.pathame === '/new') {
+    document.body.innerHTML = '<div> New Location </div>'
+  } else {
+    throw new Error(`Unknown location: ${location.pathname}`)
+  }
 
-// Render the initial location.
-document.body.innerHTML = '<div> Initial Location </div>'
+  // As soon as a page has been rendered, without any delay, tell `NavigationStack` to restore
+  // a previously-saved scroll position, if there's any.
+  //
+  // This method must be called both for the initial location and any subsequent location.
+  //
+  navigationStack.locationRendered(location)
+}
 
-// As soon as a page has been rendered, without any delay, tell `NavigationStack` to restore
-// a previously-saved scroll position, if there's any.
-//
-// This method must be called both for the initial location and any subsequent location.
-//
-navigationStack.locationRendered()
+// Subscribe to location changes.
+navigationStack.subscribe(onLocationChange)
 
 //----------------------------------------------------------------------------------------
 
-// Set the `location` to be a new location.
+// Start at the current location which is assumed to be "/initial-location".
+// No argument when using `WebBrowserEnvironment`.
+navigationStack.init()
+
+// Set the `location` to be "/new-location".
 //
 // This also updates the URL in the web browser's address bar
 // and adds a new entry in the web browser's navigation history.
 //
 navigationStack.push('/new-location')
 
-// Render the new location.
-document.body.innerHTML = '<div> New Location </div>'
-
-// The new location is now rendered.
-// Immediately after it has been rendered, call `.locationRenered()`.
-// There's no scroll position to restore because it's not a previously-visited location.
-navigationStack.locationRendered()
-
-//----------------------------------------------------------------------------------------
-
-// Set `location` "back" to the initial location.
+// Set `location` "back" to "/initial-location".
 //
 // This also updates the URL in the web browser's address bar
 // and repositions the "current location" pointer in the web browser's navigation history.
 //
 navigationStack.shift(-1)
-
-// Render the initial location.
-document.body.innerHTML = '<div> Initial Location </div>'
-
-// The initial location is now rendered.
-// Immediately after it has been rendered, call `.locationRenered()`.
-// Restores the scroll position at the initial location.
-navigationStack.locationRendered()
 
 //----------------------------------------------------------------------------------------
 
@@ -278,11 +209,61 @@ navigationStack.locationRendered()
 navigationStack.stop()
 ```
 
-`NavigationStack` provides methods:
+`NavigationStack` constructor relevant options:
 
-* `addScrollableContainer(key: string, element: Element)` — Use it in cases when it should restore not only the page scroll position but also the scroll position(s) of any other scrollable container(s). Returns a "remove scrollable container" function.
+* `manageScrollPosition: true` — Enables the automatic scroll position management feature.
+* `shouldChangePageScrollPositionOnLocationChange(prevLocation?, newLocation): boolean` — Decides whether page scroll position management should still be active for a given transition from `prevLocation` to `newLocation`. Is only relevant when `manageScrollPosition: true` option is passed to `NavigationStack` constructor. As the most obvious use case, it allows an application to selectively disable the effect of resetting page scroll position when replacing the URL with same pathname but different query parameters.
+
+
+`NavigationStack` relevant methods:
+
+* `addScrollableContainer(key: string, element: Element, options?: object)` — Use it in cases when it should restore not only the page scroll position but also the scroll position(s) of any other scrollable container(s). Returns a "remove scrollable container" function.
+  * `options` object could have properties:
+    * `shouldChangeScrollPositionOnLocationChange(prevLocation?, newLocation): boolean` — Decides whether scroll position management inside this scrollable container should still be active for a given transition from `prevLocation` to `newLocation`. Is only relevant when `manageScrollPosition: true` option is passed to `NavigationStack` constructor. As the most obvious use case, it allows an application to selectively disable the effect of resetting scroll position inside a scrollable container when replacing the URL with same pathname but different query parameters.
+
 * `locationRendered()` — Call it every time a different location has been rendered, including the initial location, without any delay, i.e. immediately after a different location has been rendered.
 
+By default, when restoring scroll position, it uses basic "immediate" scrolling. A developer could supply a custom `scrollPositionSetter` option with an implementation of custom scrolling behavior. For example, it could be some kind of "smooth" scrolling or something like that.
+
+```js
+new NavigationStack(WebBrowserEnvironment, {
+  manageScrollPosition: true,
+  scrollPositionSetter: SmoothScrollPositionSetter
+})
+
+class SmoothScrollPositionSetter {
+  // Sets scroll position of a page or a scrollable element.
+  // Returns a `Promise` that resolves when it has finished setting the scroll position.
+  async set(
+    // `scrollableContainer: Element`.
+    // This is the scrollable container whose scroll position should be set.
+    // * When setting page scroll position, `scrollableContainer` is `undefined`.
+    // * When setting scrollable element scroll position, `scrollableContainer` is the scrollable element.
+    scrollableContainer,
+    // `scrollPositionOrAnchor: string | [number, number]`.
+    // This is the scroll position to set.
+    // * When setting page scroll position, it could be either an anchor or numeric coordinates.
+    // * When setting scrollable element scroll position, it could only be numeric coordinates.
+    scrollPositionOrAnchor,
+    // `scrollPosition` provides various "helper" methods for setting scroll position according to the environment.
+    // For example, in the context of a `WebBrowserEnvironment`, it provides the methods for setting scroll position in a web browser.
+    scrollPositionHelper
+  ) {
+    if (typeof scrollPositionOrAnchor === 'string') {
+      await smoothScrollToAnchor(scrollableContainer, scrollPositionOrAnchor)
+    } else {
+      await smoothScrollToCoordinates(scrollableContainer, scrollPositionOrAnchor)
+    }
+  }
+
+  // Cancels any pending (or in-progress) setting of scroll position.
+  cancel() {
+    stopSmoothScrolling()
+  }
+}
+```
+
+<!--
 <details>
 <summary>Using scroll position restoration feature without <code>NavigationStack</code></summary>
 
@@ -382,6 +363,7 @@ scrollPositionRestoration.stop()
 * `locationRendered(location)` — Call it every time a different location has been rendered, including the initial location, without any delay, i.e. immediately after a different location has been rendered. The location argument must have a `key`.
 * `stop()` — Stops scroll position restoration and clears any listeners or timers.
 </details>
+-->
 
 ## Base Path
 
@@ -396,26 +378,26 @@ createMiddlewares(session, { basePath?: '/base-path' })
 If the web application is hosted under a certain URL prefix, it should be specified as a `basePath` parameter when creating a `NavigationStack` instance. This prefix will automatically be added to the URL in the web browser's address bar while the `location` object itself won't include it in the `pathname`.
 
 ```js
-new NavigationStack(new WebBrowserSession(), { basePath: '/base-path' })
+new NavigationStack(WebBrowserEnvironment, { basePath: '/base-path' })
 ```
 
-## Session
+## Environment
 
-A "session" ties `NavigationStack` to the environment it operates in, such as a web browser.
+An "environment" class ties `NavigationStack` to the physical environment it operates in, such as a web browser.
 
-Three different "session" implementations are shipped with this package:
+Three different "environment" implementations are shipped with this package:
 
-- Use `WebBrowserSession` in a web browser. Such session survives a page refresh and is automatically destroyed when the web browser tab gets closed.
-- Use `ServerSideRenderSession` in server-side rendering. Create a separate session for each incoming HTTP request. Initialize it with a relative URL of the HTTP request. If, during server-side render, the application code attempts to navigate to another location, it will throw a `ServerSideNavigationError` with a `location` property in it.
-- Use `InMemorySession` in tests to mimick a `WebBrowserSession`. Create a separate session for each separate navigation session. Initialize it with a relative URL or a location object.
+- Use `WebBrowserEnvironment` in a web browser. Navigation session survives a page refresh and is only destroyed when the web browser tab gets closed. Create a single `NavigationStack` instance per web browser tab.
+- Use `ServerSideRenderEnvironment` in server-side rendering. Create a separate `NavigationStack` instance for each incoming HTTP request. Initialize it with a relative URL of the HTTP request. If, during server-side render, the application code attempts to navigate to another location, it will throw a `ServerSideRedirectError` with a `location` property in it.
+- Use `InMemoryEnvironment` in tests to mimick a `WebBrowserEnvironment`. One can create as many separate `NavigationStack` instances as required because they're completely independent/isolated from one another. Initialize it with a relative URL or a location object.
 
 <details>
-<summary>See <code>ServerSideRenderSession</code> example</summary>
+<summary>See <code>ServerSideRenderEnvironment</code> example</summary>
 
 ######
 
 ```js
-const navigationStack = new NavigationStack(new ServerSideRenderSession())
+const navigationStack = new NavigationStack(ServerSideRenderEnvironment)
 
 navigationStack.subscribe((location) => {
   console.log('Current location', location)
@@ -426,19 +408,19 @@ navigationStack.subscribe((location) => {
 navigationStack.init('/initial-location')
 
 // Navigates to a new location.
-// Throws `ServerSideNavigationError` with a `location` property.
+// Throws `ServerSideRedirectError` with a `location` property.
 navigationStack.push('/new-location')
 ```
 </details>
 
 
 <details>
-<summary>See <code>InMemorySession</code> example</summary>
+<summary>See <code>InMemoryEnvironment</code> example</summary>
 
 ######
 
 ```js
-const navigationStack = new NavigationStack(new InMemorySession())
+const navigationStack = new NavigationStack(InMemoryEnvironment)
 
 navigationStack.subscribe((location) => {
   console.log('Current location', location)
@@ -456,8 +438,7 @@ navigationStack.push('/new-location')
 
 ######
 
-Every "session" has a unique `key`.
-
+<!--
 Once created, a "session" is simply passed to the `NavigationStack` constructor and then you don't have to deal with it anymore — `NavigationStack` will pull all the strings for you.
 
 However, if someone prefers to completely bypass `NavigationStack` and interact with a "session" object directly, they could do so.
@@ -481,12 +462,13 @@ However, if someone prefers to completely bypass `NavigationStack` and interact 
     * `delta: number` after a `.shift(delta)` navigation, i.e. "back or forward navigation".
     * `-1` after the user clicks a "Back" button in their web browser.
     * `1` after the user clicks a "Forward" button in their web browser.
-<!-- * `getInitialLocation(): object?` — Returns the initial location, if the session can get it from somewhere. For example, in a web browser, the initial location can be read from `window.location`. In other environments, such as server side, the initial location can't be read from anywhere. -->
+<!- * `getInitialLocation(): object?` — Returns the initial location, if the session can get it from somewhere. For example, in a web browser, the initial location can be read from `window.location`. In other environments, such as server side, the initial location can't be read from anywhere. ->
 * `start(initialLocation?: object)` — Starts the session. The `initialLocation` argument is optional when the session can read it from somewhere. For example, `WebBrowserSession` can read `initialLocation` from `window.location`.
 * `stop()` — Stops the session. Cleans up any listeners, etc.
 * `navigate(operation: string, location: object)` — Navigates to a `location` using either `"PUSH"` or `"REPLACE"` operation. The `location` argument should be a result of calling `parseInputLocation()` function.
 * `shift(delta: number)` — Navigates "back" or "forward" by skipping a specified count of pages. Negative `delta` skips backwards, positive `delta` skips forward.
 </details>
+-->
 
 ## Utility
 
@@ -549,25 +531,19 @@ removeBasePath({ pathname: '/base-path/abc' }, '/base-path') === { pathname: '/a
 
 ## Block Navigation
 
-`navigation-stack` provides the ability to block navigation. Call `addNavigationBlocker()` function to set up a "navigation blocker".
+`NavigationStack` provides the ability to block navigation. Call `.addNavigationBlocker()` method to set up a "navigation blocker".
 
 ```js
 import {
   NavigationStack,
-  WebBrowserSession,
-  addNavigationBlocker
+  WebBrowserEnvironment
 } from 'navigation-stack'
 
-// Create a session.
-const session = new WebBrowserSession()
-
 // Create a `NavigationStack` instance.
-const navigationStack = new NavigationStack(session)
+const navigationStack = new NavigationStack(WebBrowserEnvironment)
 
 // Add a navigation blocker.
-// It should be tied to the same "session".
-const removeNavigationBlocker = addNavigationBlocker(
-  session,
+const removeNavigationBlocker = navigationStack.addNavigationBlocker(
   (newLocation) => {
     // Returning `true` means "this navigation should be blocked".
     return true
@@ -594,176 +570,48 @@ navigationStack.push('/new-location')
 
 Navigation blocker should be a function that receives a `newLocation` argument and could be "synchronous" or "asynchronous" (i.e. return a `Promise`, aka `async`/`await`).
 
-The `newLocation` argument of a blocker function might not necessarily have a `key` or `index` property but other properties are present.
+The `newLocation` argument of a blocker function is an object that has all the properties of a [standard web browser location](https://developer.mozilla.org/en-US/docs/Web/API/Window/location) with the addition of a `query` object.
 
 Navigation blockers fire both when navigating from one page to another and when closing the current browser tab. In the latter case, `newLocation` argument will be `null`, and also the blocker function can't return a `Promise` (because it won't wait), and returning `true` from it will cause the web browser will to show a confirmation modal with a non-customizable generic browser-specific text like "Leave site? Changes you made might not be saved".
 
 ## Data Storage
 
-One could use `DataStorage` to store any kind of application-specific data in a given "session". The data will exist as long as the "session" exists.
+One could use `NavigationStack`'s "data storage" to store any kind of application-specific data within the bounds of a given "session", which could be defined as the time from "opening" the application to  "closing" it. As long as the "session" exists, so does the data in the "data storage".
+
+For example, in a web browser environment, a "session" starts when the user opens a website in a web browser window or tab, and ends when the user closes that web browser window or tab, and such "session" also survives a "page refresh".
 
 Different types of data could be stored under a different `key`.
 
-If each different location should have it's own data stored under the same `key`, one could use `LocationDataStorage` instead of just `DataStorage`. For example, one could store scroll position for each different page to be able to restore it when the user decides to navigate "Back" to that page. By the way, that's precisely what `ScrollPositionRestoration` does.
-
-`DataStorage` constructor receives a `session` argument and a `namespace` parameter. The `namespace` just gets prepended to every `key`. The idea is that your `namespace` must not clash with anyone else's `namespace` who might potentially use the same `session` to store their own data.
+Each different location has it's own isolated data storage compartment, so the same `key` could be reused by different locations and there'd be no conflict. For example, one could store scroll position for each different page under `key: "scroll-position"` to be able to restore it when the user decides to navigate "Back" to that page. By the way, that's how `manageScrollPosition: true` feature works.
 
 ```js
-import { WebBrowserSession } from 'navigation-stack'
-import { DataStorage, LocationDataStorage } from 'navigation-stack/data-storage'
+import { NavigationStack, WebBrowserEnvironment } from 'navigation-stack'
 
-const session = new WebBrowserSession()
+const navigationStack = new NavigationStack(WebBrowserEnvironment)
 
-// `DataStorage` example
+navigationStack.init()
 
-const dataStorage = new DataStorage(session, { namespace: 'my-namespace' })
+const location = navigationStack.current()
 
-dataStorage.set('key', 123)
-dataStorage.get('key') === 123
-
-// `LocationDataStorage` example
-
-const locationDataStorage = new LocationDataStorage(session, { namespace: 'my-namespace' })
-
-const location = { pathname: '/abc' }
-
-locationDataStorage.set(location, 'key', 123)
-locationDataStorage.get(location, 'key') === 123
+navigationStack.dataStorage.set(location, 'key', 123)
+navigationStack.dataStorage.get(location, 'key') === 123
 ```
 
-`DataStorage` or `LocationDataStorage` don't provide any guarantees about actually storing the data: if it encounters any errors in the process, it simply ignores them. This simplifies the API in a way that the application doesn't have to wrap `.get()`/`.set()` calls in a `try/catch` block. And judging by the nature of location-specific data, that type of data is inherently non-essential and rather "nice-to-have".
-
-One might ask: Why use `DataStorage` or `LocationDataStorage` when one could simply store the data in a usual variable? The answer is that a usual variable doesn't survive if the user decides to refresh the page. But the entire navigation history does survive because that's how web browsers work. So if the user decides to go "Back" after refreshing the current page, the data associated to that previous location would already be lost and can't be recovered. In contrast, when using a `DataStorage` or `LocationDataStorage` with a `WebBrowserSession`, the stored data does survive a page refresh, which feels more consistent and coherent with the persistence behavior of the navigation history itself.
-
-## Redux
-
-Under the hood, `navigation-stack` uses [`redux`](https://redux.js.org/). Why? For no particular reason. The original [`farce`](http://npmjs.com/package/farce) package was published in September 2016, and by that time `redux` had still been a hot topic since [July 2025](https://www.youtube.com/watch?v=xsSnOQynTHs). This package could most certainly be rewritten without using `redux`, it's just that there seems to be no need to do that.
-
-So since `navigation-stack` already implements all that `redux` stuff internally, such as "middlewares" or "actions", why not export it for public usage? Maybe there're still some `redux` fans out there.
-
-Using `navigation-stack` `redux`-way is equivalent to using it the conventional way via `NavigationStack` class. `navigation-stack` exports "middlewares", "actions" and a "reducer" that could be used in conjunction with `redux` or any other `redux`-compatible package (e.g. [`mini-redux`](https://www.npmjs.com/package/mini-redux)).
+The data storage doesn't provide strict guarantees about actually storing the data: if it encounters an unexpected storage error in the process, it will simply ignore it. This simplifies the API in a way that the application doesn't have to wrap `.get()`/`.set()` calls in a `try/catch` block. And judging by the nature of location-specific data, that type of data is inherently non-essential (non-critical) and rather "nice-to-have".
 
 <details>
-<summary>See <code>redux</code>-style API</summary>
+<summary>Examples of ignored errors in a <code>WebBrowserEnvironment</code>.</summary>
 
 ######
 
-Start by creating a Redux "store" with `navigation-stack` middlewares.
+* `SecurityError` — In "Private"/"Incognito" browsing mode, many browsers block write access to storage APIs to enhance privacy. Attempting to call `sessionStorage.setItem()` will throw a `SecurityError` in such case. Same error could be a result of using a really strict privacy blocker extension or opening the website from an `*.html` file directly from disk (`file://` URL).
 
-```js
-import { createStore, applyMiddleware } from 'redux';
-
-import {
-  createMiddlewares,
-  locationReducer,
-  Actions,
-  WebBrowserSession,
-} from 'navigation-stack';
-
-// Create a Redux store.
-const store = createStore(
-  // Reducer function. For example, `locationReducer()`.
-  locationReducer,
-  // It should be tied to a navigation "session".
-  applyMiddleware(...createMiddlewares(new WebBrowserSession())),
-);
-```
-
-Next, set the initial location. Normally, `NavigationStack` class API automatically performs this step for a developer. When using Redux API though, it doesn't do that and the developer has to do it themself.
-
-```js
-// Sets the initial `location`.
-//
-// Accepts either a relative URL string or a location object.
-//
-// The initial location argument could be omitted for `WebBrowserSession`
-// because it can read it by itself from `window.location`.
-// Other types of session such as `InMemorySession` or `ServerSideRenderSession`
-// don't have an initial location and require the initial location argument
-// to be specified explicitly when creating an `Actions.init(initialLocation)` action.
-//
-store.dispatch(Actions.init());
-```
-
-Then subscribe to location changes. One could use Redux'es standard [subscription mechanisms](https://redux.js.org/api/store#subscribelistener) to immediately get notified of current location changes.
-
-```js
-let currentLocation;
-
-// Create a Redux store.
-const store = createStore(
-  locationReducer, // Reducer function. For example, `locationReducer()`.
-  applyMiddleware(...createMiddlewares(new WebBrowserSession())),
-);
-
-// Subscribe to any potential Redux state changes.
-const unsubscribe = store.subscribe(() => {
-  const previousLocation = currentLocation;
-  currentLocation = store.getState(); // In case of using `locationReducer()`.
-  if (currentLocation !== previousLocation) {
-    console.log('Current location', currentLocation);
-  }
-});
-```
-
-Now ready to perform navigation actions by dispatching any of the available `Actions`.
-
-```js
-// Sets the `location` to be a new location.
-//
-// Also updates the URL in the web browser's address bar.
-//
-// Also adds a new entry in the web browser's navigation history.
-//
-store.dispatch(Actions.push('/new-location'));
-
-// Sets the `location` to be a new location.
-//
-// Also updates the URL in the web browser's address bar.
-//
-// Does not add a new entry in the web browser's navigation history
-// which is the only difference between this and `Actions.push()`.
-//
-store.dispatch(Actions.replace('/new-location'));
-
-// Sets the `location` to be a previous one (if there is one).
-// One could think of it as an equivalent of clicking a "Back" button in a web browser.
-//
-// Also updates the URL in the web browser's address bar.
-//
-// Also shifts the current position in the web browser's navigation history.
-//
-store.dispatch(Actions.shift(-1));
-
-// Sets the `location` to be a next one (if there is one).
-// One could think of it as an equivalent of clicking a "Forward" button in a web browser.
-//
-// Also updates the URL in the web browser's address bar.
-//
-// Also shifts the current position in the web browser's navigation history.
-//
-store.dispatch(Actions.shift(1));
-```
-
-To get the current location:
-
-```js
-// When `locationReducer()` is used, `store.getState()` returns the current location.
-const location = store.getState();
-console.log(location);
-```
-
-(optional) After the user is done using the app, stop the session and clean up any listeners.
-
-```js
-// (optional)
-// When the user closes the application,
-// stop the session and clean up any listeners.
-// There's no need to do this in a web browser.
-unsubscribe();
-store.dispatch(Actions.stop());
-```
+* `QuotaExceededError` — Could happen if the application attempts to store too much data in `navigation-stack`'s "data storage", or if the application has already used up all available space in `sessionStorage` for some other purposes. The maximum available space in `sessionStorage` depends on the web browser and is usually assumed to be around `5 MB` per URL origin.
 </details>
+
+######
+
+One might ask: Why use `NavigationStack`'s data storage when one could simply store the data in a usual variable? The answer is that a usual variable doesn't survive if the user decides to refresh the page. But the entire navigation history does survive because that's how web browsers work. So if the user decides to go "Back" after refreshing the current page, the data associated to that previous location would already be lost and can't be recovered. In contrast, when using `NavigationStack` with a `WebBrowserEnvironment`, the stored data does survive a page refresh, which feels more consistent and coherent with the persistence behavior of the navigation history itself.
 
 ## Development
 
@@ -775,7 +623,21 @@ yarn format
 yarn test
 ```
 
-It runs tests in two web browsers (for no particular reason) — Chrome and Firefox (configurable in `karma.conf.cjs`). When running `yarn test`, it opens Chome and Firefox browser windows. Don't unfocus those windows, otherwise the tests will finish with errors.
+It will open two web browser windows — Firefox and Chrome — and run live tests in those. The web browsers are specified in `karma.conf.cjs` file. When running tests, don't unfocus the web browser windows, otherwise the tests will fail with random errors. If you're not unfocusing the web browser windows and the tests still fail with random errors, see if increasing the interval in `await delay(100)` calls in tests fixes the issue.
+
+## Development History
+
+Originally it started from a fork of [`farce`](http://npmjs.com/package/farce) package to fix a couple of small bugs there ([1](https://github.com/4Catalyzer/farce/issues/483), [2](https://github.com/4Catalyzer/farce/issues/491)).
+
+Then I decided to merge it with [`scroll-behavior`](http://npmjs.com/package/scroll-behavior) package to fix a couple of small bugs there ([1](https://github.com/taion/scroll-behavior/issues/215), [2](https://github.com/taion/scroll-behavior/pull/472)).
+
+Then I decided to completely reorganize and refactor the entire code.
+
+Then I decided to remove Redux and expose a more conventional and simple API. The original [`farce`](http://npmjs.com/package/farce) package was published in September 2016, and by that time `redux` had [still been](https://medium.com/@dan_abramov/you-might-not-need-redux-be46360cf367) a hot topic since [July 2015](https://www.youtube.com/watch?v=xsSnOQynTHs). But in retrospect, there were no legitimate reasons to heavily rely on Redux when implementing such a small and universal library. Apparently, in 2016, everyone went crazy over Redux and it became a de-facto standard when building just about any React web application, to the point of assuming that if you're building a React web app, you're 100% building it on Redux, so all hot frameworks should reuse that Redux for both the internal implementation and the public API.
+
+> Redux was a revolutionary technology in the React ecosystem. It enabled us to have a global store with [immutable data](https://medium.com/dailyjs/the-state-of-immutability-169d2cd11310) and **fixed the issue of [prop-drilling](https://kentcdodds.com/blog/prop-drilling) in our component tree. For sharing immutable data across an application, it continues to be an excellent tool that scales really well.
+
+Source: [Why I Stopped Using Redux](https://dev.to/g_abud/why-i-quit-redux-1knl)
 
 ## GitHub
 

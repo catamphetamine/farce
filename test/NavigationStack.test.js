@@ -1,14 +1,14 @@
 import delay from 'delay';
 
 import NavigationStack from '../src/NavigationStack';
-import InMemorySession from '../src/session/InMemorySession';
-import WebBrowserSession from '../src/session/WebBrowserSession';
+import InMemoryEnvironment from '../src/environment/InMemoryEnvironment';
+import WebBrowserEnvironment from '../src/environment/WebBrowserEnvironment';
 
 describe('NavigationStack', () => {
   let navigationStack;
 
   beforeEach(() => {
-    navigationStack = new NavigationStack(new InMemorySession());
+    navigationStack = new NavigationStack(InMemoryEnvironment);
     navigationStack.init('/initial');
   });
 
@@ -54,7 +54,7 @@ describe('NavigationStack (WebBrowserSession)', () => {
   beforeEach(() => {
     window.history.replaceState(null, null, '/initial');
 
-    navigationStack = new NavigationStack(new WebBrowserSession());
+    navigationStack = new NavigationStack(WebBrowserEnvironment);
 
     navigationStack.init();
   });
@@ -68,21 +68,21 @@ describe('NavigationStack (WebBrowserSession)', () => {
 
   it('should allow calling `init()` without an argument, and then support `push` and `shift` navigation operations', async () => {
     navigationStack.push('/new');
-    await delay(20);
+    await delay(100);
     expect(navigationStack.current()).to.include({
       pathname: '/new',
       index: 1,
     });
 
     navigationStack.shift(-1);
-    await delay(20);
+    await delay(100);
     expect(navigationStack.current()).to.include({
       pathname: '/initial',
       index: 0,
     });
 
     navigationStack.shift(+1);
-    await delay(20);
+    await delay(100);
     expect(navigationStack.current()).to.include({
       pathname: '/new',
       index: 1,
@@ -91,11 +91,80 @@ describe('NavigationStack (WebBrowserSession)', () => {
 
   it('should allow calling `init()` without an argument, and then support `replace` navigation operation', async () => {
     navigationStack.replace('/new');
-    await delay(20);
+    await delay(100);
     expect(navigationStack.current()).to.include({
       pathname: '/new',
       index: 0,
     });
+  });
+
+  it('should not allow calling `init()` multiple times', () => {
+    expect(() => {
+      navigationStack.init('/new');
+    }).to.throw('Already initialized');
+  });
+
+  it('should restart a previously-started session', async () => {
+    navigationStack.push('/new');
+    navigationStack.stop();
+
+    // Simulate the user refreshing the page in a web browser.
+    // In such case, `window.history` will be retained
+    // but every javascript variable will be recreated from scratch.
+    navigationStack = new NavigationStack(WebBrowserEnvironment);
+
+    navigationStack.init();
+
+    // A publicly-exposed `location` object doesn't have an `operation` property.
+    // expect(navigationStack.current().operation).to.equal('init');
+
+    expect(navigationStack.current().pathname).to.equal('/new');
+    expect(navigationStack.current().index).to.equal(1);
+
+    navigationStack.shift(-1);
+
+    await delay(100);
+
+    expect(navigationStack.current().pathname).to.equal('/initial');
+    expect(navigationStack.current().index).to.equal(0);
+
+    navigationStack.shift(1);
+
+    await delay(100);
+
+    expect(navigationStack.current().pathname).to.equal('/new');
+    expect(navigationStack.current().index).to.equal(1);
+  });
+});
+
+describe('NavigationStack.addNavigationBlocker', () => {
+  let navigationStack;
+
+  afterEach(() => {
+    // Even if a test errors, the `NavigationStack` should still be stopped
+    // in order to remove the potential "popstate" listener so that it doesn't
+    // interfere with other tests.
+    navigationStack.stop();
+  });
+
+  it('should add/remove navigation blocker', () => {
+    navigationStack = new NavigationStack(InMemoryEnvironment);
+
+    navigationStack.init('/initial');
+
+    expect(navigationStack.current().pathname).to.equal('/initial');
+
+    const removeNavigationBlocker = navigationStack.addNavigationBlocker(
+      () => true,
+    );
+
+    navigationStack.push('/new');
+    expect(navigationStack.current().pathname).to.equal('/initial');
+
+    removeNavigationBlocker();
+
+    navigationStack.push('/new');
+    expect(navigationStack.current().pathname).to.equal('/new');
   });
 });
 
@@ -110,7 +179,7 @@ describe('NavigationStack.subscribe', () => {
   });
 
   it('should subscribe to location changes', () => {
-    navigationStack = new NavigationStack(new InMemorySession());
+    navigationStack = new NavigationStack(InMemoryEnvironment);
 
     const listener = sinon.spy();
 
@@ -165,7 +234,7 @@ describe('NavigationStack.subscribe', () => {
   it('should subscribe to location changes (WebBrowserSession)', () => {
     window.history.replaceState(null, null, '/initial');
 
-    navigationStack = new NavigationStack(new WebBrowserSession());
+    navigationStack = new NavigationStack(WebBrowserEnvironment);
 
     const listener = sinon.spy();
 
@@ -198,9 +267,7 @@ describe('NavigationStack.stop()', () => {
     sandbox.spy(window, 'addEventListener');
     sandbox.spy(window, 'removeEventListener');
 
-    const session = new WebBrowserSession();
-
-    const navigationStack = new NavigationStack(session);
+    const navigationStack = new NavigationStack(WebBrowserEnvironment);
 
     // This subscription won't be "unsubscribed" by the code.
     // It is expected to be "unsubscribed" automatically on `navigationStack.stop()`
@@ -237,11 +304,12 @@ describe('NavigationStack', () => {
   });
 
   it('should support `basePath`', () => {
-    const session = new InMemorySession();
-
-    navigationStack = new NavigationStack(session, {
+    navigationStack = new NavigationStack(InMemoryEnvironment, {
       basePath: '/base',
     });
+
+    // eslint-disable-next-line no-underscore-dangle
+    const session = navigationStack._session;
 
     navigationStack.init('/initial');
 
@@ -257,7 +325,7 @@ describe('NavigationStack', () => {
   });
 });
 
-describe('NavigationStack (maintainScrollPosition: true)', () => {
+describe('NavigationStack (manageScrollPosition: true)', () => {
   let navigationStack;
 
   afterEach(() => {
@@ -270,9 +338,9 @@ describe('NavigationStack (maintainScrollPosition: true)', () => {
     navigationStack.stop();
   });
 
-  it('should support `maintainScrollPosition: true` option', async () => {
-    navigationStack = new NavigationStack(new WebBrowserSession(), {
-      maintainScrollPosition: true,
+  it('should support `manageScrollPosition: true` option', async () => {
+    navigationStack = new NavigationStack(WebBrowserEnvironment, {
+      manageScrollPosition: true,
     });
 
     // Start with the "/initial" page.
@@ -283,7 +351,7 @@ describe('NavigationStack (maintainScrollPosition: true)', () => {
 
     // "/initial" page rendered.
     // Restore scroll position (no saved scroll position to restore).
-    await navigationStack.locationRendered();
+    await navigationStack.locationRendered(navigationStack.current());
 
     // Create a content <div/> that "overflows" the window so that it becomes scrollable.
     const content = document.createElement('div');
@@ -301,7 +369,7 @@ describe('NavigationStack (maintainScrollPosition: true)', () => {
     // Wait a bit for `ScrollPositionRestoration` to save the scroll position
     // because it does that "asynchronously", i.e. in an "immediate" timeout
     // as a way of "throttling" scroll events.
-    await delay(20);
+    await delay(100);
 
     // Go to "/new" page.
     navigationStack.push('/new');
@@ -319,7 +387,7 @@ describe('NavigationStack (maintainScrollPosition: true)', () => {
 
     // "/new" page rendered.
     // Restore scroll position (no saved scroll position to restore).
-    await navigationStack.locationRendered();
+    await navigationStack.locationRendered(navigationStack.current());
 
     // It should've reset page scroll position.
     expect(window.pageYOffset).to.equal(0);
@@ -341,7 +409,7 @@ describe('NavigationStack (maintainScrollPosition: true)', () => {
     // Wait a bit for `ScrollPositionRestoration` to save the scroll position
     // because it does that "asynchronously", i.e. in an "immediate" timeout
     // as a way of "throttling" scroll events.
-    await delay(20);
+    await delay(100);
 
     // Register the scrollable container on the "/new" page.
     const untrackScrollableContainer = navigationStack.addScrollableContainer(
@@ -354,7 +422,7 @@ describe('NavigationStack (maintainScrollPosition: true)', () => {
 
     // "/new-2" page rendered.
     // Restore scroll position (no saved scroll position to restore).
-    await navigationStack.locationRendered();
+    await navigationStack.locationRendered(navigationStack.current());
 
     // Check that it has reset the scroll position inside the scrollable container.
     expect(scrollableContainer.scrollTop).to.equal(0);
@@ -366,11 +434,11 @@ describe('NavigationStack (maintainScrollPosition: true)', () => {
     navigationStack.shift(-1);
 
     // Wait for the web browser to emit a "popstate" event from `window.history.go(-1)` navigation.
-    await delay(20);
+    await delay(100);
 
     // "/new" page rendered.
     // Restore scroll position.
-    await navigationStack.locationRendered();
+    await navigationStack.locationRendered(navigationStack.current());
 
     // Check that it has restored the scroll position inside the scrollable container.
     expect(scrollableContainer.scrollTop).to.be.closeTo(1000, 0.5);
@@ -382,7 +450,7 @@ describe('NavigationStack (maintainScrollPosition: true)', () => {
     navigationStack.shift(-1);
 
     // Wait for the web browser to emit a "popstate" event from `window.history.go(-1)` navigation.
-    await delay(20);
+    await delay(100);
 
     // The scrollable container is only present at the "/new" or "/new-2" pages so remove it now.
     document.body.removeChild(scrollableContainer);
@@ -391,7 +459,7 @@ describe('NavigationStack (maintainScrollPosition: true)', () => {
 
     // "/initial" page rendered.
     // Restore scroll position.
-    await navigationStack.locationRendered();
+    await navigationStack.locationRendered(navigationStack.current());
 
     // Check that it has restored page scroll position.
     expect(window.pageYOffset).to.be.closeTo(1000, 0.5);

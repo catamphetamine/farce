@@ -1,5 +1,3 @@
-// TypeScript Version: 3.0
-
 export {};
 
 export type Query = Record<string, string>;
@@ -97,11 +95,11 @@ export type NavigationBlockerResult =
  *
  * * The `location` argument is `null` when the web browser tab is about to be closed.
  * * The `location` argument is of type `LocationBase` when a `.push()` or `.replace()` navigation is blocked.
- * * The `location` argument is of type `Location` when blocking a navigation that was initiated outside of the application code.
+ * * The `location` argument is of type `LocationBase` when blocking a navigation that was initiated outside of the application code.
  *   For example, when the user clicks "Back" or "Forward" button in a web browser.
  */
 export type NavigationBlocker = (
-  location: Location | LocationBase | null,
+  location: LocationBase | null,
 ) => NavigationBlockerResult;
 
 // I dunno why did they use an `interface` here.
@@ -123,26 +121,28 @@ export function parseLocationUrl(locationUrl: string): LocationBase;
 
 export function parseInputLocation(location: InputLocation): LocationBase;
 
-export function addNavigationBlocker(
-  session: Session,
-  blocker: NavigationBlocker,
-): () => void;
-
-export interface NavigationStackOptions {
+export interface NavigationStackOptions<ScrollableContainer, Anchor> {
   basePath?: string;
-  maintainScrollPosition?: boolean;
+  manageScrollPosition?: boolean;
+  scrollPositionSetter?: Constructor<
+    ScrollPositionSetter<ScrollableContainer, Anchor>
+  >;
 }
 
 export class NavigationStack<ScrollableContainer = any, Anchor = any> {
   constructor(
-    session: Session<ScrollableContainer, Anchor>,
-    options?: NavigationStackOptions,
+    environment: Constructor<Environment<ScrollableContainer, Anchor>>,
+    options?: NavigationStackOptions<ScrollableContainer, Anchor>,
   );
 
   addScrollableContainer(
     scrollableContainerKey: string,
     scrollableContainer: ScrollableContainer,
   ): () => void;
+
+  addNavigationBlocker(blocker: NavigationBlocker): () => void;
+
+  dataStorage: LocationDataStorage;
 
   subscribe(listener: (location: Location) => void): () => void;
 
@@ -156,7 +156,7 @@ export class NavigationStack<ScrollableContainer = any, Anchor = any> {
 
   shift(delta: number): void;
 
-  locationRendered(): Promise<void>;
+  locationRendered(location: Location): Promise<void>;
 
   stop(): void;
 }
@@ -173,7 +173,7 @@ export type SessionExecutionStatusListener = (
 
 export type ScrollListener = () => void;
 
-export class ServerSideNavigationError extends Error {
+export class ServerSideRedirectError extends Error {
   constructor(location: LocationBase);
 
   location: LocationBase;
@@ -185,9 +185,11 @@ export class NavigationOutOfBoundsError extends Error {
   index: number;
 }
 
-export class Navigation {
-  // Subscribes to "location change" events.
-  subscribe(listener: (location: LocationInternal) => void): () => void;
+export class EnvironmentNavigation {
+  // Subscribes to "asynchronous" changes of the current location.
+  subscribeToAsyncrhonousLocationUpdates(
+    listener: (location: LocationInternal) => void,
+  ): () => void;
 
   init(
     initialLocation: LocationBase,
@@ -218,11 +220,17 @@ export interface EnvironmentDataStorage {
   set(key: string, value: string): void;
 }
 
-export interface SessionLifecycle {
+export interface EnvironmentLifecycle {
   addTerminationBlocker(blocker: SessionTerminationBlocker): () => void;
   addExecutionStatusListener(
     listener: SessionExecutionStatusListener,
   ): () => void;
+}
+
+export interface EnvironmentLog {
+  debug(...args: any[]): void;
+  warn(...args: any[]): void;
+  error(...args: any[]): void;
 }
 
 // Manages scroll position in an environment such as a web browser.
@@ -255,10 +263,13 @@ export interface EnvironmentScrollPosition<ScrollableContainer, Anchor> {
 
 export interface Environment<ScrollableContainer, Anchor> {
   dataStorage: EnvironmentDataStorage;
+  log: EnvironmentLog;
+  lifecycle: EnvironmentLifecycle;
+  navigation: EnvironmentNavigation;
   scrollPosition: EnvironmentScrollPosition<ScrollableContainer, Anchor>;
 }
 
-export interface Session<ScrollableContainer = any, Anchor = any> {
+interface Session<ScrollableContainer = any, Anchor = any> {
   // `key` should be unique within `environment.dataStorage`.
   // For example, `BrowserEnvironment` uses `window.sessionStorage`
   // that is shared across different sessions within a given web browser tab,
@@ -268,7 +279,7 @@ export interface Session<ScrollableContainer = any, Anchor = any> {
   // Private varibles. Not public API.
   environment: Environment<ScrollableContainer, Anchor>;
 
-  lifecycle: SessionLifecycle;
+  lifecycle: EnvironmentLifecycle;
 
   subscribe(listener: (location: LocationInternal) => void): () => void;
 
@@ -282,12 +293,12 @@ export interface Session<ScrollableContainer = any, Anchor = any> {
 }
 
 // This is just a copy-paste of the `session` interface above.
-declare abstract class SessionBaseClass<
-  ScrollableContainer = any,
-  Anchor = any,
-> implements Session<ScrollableContainer, Anchor>
+declare abstract class SessionClass<ScrollableContainer = any, Anchor = any>
+  implements Session<ScrollableContainer, Anchor>
 {
-  constructor(parameters: { navigation: Navigation });
+  constructor(
+    environmentClass: Constructor<Environment<ScrollableContainer, Anchor>>,
+  );
 
   // `key` should be unique within `environment.dataStorage`.
   // For example, `BrowserEnvironment` uses `window.sessionStorage`
@@ -295,10 +306,11 @@ declare abstract class SessionBaseClass<
   // hence the uniqueness requirement.
   key: string;
 
-  // Private varibles. Not public API.
+  // Private varible. Not public API.
   environment: Environment<ScrollableContainer, Anchor>;
 
-  lifecycle: SessionLifecycle;
+  // Private varible. Not public API.
+  lifecycle: EnvironmentLifecycle;
 
   subscribe(listener: (location: LocationInternal) => void): () => void;
 
@@ -311,14 +323,148 @@ declare abstract class SessionBaseClass<
   shift(delta: number): void;
 }
 
-export class WebBrowserSession extends SessionBaseClass<HTMLElement, string> {
-  constructor();
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface WebBrowserEnvironment
+  extends Environment<HTMLElement, string> {}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface ServerSideRenderEnvironment
+  extends Environment<string, string> {}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface InMemoryEnvironment extends Environment<string, string> {}
+
+// Theoretically, a developer could pass their own `ScrollPositionSetter` implementation
+// when calling `.addScrollableContainer()` or
+export interface ScrollPositionSetter<ScrollableContainer, Anchor> {
+  // Sets scroll position of a page or a scrollable element.
+  // Returns a `Promise` that resolves when it has finished setting the scroll position.
+  set(
+    // This is the scrollable container whose scroll position should be set.
+    // * When setting page scroll position, `scrollableContainer` is `undefined`.
+    // * When setting scrollable element scroll position, `scrollableContainer` is the scrollable element.
+    scrollableContainer: ScrollableContainer,
+    // This is the scroll position to set.
+    // * When setting page scroll position, it could be either an anchor or numeric coordinates.
+    // * When setting scrollable element scroll position, it could only be numeric coordinates.
+    scrollPositionOrAnchor: Anchor | [number, number],
+    // `scrollPosition` provides various "helper" methods for setting scroll position according to the environment.
+    // For example, in the context of a `WebBrowserEnvironment`, it provides the methods for setting scroll position in a web browser.
+    scrollPositionHelper: EnvironmentScrollPosition<
+      ScrollableContainer,
+      Anchor
+    >,
+  ): Promise<void>;
+
+  // Cancels any pending (or in-progress) setting of scroll position.
+  cancel(): void;
 }
 
-export class ServerSideRenderSession extends SessionBaseClass<string, string> {
-  constructor();
+// https://stackoverflow.com/questions/39392853/is-there-a-type-for-class-in-typescript-and-does-any-include-it
+export type Constructor<T = any> = new (...args: any[]) => T;
+
+export type DataStorageValue =
+  | string
+  | number
+  | boolean
+  | Record<string, unknown>
+  | null
+  | undefined;
+
+declare class DataStorage<
+  Key extends string = string,
+  Value extends DataStorageValue = DataStorageValue,
+> {
+  constructor(session: Session, options: { namespace: string });
+
+  get(key: Key): Value | undefined;
+
+  set(key: Key, value: Value | undefined): void;
 }
 
-export class InMemorySession extends SessionBaseClass<string, string> {
-  constructor();
+declare class LocationDataStorage<
+  Key extends string = string,
+  Value extends DataStorageValue = DataStorageValue,
+> {
+  constructor(session: Session, options: { namespace: string });
+
+  get(location: Location, key: Key): Value;
+
+  set(location: Location, key: Key, value: Value): void;
+}
+
+export class ScrollPositionRestoration<
+  ScrollableContainer = any,
+  Anchor = any,
+> {
+  constructor(
+    session: Session<ScrollableContainer, Anchor>,
+
+    options?: {
+      // Using this option, a developer could provide their own implementation of setting
+      // a scroll position. For example, it could use "smooth" (animated) scrolling, etc.
+      // When specified, it applies to both page and any scrollable containers.
+      scrollPositionSetter: ScrollPositionSetter<ScrollableContainer, Anchor>;
+
+      shouldChangePageScrollPositionOnLocationChange?: (
+        prevLocation: Location | undefined,
+        newLocation: Location,
+      ) => boolean;
+
+      // `options._getSavedPageScrollPositionOnLocationChange`
+      // isn't used in real life and is not part of the public API.
+      // It's only used in tests.
+      _getSavedPageScrollPositionOnLocationChange?: (
+        location: Location,
+        prevLocation: Location | undefined,
+      ) => [number, number] | undefined;
+
+      // Using this option, a developer could theoretically provide their own implementation
+      // of setting a scroll position. For example, it could use "smooth" (animated) scrolling, etc.
+      // This could be part of the public API if anyone provided a sensible real-world use case for it.
+      _pageScrollPositionSetter?: ScrollPositionSetter<
+        ScrollableContainer,
+        Anchor
+      >;
+    },
+  );
+
+  addScrollableContainer(
+    scrollableContainerKey: string,
+    scrollableContainer: ScrollableContainer,
+
+    options?: {
+      shouldChangeScrollPositionOnLocationChange?: (
+        prevLocation: Location | undefined,
+        newLocation: Location,
+      ) => boolean;
+
+      // `_options._getSavedScrollPositionOnLocationChange`
+      // isn't used in real life and is not part of the public API.
+      // It's only used in tests.
+      _getSavedScrollPositionOnLocationChange?: (
+        location: Location,
+        prevLocation: Location | undefined,
+      ) => [number, number] | undefined;
+
+      // Using this option, a developer could theoretically provide their own implementation
+      // of setting a scroll position. For example, it could use "smooth" (animated) scrolling, etc.
+      // This could be part of the public API if anyone provided a sensible real-world use case for it.
+      _scrollPositionSetter: ScrollPositionSetter<ScrollableContainer, Anchor>;
+    },
+  ): () => void;
+
+  locationRendered: (location: Location) => Promise<void>;
+
+  stop(): void;
+
+  // `_enableSavingScrollPosition()` and `_disableSavingScrollPosition()`
+  // aren't used in real life and are not part of the public API.
+  // They're only used in tests.
+  _enableSavingScrollPosition(): void;
+
+  // `_enableSavingScrollPosition()` and `_disableSavingScrollPosition()`
+  // aren't used in real life and are not part of the public API.
+  // They're only used in tests.
+  _disableSavingScrollPosition(): void;
 }

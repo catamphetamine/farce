@@ -1,6 +1,6 @@
-import createSearchFromQuery from './createSearchFromQuery';
 import parseLocationUrl from './parseLocationUrl';
 import parseQueryFromSearch from './parseQueryFromSearch';
+import stringifyQueryAsSearch from './stringifyQueryAsSearch';
 
 function stringifyQueryParameterValue(value) {
   if (value === null || value === undefined) {
@@ -45,7 +45,7 @@ export default function parseInputLocation(location) {
   if (location.query && !location.search) {
     location = {
       ...location,
-      search: createSearchFromQuery(location.query),
+      search: stringifyQueryAsSearch(location.query),
     };
   }
 

@@ -11,11 +11,10 @@ describe('index', () => {
     expect(exports.parseLocationUrl).to.exist();
     expect(exports.parseInputLocation).to.exist();
     expect(exports.NavigationStack).to.exist();
-    expect(exports.Session).to.exist();
-    expect(exports.InMemorySession).to.exist();
-    expect(exports.WebBrowserSession).to.exist();
-    expect(exports.ServerSideRenderSession).to.exist();
-    expect(exports.ServerSideNavigationError).to.exist();
+    expect(exports.InMemoryEnvironment).to.exist();
+    expect(exports.WebBrowserEnvironment).to.exist();
+    expect(exports.ServerSideRenderEnvironment).to.exist();
+    expect(exports.ServerSideRedirectError).to.exist();
     expect(exports.NavigationOutOfBoundsError).to.exist();
   });
 });

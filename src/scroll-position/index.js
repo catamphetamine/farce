@@ -1,1 +1,1 @@
-export ScrollPositionRestoration from './ScrollPositionRestoration';
+export { default as ScrollPositionRestoration } from './ScrollPositionRestoration';

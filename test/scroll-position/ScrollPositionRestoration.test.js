@@ -8,7 +8,7 @@ import delay from './delay';
 import { setEventListener, triggerEvent } from './mockPageLifecycle';
 import runApp from './runApp';
 import withScrollableContainerAtIndexPageWithDisabledAutomaticScrollPositionRestoration from './withScrollableContainerAtIndexPageWithDisabledAutomaticScrollPositionRestoration';
-import PageLifecycle from '../../src/session/lifecycle/page-lifecycle/PageLifecycleInstance';
+import PageLifecycle from '../../src/environment/lifecycle/page-lifecycle/PageLifecycleInstance';
 
 describe('ScrollPositionRestoration', () => {
   let unlisten;
@@ -130,16 +130,22 @@ describe('ScrollPositionRestoration', () => {
   });
 
   describe('custom behavior', () => {
-    it('should allow scroll suppression', (done) => {
+    it('should allow disabling scroll position reset when just the URL query parameters change', (done) => {
       const app = addScrollableContainerWithAnchors(
         createApp({
-          shouldSetPageScrollPositionOnLocationChange: (
-            location,
+          shouldChangePageScrollPositionOnLocationChange: (
             prevLocation,
+            location,
           ) => {
-            return (
-              !prevLocation || prevLocation.pathname !== location.pathname
-            );
+            // Is allowed to set the initial scroll position.
+            if (!prevLocation) {
+              return true;
+            }
+            // Can set scroll position if the new location has a different `pathname`.
+            // If it has the same `pathame`, the scroll position won't be set
+            // and the previous one will be retained, hereby avoiding scroll position "jumping"
+            // when simply updating URL query parameters.
+            return prevLocation.pathname !== location.pathname;
           },
         }),
       );
@@ -151,23 +157,30 @@ describe('ScrollPositionRestoration', () => {
         () => {
           scrollTop(window, 5000);
           delay(() => {
+            // Add URL query parameters to the current URL.
+            // This shouldn't result in a scroll position reset.
             app.goTo('/detail?key=value');
           });
         },
         () => {
+          // Check that the scroll position hasn't been reset.
+          //
           // Here, it said "expected 4999.7998046875 to equal 5000".
           // Using `.to.be.closeTo()` here instead of `.to.equal()` to work around this browser issue.
           expect(scrollTop(window)).to.be.closeTo(5000, 0.5);
+          // Navigate to some other completely unrelated URL.
           app.goTo('/');
         },
         () => {
+          // Check that the scroll position has been reset because it's now a completely
+          // different URL and not just the old one with new query parameters.
           expect(scrollTop(window)).to.equal(0);
           done();
         },
       ]);
     });
 
-    it('should ignore scroll events when `disableSavingScrollPosition()` is used', (done) => {
+    it('should stop saving scroll position when `disableSavingScrollPosition()` is called, and should resume saving scroll position when `enableSavingScrollPosition()` is called', (done) => {
       const app = addScrollableContainerWithAnchors(createApp());
 
       unlisten = runApp(app, [
@@ -205,27 +218,34 @@ describe('ScrollPositionRestoration', () => {
       ]);
     });
 
-    it('should allow custom position', (done) => {
+    it('should allow overriding the default source for reading a previously-saved scroll position', (done) => {
       const app = addScrollableContainerWithAnchors(
         createApp({
+          // Read a previously-saved scroll position not from the default "data storage"
+          // but from this "mock-up" which always returns the same scroll position.
           getSavedPageScrollPositionOnLocationChange: () => [10, 20],
         }),
       );
 
       unlisten = runApp(app, [
         () => {
+          // Go to some random page.
           app.goTo('/detail');
         },
         () => {
+          // Go to some random page again, for no reason.
           app.goTo('/');
         },
         () => {
+          // Check that the "mock-up" scroll position has been restored.
+          //
           // Here, it said "expected 9.966666221618652 to equal 10".
           // Using `.to.be.closeTo()` here instead of `.to.equal()` to work around this browser issue.
           expect(scrollLeft(window)).to.be.closeTo(10, 0.5);
           // Here, it said "19.933332443237305 to equal 20".
           // Using `.to.be.closeTo()` here instead of `.to.equal()` to work around this browser issue.
           expect(scrollTop(window)).to.be.closeTo(20, 0.5);
+          // Test finished.
           done();
         },
       ]);
@@ -290,7 +310,7 @@ describe('ScrollPositionRestoration', () => {
     it('should follow browser scroll behavior', (done) => {
       const { container, ...app } = addScrollableContainer(
         createApp({
-          shouldSetPageScrollPositionOnLocationChange: () => false,
+          shouldChangePageScrollPositionOnLocationChange: () => false,
         }),
       );
 
@@ -325,7 +345,7 @@ describe('ScrollPositionRestoration', () => {
       const { container, ...app } =
         withScrollableContainerAtIndexPageWithDisabledAutomaticScrollPositionRestoration(
           createApp({
-            shouldSetPageScrollPositionOnLocationChange: () => false,
+            shouldChangePageScrollPositionOnLocationChange: () => false,
           }),
         );
 
@@ -359,7 +379,7 @@ describe('ScrollPositionRestoration', () => {
     it('should save element scroll position on scroll event, i.e. before navigation is even attempted', (done) => {
       const app1 = addScrollableContainer(
         createApp({
-          shouldSetPageScrollPositionOnLocationChange: () => false,
+          shouldChangePageScrollPositionOnLocationChange: () => false,
         }),
       );
 
@@ -374,8 +394,9 @@ describe('ScrollPositionRestoration', () => {
             const app2 = addScrollableContainer(
               createApp({
                 // Restore the data of the session of `app1`.
+                // That data includes the scroll position.
                 sessionKey: app1.getSessionKey(),
-                shouldSetPageScrollPositionOnLocationChange: () => false,
+                shouldChangePageScrollPositionOnLocationChange: () => false,
               }),
             );
 

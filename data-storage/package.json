@@ -1,7 +1,0 @@
-{
-  "private": true,
-  "name": "navigation-stack/data-storage",
-  "main": "./../lib/cjs/data-storage/index.js",
-  "module": "./../lib/esm/data-storage/index.js",
-  "types": "./../lib/data-storage/index.d.ts"
-}

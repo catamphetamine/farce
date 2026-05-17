@@ -6,7 +6,6 @@
     "strict": true,
     "types": [],
     "noEmit": true,
-    "baseUrl": ".",
     "paths": {
       "navigation-stack": ["."]
     }

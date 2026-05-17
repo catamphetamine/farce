@@ -1,11 +1,11 @@
 import NavigationStack from '../../src/NavigationStack';
+import WebBrowserEnvironment from '../../src/environment/WebBrowserEnvironment';
 import ScrollPositionRestoration from '../../src/scroll-position/ScrollPositionRestoration';
-import WebBrowserSession from '../../src/session/WebBrowserSession';
 
 // Creates a website with `ScrollPositionRestoration`.
 export default function createApp({
   sessionKey,
-  shouldSetPageScrollPositionOnLocationChange,
+  shouldChangePageScrollPositionOnLocationChange,
   getSavedPageScrollPositionOnLocationChange,
 } = {}) {
   let currentLocation = null;
@@ -56,17 +56,17 @@ export default function createApp({
       throw new Error('Only one `listener` is allowed in tests');
     }
 
-    session = new WebBrowserSession();
+    navigationStack = new NavigationStack(WebBrowserEnvironment);
+    // eslint-disable-next-line no-underscore-dangle
+    session = navigationStack._session;
     // There's this one test that restores data of a session of a previous app
     // and for that the new session just has to have the same key in order to read
     // the previous app's session data from the environment storage.
     if (sessionKey) {
       session.key = sessionKey;
     }
-    navigationStack = new NavigationStack(session);
     scrollPositionRestoration = new ScrollPositionRestoration(session, {
-      _shouldSetPageScrollPositionOnLocationChange:
-        shouldSetPageScrollPositionOnLocationChange,
+      shouldChangePageScrollPositionOnLocationChange,
       _getSavedPageScrollPositionOnLocationChange:
         getSavedPageScrollPositionOnLocationChange,
     });
@@ -93,8 +93,8 @@ export default function createApp({
   // Registers a scrollable container on a page.
   function registerScrollableContainer(key, element, options) {
     return scrollPositionRestoration.addScrollableContainer(key, element, {
-      _shouldSetScrollPositionOnLocationChange:
-        options && options.shouldSetScrollPositionOnLocationChange,
+      shouldChangeScrollPositionOnLocationChange:
+        options && options.shouldChangeScrollPositionOnLocationChange,
       _getSavedScrollPositionOnLocationChange:
         options && options.getSavedScrollPositionOnLocationChange,
     });

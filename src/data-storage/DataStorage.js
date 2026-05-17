@@ -4,6 +4,7 @@ export default class DataStorage {
       throw new Error('`DataStorage` requires a `session.key`');
     }
     this._sessionKey = session.key;
+    this._log = session.environment.log;
     this._dataStorage = session.environment.dataStorage;
     this._namespace = namespace;
   }
@@ -22,8 +23,8 @@ export default class DataStorage {
       // junk into sessionStorage under our namespace.
       return JSON.parse(value);
     } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('[navigation-stack] Could not read data from storage');
+      this._log.error('[navigation-stack] Could not read data from storage');
+      this._log.error(error);
 
       // Pretend that the entry doesn't exist.
       return undefined;
@@ -38,8 +39,10 @@ export default class DataStorage {
         this._dataStorage.remove(storageKey);
       } catch (error) {
         // No need to handle errors here.
-        // eslint-disable-next-line no-console
-        console.error('[navigation-stack] Could not delete data from storage');
+        this._log.error(
+          '[navigation-stack] Could not delete data from storage',
+        );
+        this._log.error(error);
       }
 
       return;
@@ -54,8 +57,8 @@ export default class DataStorage {
     } catch (error) {
       // No need to handle errors here either. If it didn't work, it didn't
       // work. We make no guarantees about actually saving the value.
-      // eslint-disable-next-line no-console
-      console.error('[navigation-stack] Could not save data in storage');
+      this._log.error('[navigation-stack] Could not save data in storage');
+      this._log.error(error);
     }
   }
 
