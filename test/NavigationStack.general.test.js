@@ -56,7 +56,7 @@ describe('NavigationStack (basePath)', () => {
     navigationStack.push('/new');
 
     // eslint-disable-next-line no-underscore-dangle
-    expect(session._subscription._latest.pathname).to.equal('/base/new');
+    expect(session._latestLocation.pathname).to.equal('/base/new');
 
     expect(navigationStack.current()).to.include({
       pathname: '/new',

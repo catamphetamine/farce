@@ -625,6 +625,8 @@ yarn test
 
 It will open two web browser windows — Firefox and Chrome — and run live tests in those. The web browsers are specified in `karma.conf.cjs` file. When running tests, don't unfocus the web browser windows, otherwise the tests will fail with random errors. If you're not unfocusing the web browser windows and the tests still fail with random errors, see if increasing the interval in `await delay(100)` calls in tests fixes the issue.
 
+For easier debugging, there's a `const DEBUG_ENABLED = false` flag in `InMemoryLog.js` file. That variable could be set to `true` in order to output a "debug" log in the console when running non-browser tests. When running browser tests, or when running `navigation-stack` in an application, one could set `window.NAVIGATION_STACK_DEBUG_ENABLED` variable to `true` to output a "debug" log in the browser's console.
+
 ## Development History
 
 Originally it started from a fork of [`farce`](http://npmjs.com/package/farce) package to fix a couple of small bugs there ([1](https://github.com/4Catalyzer/farce/issues/483), [2](https://github.com/4Catalyzer/farce/issues/491)).

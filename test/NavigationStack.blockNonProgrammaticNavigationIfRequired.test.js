@@ -98,29 +98,63 @@ describe('NavigationStack (blockNonProgrammaticNavigationIfRequired)', () => {
     // });
 
     it('should support async rewinding', async () => {
-      // eslint-disable-next-line no-underscore-dangle
-      if (session._subscription._listeners.length !== 2) {
+      /* eslint-disable no-underscore-dangle */
+      // Validate that 2 listeners are currently attached:
+      // * The "main" listener of the `Session` which updates current location index property value.
+      // * The "main" listener of the `NavigationStack` which updates current location property value, and also runs any navigation blockers.
+      if (
+        !(
+          session._synchronousLocationChangesSubscription._listeners.length ===
+            2 &&
+          session._asynchronousLocationChangesSubscription._listeners
+            .length === 2
+        )
+      ) {
         throw new Error(
-          "Expected 2 listeners: 1 session's own and 1 from `updateInternalLocationMiddleware()`",
+          "Expected 2 listeners: 1 session's own and 1 from ...",
         );
       }
+      /* eslint-enable no-underscore-dangle */
 
-      const originalListener =
+      // "Synchronous" location change listener.
+      const originalListenerSynchronous =
         // eslint-disable-next-line no-underscore-dangle
-        session._subscription._listeners[1].listener;
+        session._synchronousLocationChangesSubscription._listeners[1].listener;
 
+      // "Asynchronous" location change listener.
+      const originalListenerAsynchronous =
+        // eslint-disable-next-line no-underscore-dangle
+        session._asynchronousLocationChangesSubscription._listeners[1]
+          .listener;
+
+      // Will be used to block location change events from being processed
+      // until they're manually unblocked by calling `navigationDeferred.resolve()`.
       let navigationDeferred;
 
-      // Alternatively to overwriting `_listeners[1].listener`,
-      // it could pass the `deferred` to `createMiddlewares()` function,
-      // which would then pass it to `updateInternalLocationMiddleware()`'s listener.
+      // Patch the location change listeners of ...
+      //
+      // Patch the "synchonous" location change listener.
       // eslint-disable-next-line no-underscore-dangle
-      session._subscription._listeners[1].listener = async (...args) => {
-        navigationDeferred = pDefer();
-        await navigationDeferred.promise;
-
-        originalListener(...args);
-      };
+      session._synchronousLocationChangesSubscription._listeners[1].listener =
+        async (...args) => {
+          // Block this location change event from being processed
+          // until it's manually unblocked by calling `navigationDeferred.resolve()`.
+          navigationDeferred = pDefer();
+          await navigationDeferred.promise;
+          // Call "synchronous" location change lisneters.
+          originalListenerSynchronous(...args);
+        };
+      // Patch the "asynchonous" location change listener.
+      // eslint-disable-next-line no-underscore-dangle
+      session._asynchronousLocationChangesSubscription._listeners[1].listener =
+        async (...args) => {
+          // Block this location change event from being processed
+          // until it's manually unblocked by calling `navigationDeferred.resolve()`.
+          navigationDeferred = pDefer();
+          await navigationDeferred.promise;
+          // Call "asynchronous" location change lisneters.
+          originalListenerAsynchronous(...args);
+        };
 
       const navigationBlockerDeferred = pDefer();
       addNavigationBlocker(() => navigationBlockerDeferred.promise);
@@ -130,10 +164,10 @@ describe('NavigationStack (blockNonProgrammaticNavigationIfRequired)', () => {
       // current location was updated immediately.
       // Any `.subscribe()` listeners haven't yet been called,
       // so current location in Redux state hasn't been updated yet.
-      // That's why it uses `session._subscription._latest` here
-      // instead of simply reading the current location from Redux state.
+      // That's why it uses `session._latestLocation` here
+      // instead of simply reading the current location from the `NavigationStack` state.
       // eslint-disable-next-line no-underscore-dangle
-      expect(session._subscription._latest.pathname).to.equal('/initial');
+      expect(session._latestLocation.pathname).to.equal('/initial');
       // navigation is waiting.
       expect(navigationStack.current().pathname).to.equal('/new');
 
@@ -143,7 +177,7 @@ describe('NavigationStack (blockNonProgrammaticNavigationIfRequired)', () => {
 
       // rewinded.
       // eslint-disable-next-line no-underscore-dangle
-      expect(session._subscription._latest.pathname).to.equal('/new');
+      expect(session._latestLocation.pathname).to.equal('/new');
       // navigation almost finished: navigation blockers are running.
       expect(navigationStack.current().pathname).to.equal('/new');
 
@@ -157,82 +191,11 @@ describe('NavigationStack (blockNonProgrammaticNavigationIfRequired)', () => {
 
       // the rewind was undone.
       // eslint-disable-next-line no-underscore-dangle
-      expect(session._subscription._latest.pathname).to.equal('/initial');
+      expect(session._latestLocation.pathname).to.equal('/initial');
       // navigation finished.
       // wasn't blocked.
       expect(navigationStack.current().pathname).to.equal('/initial');
     });
-
-    // it('should allow navigation without calling any blockers when `location.delta` is `null`', async () => {
-    //   const navigationBlockerDeferred = pDefer();
-    //   addNavigationBlocker(() => navigationBlockerDeferred.promise);
-    //
-    //   // Update location with a `SHIFT` operation.
-    //   /* eslint-disable no-underscore-dangle */
-    //   session._currentLocationIndex = 0;
-    //   session._navigation._triggerUpdateInternalLocationMiddlewareListener(
-    //     session._navigation._createLocationObject({
-    //       operation: 'shift',
-    //       delta: null,
-    //     }),
-    //   );
-    //   /* eslint-enable no-underscore-dangle */
-    //
-    //   navigationBlockerDeferred.resolve(true);
-    //   await delay(10);
-    //
-    //   // Without delta, we can't rewind the location change,
-    //   // so navigation is allowed without calling any blockers.
-    //   expect(currentNavigationLocation.pathname).to.equal('/initial');
-    //   expect(navigationStack.current().pathname).to.equal('/initial');
-    // });
-
-    // it('should allow navigation when blocker returns `undefined` and `location.delta` is `null`', async () => {
-    //   const navigationBlockerDeferred = pDefer();
-    //   addNavigationBlocker(() => navigationBlockerDeferred.promise);
-    //
-    //   // Update location with a `SHIFT` operation.
-    //   /* eslint-disable no-underscore-dangle */
-    //   session._navigation._index = 0;
-    //   session._navigation._subscriptionListener(session._navigation._createLocationObject({
-    //     operation: 'shift',
-    //     delta: null,
-    //   }));
-    //   /* eslint-enable no-underscore-dangle */
-    //
-    //   // Without delta, we can't rewind on the session.
-    //   expect(currentNavigationLocation.pathname).to.equal('/initial');
-    //   expect(navigationStack.current().pathname).to.equal('/new');
-    //
-    //   navigationBlockerDeferred.resolve(undefined);
-    //   await delay(10);
-    //
-    //   expect(currentNavigationLocation.pathname).to.equal('/initial');
-    //   expect(navigationStack.current().pathname).to.equal('/initial');
-    // });
-
-    // it('should block store update when blocker returns `true` and `location.delta` is `null`', async () => {
-    //   const navigationBlockerDeferred = pDefer();
-    //   addNavigationBlocker(() => navigationBlockerDeferred.promise);
-    //
-    //   /* eslint-disable no-underscore-dangle */
-    //   session._navigation._index = 0;
-    //   session._navigation._subscriptionListener(session._navigation._createLocationObject({
-    //     operation: 'shift',
-    //     delta: null,
-    //   }));
-    //   /* eslint-enable no-underscore-dangle */
-    //
-    //   expect(session._navigation.getInitialLocation().pathname).to.equal('/initial');
-    //   expect(navigationStack.current().pathname).to.equal('/new');
-    //
-    //   navigationBlockerDeferred.resolve(true);
-    //   await delay(10);
-    //
-    //   // These are out-of-sync now, but it's the best we can do.
-    //   expect(session._navigation.getInitialLocation().pathname).to.equal('/initial');
-    //   expect(navigationStack.current().pathname).to.equal('/new');
-    // });
   });
 });
 

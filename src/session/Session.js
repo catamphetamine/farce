@@ -31,29 +31,36 @@ export default class Session {
     this._terminalLocationIndex = this._currentLocationIndex;
 
     // Allows subscribing to location updates.
-    this._subscription = new Subscription();
-
+    //
     // Subscribing to location changes means subscribing to both "synchronous"
-    // and "asynchronous" location changes. "synchronous" location changes
-    // happen immediately when the code triggers them."asynchronous" location changes
-    // either happen after an arbitrary delay or are even triggered from outside the code.
+    // and "asynchronous" location changes.
     //
-    // Subscribing to "asynchronous" location changes is not necessary when
-    // there're no actual subscribers, in order to not unnecessarily "waste" any resources.
-    // Of course, this statement is rather far-fetched and in reality no one would ever tell any difference.
-    // Still, I felt like randomly introducing this seemingly unnecessary minor optimization.
+    // "synchronous" location changes happen immediately when the code triggers them.
+    // These location changes are manually pushed to subscribers by calling
+    // `.notifySubscribers()` method of `this._synchronousLocationChangesSubscription`.
     //
-    // So it only subscribes to "asynchronous" location changes if there's at least one active subscriber.
-    // And in case all subscribers get unsubscribed, it will unsubscribe from "asynchronous" location changes too.
-    // One might think of it as some form of "mental masturbation", but what can I do — I already wrote the code.
+    this._synchronousLocationChangesSubscription = new Subscription();
     //
-    this._subscription.onFirstSubscriber(() => {
-      return this.environment.navigation.subscribeToAsyncrhonousLocationUpdates(
-        (location) => {
-          // Notify all subscribers about this "asynchronous" location change.
-          this._subscription.notifySubscribers(location);
-        },
-      );
+    // "asynchronous" location changes either happen after an arbitrary delay
+    // or are even triggered from outside the code. These location changes should
+    // themselves be subscribed to due to the "asynchoronous" nature of them.
+    // So first the environment notifies `this._asynchronousLocationChangesSubscription`
+    // about an "asynchronous" location change, and after that
+    // `this._asynchronousLocationChangesSubscription` notifies all subscribers.
+    //
+    this._asynchronousLocationChangesSubscription = new Subscription({
+      // Subscribe to "asynchronous" location changes.
+      // The environment will trigger this subscription when location is changed "asynchronously".
+      subscribe: (notifySubscribers) => {
+        return this.environment.navigation.subscribeToAsyncrhonousLocationUpdates(
+          (location) => {
+            // `this._latestLocation` is only used in tests.
+            this._latestLocation = location;
+            // Notify all subscribers about this "asynchronous" location change.
+            notifySubscribers(location);
+          },
+        );
+      },
     });
 
     // This subscription is triggered in two cases:
@@ -86,7 +93,8 @@ export default class Session {
   // Applications should prefer adding any such listeners by calling `NavigationStack.subscribe()`
   // method instead of calling this method directly, in order to "normalize" the `location` argument.
   subscribe(listener) {
-    return this._subscription.subscribe((location) => {
+    // Validates the state of things and then calls the listener.
+    const onLocationDidChange = (location) => {
       if (
         !this._isStarted() &&
         location.operation !== NavigationOperations.INIT
@@ -97,7 +105,22 @@ export default class Session {
         // Call the listener.
         listener(location);
       }
-    });
+    };
+
+    const unsubscribeFromSynchronousLocationChanges =
+      this._synchronousLocationChangesSubscription.subscribe(
+        onLocationDidChange,
+      );
+
+    const unsubscribeFromAsynchronousLocationChanges =
+      this._asynchronousLocationChangesSubscription.subscribe(
+        onLocationDidChange,
+      );
+
+    return () => {
+      unsubscribeFromSynchronousLocationChanges();
+      unsubscribeFromAsynchronousLocationChanges();
+    };
   }
 
   // Starts a navigation session.
@@ -153,8 +176,12 @@ export default class Session {
     });
 
     if (locationResult) {
+      // `this._latestLocation` is only used in tests.
+      this._latestLocation = locationResult;
       // Notify all subscribers about this "synchronous" location change.
-      this._subscription.notifySubscribers(locationResult);
+      this._synchronousLocationChangesSubscription.notifySubscribers(
+        locationResult,
+      );
     }
   }
 
@@ -171,10 +198,13 @@ export default class Session {
     // Remove location change subscription.
     this._unsubscribe();
 
-    // Even if it calls `unsubscribe()` function above, any other subscriptions
-    // would still stay. For example, subscriptions created by the application code.
-    // To work around that, `.stop()` function removes all subscriptions.
-    this._subscription.stop();
+    // Even if the session itself unsubscribes from location changes,
+    // any other existing subscriptions would still stay.
+    // For example, those could be some additional subscriptions
+    // created in the application code.
+    // So all those subscriptions should be removed too.
+    this._synchronousLocationChangesSubscription.stop();
+    this._asynchronousLocationChangesSubscription.stop();
   }
 
   navigate(operation, location) {
@@ -213,8 +243,12 @@ export default class Session {
     });
 
     if (locationResult) {
+      // `this._latestLocation` is only used in tests.
+      this._latestLocation = locationResult;
       // Notify all subscribers about this "synchronous" location change.
-      this._subscription.notifySubscribers(locationResult);
+      this._synchronousLocationChangesSubscription.notifySubscribers(
+        locationResult,
+      );
     }
   }
 
@@ -251,8 +285,12 @@ export default class Session {
     });
 
     if (locationResult) {
+      // `this._latestLocation` is only used in tests.
+      this._latestLocation = locationResult;
       // Notify all subscribers about this "synchronous" location change.
-      this._subscription.notifySubscribers(locationResult);
+      this._synchronousLocationChangesSubscription.notifySubscribers(
+        locationResult,
+      );
     }
   }
 

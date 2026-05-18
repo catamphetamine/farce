@@ -291,7 +291,7 @@ describe('Session (WebBrowserEnvironment) (restart)', () => {
     newSession.start();
 
     // eslint-disable-next-line no-underscore-dangle
-    expect(newSession._subscription._latest.operation).to.equal('init');
+    expect(newSession._latestLocation.operation).to.equal('init');
 
     expect(currentLocation.pathname).to.equal('/new');
     expect(currentLocation.index).to.equal(latestLocationIndex);

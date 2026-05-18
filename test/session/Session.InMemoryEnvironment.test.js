@@ -254,19 +254,48 @@ describe('Session (InMemoryEnvironment)', () => {
 
     session.start(parseInputLocation('/initial'));
 
-    // eslint-disable-next-line no-underscore-dangle
-    expect(session._subscription._listeners.length).to.equal(1);
+    // Validate that 1 listener is currently attached:
+    // * The "main" listener of the `Session` which updates current location index property value.
+    // * There's no `NavigationStack`'s "main" listener in this list because no `NavigationStack` instance is created here.
+    expect(
+      // eslint-disable-next-line no-underscore-dangle
+      session._synchronousLocationChangesSubscription._listeners.length,
+    ).to.equal(1);
+    expect(
+      // eslint-disable-next-line no-underscore-dangle
+      session._asynchronousLocationChangesSubscription._listeners.length,
+    ).to.equal(1);
 
+    // Add a new listener.
     const listener = sinon.spy();
     session.subscribe(listener);
 
-    // eslint-disable-next-line no-underscore-dangle
-    expect(session._subscription._listeners.length).to.equal(2);
+    // Validate that 2 listeners are currently attached:
+    // * The "main" listener of the `Session` which updates current location index property value.
+    // * An additional "dummy" listener.
+    // * There's no `NavigationStack`'s "main" listener in this list because no `NavigationStack` instance is created here.
+    expect(
+      // eslint-disable-next-line no-underscore-dangle
+      session._synchronousLocationChangesSubscription._listeners.length,
+    ).to.equal(2);
+    expect(
+      // eslint-disable-next-line no-underscore-dangle
+      session._asynchronousLocationChangesSubscription._listeners.length,
+    ).to.equal(2);
 
+    // Stop the session. This will remove any listeners.
     session.stop();
 
-    // eslint-disable-next-line no-underscore-dangle
-    expect(session._subscription._listeners.length).to.equal(0);
+    // Validate that no listeners are currently attached
+    // because the session was stopped.
+    expect(
+      // eslint-disable-next-line no-underscore-dangle
+      session._synchronousLocationChangesSubscription._listeners.length,
+    ).to.equal(0);
+    expect(
+      // eslint-disable-next-line no-underscore-dangle
+      session._asynchronousLocationChangesSubscription._listeners.length,
+    ).to.equal(0);
   });
 
   // describe('persistence', () => {
