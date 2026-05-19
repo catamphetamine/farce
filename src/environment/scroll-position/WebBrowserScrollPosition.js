@@ -15,6 +15,13 @@ export default class WebBrowserScrollPosition {
       // By default it scrolls the element into view
       // so that it's visible at the top of the window.
       anchorElement.scrollIntoView();
+      // The line above uses "smooth" scrolling by default
+      // which is not very convenient in automated tests
+      // in certain web browsers such as Firefox.
+      // Still, even adding `behavior: 'instant'` parameter here
+      // still has no effect when running auto-tests in Firefox.
+      // See the comments in `ScrollPositionRestoration.test.js` file for more details.
+      // anchorElement.scrollIntoView({ behavior: 'instant' });
     } else {
       this.setPageScrollPosition([0, 0]);
     }

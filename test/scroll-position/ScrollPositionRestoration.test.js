@@ -122,20 +122,32 @@ describe('ScrollPositionRestoration', () => {
           app.goTo('/detail#child1');
         },
         () => {
-          // Here, it said "expected 7.800000190734863 to equal 7.999997138977051".
+          // Here, it said "expected 7.949999809265137 to equal 8.00000286102295".
           // Using `.to.be.closeTo()` here instead of `.to.equal()` to work around this browser issue.
           expect(scrollTop(window)).to.be.closeTo(offset(child1).top, 0.5);
+          // Navigate to `#child2` jost to show that the weird out-of-place scroll event
+          // in the next step of this test is caused by an `anchorElement.scrollIntoView()` call
+          // in `WebBrowserScrollPosition.js` file. Specifically, `#child2` element vertical offset
+          // is `100px`, which translates into `scrollIntoView()` vertical offset of `108px`,
+          // and the next step of this test will verify that by throwing an error:
+          // "expected expected 107.76667022705078 to be close to 8.000007629394531",
+          // where the observed vertical offset of `107.7...` is caused by a late "scroll" event
+          // still emitted by that `anchorElement.scrollIntoView()` function call from the recent past.
+          app.goTo('/detail#child2');
+        },
+        () => {
+          // Here, it said "expected 107.800000190734863 to equal 107.999997138977051".
+          // Using `.to.be.closeTo()` here instead of `.to.equal()` to work around this browser issue.
+          expect(scrollTop(window)).to.be.closeTo(offset(child2).top, 0.5);
           // Tests that navigating to an unknown anchor sets page scroll position to `0`.
           app.goTo('/detail#unknown-anchor');
         },
         () => {
-          // When running automatic tests in Firefox browser, it has a weird bug
-          // when the browser decides to scroll the page for no reason.
-          // It happens here regardless of the URL that is navigated to,
-          // i.e. it's not caused specifically by "/detail#unknown-anchor" URL or anything.
-          // It just happens, for no reason.
+          // When running automatic tests in Firefox browser, `scrollIntoView()`
+          // has a bug when it doesn't scroll instantly but instead does it "smoothly"
+          // regardless of whether `behavior: "instant"` parameter it passed to it or not.
           //
-          // Here's a "debug" log:
+          // Here's a "debug" log, with the out-of-place scroll event being detected at the end:
           //
           // ↓ push "/detail#unknown-anchor" index 3
           // current location is "/detail#unknown-anchor" index 3
@@ -143,12 +155,20 @@ describe('ScrollPositionRestoration', () => {
           // set initial scroll position at "/detail#unknown-anchor" in <page> at anchor #unknown-anchor
           // scroll detected at "/detail#unknown-anchor" in <page>
           // save scroll position at "/detail#unknown-anchor" in <page> [ 0, 0 ]
-          // scroll detected at "/detail#unknown-anchor" in <page>
+          // scroll detected at "/detail#unknown-anchor" in <page> // <----- THIS IS THE OUT-OF-PLACE SCROLL EVENT FROM THE RECENT PAST
           // save scroll position at "/detail#unknown-anchor" in <page> [ 7.949999809265137, 7.949999809265137 ]
           //
-          // Futhermore, this weird bug not only caused the `expect()` check below to throw an error,
+          // This weird bug not only caused the `expect()` check below to throw an error,
           // it also caused the next test (i.e. the next `it()`) to start with this weird
           // non-zero scroll position because the browser seems to be reused between tests.
+          //
+          // Here's a same bug report in Playwrite repository from 2020:
+          // https://github.com/microsoft/playwright/issues/1552
+          //
+          // One could test it by opening `WebBrowserScrollPosition.js` file
+          // and changing `anchorElement.scrollIntoView()` line to
+          // `anchorElement.scrollIntoView({ behavior: 'instant' })`
+          // and this test would still throw an error in Firefox.
           //
           // Because of such weird bug, Firefox browser had to manually be skipped here.
           const isFirefoxBrowser = window.navigator.userAgent.toLowerCase().includes('firefox');
