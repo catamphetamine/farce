@@ -302,37 +302,6 @@ interface Session<ScrollableContainer = any, Anchor = any> {
   shift(delta: number): void;
 }
 
-// This is just a copy-paste of the `Session` interface above.
-declare abstract class SessionClass<ScrollableContainer = any, Anchor = any>
-  implements Session<ScrollableContainer, Anchor>
-{
-  constructor(
-    environmentClass: Constructor<Environment<ScrollableContainer, Anchor>>,
-  );
-
-  // `key` should be unique within `environment.dataStorage`.
-  // For example, `BrowserEnvironment` uses `window.sessionStorage`
-  // that is shared across different sessions within a given web browser tab,
-  // hence the uniqueness requirement.
-  key: string;
-
-  // Private varible. Not public API.
-  environment: Environment<ScrollableContainer, Anchor>;
-
-  // Private varible. Not public API.
-  lifecycle: EnvironmentLifecycle;
-
-  subscribe(listener: (location: LocationInternal) => void): () => void;
-
-  start(initialLocation?: LocationBase): void;
-
-  stop(): void;
-
-  navigate(operation: PushOrReplaceOperation, location: LocationBase): void;
-
-  shift(delta: number): void;
-}
-
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export class WebBrowserEnvironment
   extends EnvironmentClass<HTMLElement, string> {}

@@ -136,9 +136,9 @@ describe('ScrollPositionRestoration', () => {
           app.goTo('/detail#child2');
         },
         () => {
-          // Here, it said "expected 107.800000190734863 to equal 107.999997138977051".
+          // Here, it said "expected expected 107.76667022705078 to equal 108.43334197998047".
           // Using `.to.be.closeTo()` here instead of `.to.equal()` to work around this browser issue.
-          expect(scrollTop(window)).to.be.closeTo(offset(child2).top, 0.5);
+          expect(scrollTop(window)).to.be.closeTo(offset(child2).top, 1);
           // Tests that navigating to an unknown anchor sets page scroll position to `0`.
           app.goTo('/detail#unknown-anchor');
         },

@@ -42,6 +42,12 @@ export default class PageScrollPositionSetter {
       return Promise.resolve();
     }
 
+    // if (isDelayedCall) {
+    //   console.log(
+    //     '(workaround) set page scroll position again after a momentary delay',
+    //   );
+    // }
+
     // The original author of `scroll-behavior` package wrote:
     //
     // "Updating the window scroll position is really flaky.
@@ -60,6 +66,15 @@ export default class PageScrollPositionSetter {
     }
 
     // Repeat the attempt to set scroll position after a momentary delay.
+    // The authors of the original `scroll-behavior` package
+    // did this to workaround buggy behavior in browsers
+    // when they overwrote the first attempt to set page scroll position
+    // with their own forced initial setting of page scroll position.
+    // The second setting of page scroll position works around this issue
+    // by over-overwriting the page scroll position to the originally intended value.
+    // They weren't specific about which exact browsers in which exact circumstances
+    // exhibited the described buggy behavior, so it's a bit of a "magical" workaround
+    // which isn't removed in future just in case to not "break" any unknown cases.
     return new Promise((resolve) => {
       this._cancelDelayedSetPageScrollPosition = scheduleNextTick(() =>
         resolve(this._setPageScrollPosition(environmentScrollPosition)),
