@@ -1,8 +1,12 @@
+// import { describe, it } from 'mocha';
+import { expect } from 'chai';
+import sinon from 'sinon';
+
 import delay from 'delay';
 
-import NavigationStack from '../src/NavigationStack';
-import InMemoryEnvironment from '../src/environment/InMemoryEnvironment';
-import WebBrowserEnvironment from '../src/environment/WebBrowserEnvironment';
+import NavigationStack from '../src/NavigationStack.js';
+import InMemoryEnvironment from '../src/environment/InMemoryEnvironment.js';
+import WebBrowserEnvironment from '../src/environment/WebBrowserEnvironment.js';
 
 describe('NavigationStack', () => {
   let navigationStack;
@@ -188,7 +192,7 @@ describe('NavigationStack.subscribe', () => {
     navigationStack.init('/initial');
 
     // `.init()` calls subscription listeners.
-    expect(listener).to.have.been.calledOnce();
+    expect(listener.callCount).to.equal(1);
     expect(listener.lastCall.args[0]).to.include({
       // operation: 'init',
       pathname: '/initial',
@@ -197,7 +201,7 @@ describe('NavigationStack.subscribe', () => {
 
     navigationStack.push('/new');
 
-    expect(listener).to.have.been.calledOnce();
+    expect(listener.callCount).to.equal(1);
     expect(listener.lastCall.args[0]).to.include({
       // operation: 'push',
       pathname: '/new',
@@ -206,7 +210,7 @@ describe('NavigationStack.subscribe', () => {
 
     navigationStack.replace('/new-2');
 
-    expect(listener).to.have.been.calledOnce();
+    expect(listener.callCount).to.equal(1);
     expect(listener.lastCall.args[0]).to.include({
       // operation: 'replace',
       pathname: '/new-2',
@@ -215,7 +219,7 @@ describe('NavigationStack.subscribe', () => {
 
     navigationStack.shift(-1);
 
-    expect(listener).to.have.been.calledOnce();
+    expect(listener.callCount).to.equal(1);
     expect(listener.lastCall.args[0]).to.include({
       // operation: 'shift',
       // delta: -1,
@@ -228,7 +232,7 @@ describe('NavigationStack.subscribe', () => {
     navigationStack.push('/new-3');
 
     // Unsubscribed, so the listener doesn't get called.
-    expect(listener).to.not.have.been.called();
+    expect(listener.callCount).to.equal(0);
   });
 
   it('should subscribe to location changes (WebBrowserSession)', () => {
@@ -243,7 +247,7 @@ describe('NavigationStack.subscribe', () => {
     navigationStack.init();
 
     // `.init()` calls subscription listeners.
-    expect(listener).to.have.been.calledOnce();
+    expect(listener.callCount).to.equal(1);
     expect(listener.lastCall.args[0]).to.include({
       // operation: 'init',
       pathname: '/initial',
@@ -280,13 +284,11 @@ describe('NavigationStack.stop()', () => {
 
     navigationStack.stop();
 
-    expect(window.addEventListener)
-      .to.have.been.calledOnce()
-      .and.to.have.been.called.with('popstate');
+    expect(window.addEventListener.callCount).to.equal(1);
+    expect(window.addEventListener.calledWith('popstate')).to.equal(true);
 
-    expect(window.removeEventListener)
-      .to.have.been.calledOnce()
-      .and.to.have.been.called.with('popstate');
+    expect(window.removeEventListener.callCount).to.equal(1);
+    expect(window.removeEventListener.calledWith('popstate')).to.equal(true);
   });
 });
 

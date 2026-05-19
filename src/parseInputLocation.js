@@ -1,6 +1,6 @@
-import parseLocationUrl from './parseLocationUrl';
-import parseQueryFromSearch from './parseQueryFromSearch';
-import stringifyQueryAsSearch from './stringifyQueryAsSearch';
+import parseLocationUrl from './parseLocationUrl.js';
+import parseQueryFromSearch from './parseQueryFromSearch.js';
+import stringifyQueryAsSearch from './stringifyQueryAsSearch.js';
 
 function stringifyQueryParameterValue(value) {
   if (value === null || value === undefined) {

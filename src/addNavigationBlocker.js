@@ -1,2 +1,2 @@
 // eslint-disable-next-line no-restricted-exports
-export { addNavigationBlocker as default } from './navigationBlockers';
+export { addNavigationBlocker as default } from './navigationBlockers.js';

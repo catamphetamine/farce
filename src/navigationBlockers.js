@@ -1,6 +1,6 @@
 /* eslint-disable no-underscore-dangle */
 
-import isPromise from './isPromise';
+import isPromise from './isPromise.js';
 
 export function getNavigationBlockers(container) {
   return container._navigationBlockersList || [];

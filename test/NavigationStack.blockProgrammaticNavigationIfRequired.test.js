@@ -1,10 +1,14 @@
+// import { describe, it } from 'mocha';
+import { expect } from 'chai';
+import sinon from 'sinon';
+
 import delay from 'delay';
 import pDefer from 'p-defer';
 
-import shouldWarn from './shouldWarn';
-import NavigationStack from '../src/NavigationStack';
-import addNavigationBlockerOriginal from '../src/addNavigationBlocker';
-import InMemoryEnvironment from '../src/environment/InMemoryEnvironment';
+import { stubConsoleWarn } from './console.warn.js';
+import NavigationStack from '../src/NavigationStack.js';
+import addNavigationBlockerOriginal from '../src/addNavigationBlocker.js';
+import InMemoryEnvironment from '../src/environment/InMemoryEnvironment.js';
 
 describe('NavigationStack (blockProgrammaticNavigationIfRequired)', () => {
   // const sandbox = sinon.createSandbox();
@@ -41,7 +45,7 @@ describe('NavigationStack (blockProgrammaticNavigationIfRequired)', () => {
       navigationStack.push('/new');
       expect(navigationStack.current().pathname).to.equal('/initial');
 
-      expect(blocker).to.have.been.calledOnce();
+      expect(blocker.callCount).to.equal(1);
 
       expect(blocker.firstCall.args[0]).to.include({
         // operation: 'push',
@@ -66,8 +70,8 @@ describe('NavigationStack (blockProgrammaticNavigationIfRequired)', () => {
       navigationStack.push('/new');
       expect(navigationStack.current().pathname).to.equal('/initial');
 
-      expect(blocker1).to.have.been.calledOnce();
-      expect(blocker2).to.have.been.calledOnce();
+      expect(blocker1.callCount).to.equal(1);
+      expect(blocker2.callCount).to.equal(1);
     });
 
     it('should not fall through when first blocker returns `true`', () => {
@@ -80,12 +84,14 @@ describe('NavigationStack (blockProgrammaticNavigationIfRequired)', () => {
       navigationStack.push('/new');
       expect(navigationStack.current().pathname).to.equal('/initial');
 
-      expect(blocker1).to.have.been.calledOnce();
-      expect(blocker2).not.to.have.been.called();
+      expect(blocker1.callCount).to.equal(1)
+      expect(blocker2.callCount).to.equal(0)
     });
 
     it('should warn on and ignore blockers that throw', () => {
-      shouldWarn(
+      const consoleWarnStub = stubConsoleWarn()
+
+      consoleWarnStub.expect(
         'Ignoring navigation blocker `syncBlocker` that failed with `Error: Navigation blocker error example`.',
       );
 
@@ -97,6 +103,8 @@ describe('NavigationStack (blockProgrammaticNavigationIfRequired)', () => {
 
       navigationStack.push('/new');
       expect(navigationStack.current().pathname).to.equal('/new');
+
+      consoleWarnStub.restoreAndCheckExpected()
     });
 
     // it('should show a confirmation dialog and allow navigation on string', () => {
@@ -107,9 +115,8 @@ describe('NavigationStack (blockProgrammaticNavigationIfRequired)', () => {
     //   navigationStack.push('/new'));
     //   expect(navigationStack.current().pathname).to.equal('/new');
     //
-    //   expect(window.confirm)
-    //     .to.have.been.calledOnce()
-    //     .and.to.have.been.called.with('/new');
+    //   expect(window.confirm.callCount).to.equal(1)
+    //   expect(window.confirm.calledWith('/new')).to.equal(true)
     // });
 
     // it('should show a confirmation dialog and block navigation on string', () => {
@@ -120,9 +127,8 @@ describe('NavigationStack (blockProgrammaticNavigationIfRequired)', () => {
     //   navigationStack.push('/new'));
     //   expect(navigationStack.current().pathname).to.equal('/initial');
     //
-    //   expect(window.confirm)
-    //     .to.have.been.calledOnce()
-    //     .and.to.have.been.called.with('/new');
+    //   expect(window.confirm.callCount).to.equal(1)
+    //   expect(window.confirm.calledWith('/new')).to.equal(true)
     // });
 
     it('should allow navigation when blocker returns `undefined` (async)', async () => {
@@ -173,7 +179,9 @@ describe('NavigationStack (blockProgrammaticNavigationIfRequired)', () => {
     });
 
     it('should warn on and ignore async blockers that throw an error', async () => {
-      shouldWarn(
+      const consoleWarnStub = stubConsoleWarn()
+
+      consoleWarnStub.expect(
         'Ignoring navigation blocker `asyncBlocker` that failed with `Error: Navigation blocker error example`.',
       );
 
@@ -190,6 +198,8 @@ describe('NavigationStack (blockProgrammaticNavigationIfRequired)', () => {
       await delay(10);
 
       expect(navigationStack.current().pathname).to.equal('/new');
+
+      consoleWarnStub.restoreAndCheckExpected();
     });
 
     it('should allow removing blockers', () => {
@@ -240,51 +250,48 @@ describe('addTerminationBlocker', () => {
 
   it('should add/remove event blocker', () => {
     expect(
-      session.environment.lifecycle.addTerminationBlocker,
-    ).not.to.have.been.called();
-    // expect(window.addEventListener).not.to.have.been.called();
+      session.environment.lifecycle.addTerminationBlocker.callCount,
+    ).to.equal(0);
+    // expect(window.addEventListener.callCount).to.equal(0);
 
     const removeNavigationBlocker1 = addNavigationBlocker(() => null, {
       beforeUnload: true,
     });
     expect(
-      session.environment.lifecycle.addTerminationBlocker,
-    ).to.have.been.calledOnce();
-    // expect(window.addEventListener)
-    //   .to.have.been.calledOnce()
-    //   .and.to.have.been.called.with('beforeunload');
+      session.environment.lifecycle.addTerminationBlocker.callCount,
+    ).to.equal(1);
+    // expect(window.addEventListener.callCount).to.equal(1)
+    // expect(window.addEventListener.calledWith('beforeunload')).to.equal(true)
 
     const removeNavigationBlocker2 = addNavigationBlocker(() => null, {
       beforeUnload: true,
     });
     expect(
-      session.environment.lifecycle.addTerminationBlocker,
-    ).to.have.been.calledOnce();
-    // expect(window.addEventListener)
-    //   .to.have.been.calledOnce()
-    //   .and.to.have.been.called.with('beforeunload');
+      session.environment.lifecycle.addTerminationBlocker.callCount,
+    ).to.equal(1);
+    // expect(window.addEventListener.callCount).to.equal(1)
+    // expect(window.addEventListener.calledWith('beforeunload')).to.equal(true)
 
     const removeTerminationBlocker = sinon.stub();
     // eslint-disable-next-line no-underscore-dangle
     session._removeTerminationBlocker = removeTerminationBlocker;
 
     removeNavigationBlocker1();
-    // expect(window.removeEventListener).not.to.have.been.called();
-    expect(removeTerminationBlocker).not.to.have.been.called();
+    // expect(window.removeEventListener.callCount).to.equal(0);
+    expect(removeTerminationBlocker.callCount).to.equal(0)
 
     removeNavigationBlocker2();
-    // expect(window.removeEventListener)
-    //   .to.have.been.calledOnce()
-    //   .and.to.have.been.called.with('beforeunload');
-    expect(removeTerminationBlocker).to.have.been.calledOnce();
+    // expect(window.removeEventListener.callCount).to.equal(1)
+    // expect(window.removeEventListener.calledWith('beforeunload')).to.equal(true)
+    expect(removeTerminationBlocker.callCount).to.equal(1);
   });
 
   // it('should not add a global "before destroy" listener when no `beforeTermination` blocker has been added', () => {
   //   const removeNavigationBlocker = addNavigationBlocker(() => null);
-  //   expect(window.addEventListener).not.to.have.been.called();
+  //   expect(window.addEventListener.callCount).to.equal(0);
   //
   //   removeNavigationBlocker();
-  //   expect(window.removeEventListener).not.to.have.been.called();
+  //   expect(window.removeEventListener.callCount).to.equal(0);
   // });
 });
 
@@ -319,14 +326,13 @@ describe('NavigationStack (blockProgrammaticNavigationIfRequired) (stop)', () =>
     // eslint-disable-next-line no-underscore-dangle
     session._removeTerminationBlocker = removeTerminationBlocker;
 
-    // expect(window.removeEventListener).not.to.have.been.called();
-    expect(removeTerminationBlocker).not.to.have.been.called();
+    // expect(window.removeEventListener.callCount).to.equal(0);
+    expect(removeTerminationBlocker.callCount).to.equal(0);
 
     navigationStack.stop();
 
-    // expect(window.removeEventListener)
-    //   .to.have.been.calledOnce()
-    //   .and.to.have.been.called.with('beforeunload');
-    expect(removeTerminationBlocker).to.have.been.calledOnce();
+    // expect(window.removeEventListener.callCount).to.equal(1)
+    // expect(window.removeEventListener.calledWith('beforeunload')).to.equal(true)
+    expect(removeTerminationBlocker.callCount).to.equal(1);
   });
 });

@@ -1,2 +1,2 @@
-export DataStorage from './DataStorage';
-export LocationDataStorage from './LocationDataStorage';
+export { default as DataStorage } from './DataStorage.js';
+export { default as LocationDataStorage } from './LocationDataStorage.js';

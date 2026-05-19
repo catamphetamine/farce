@@ -1,8 +1,8 @@
-import WebBrowserDataStorage from './data-storage/WebBrowserDataStorage';
-import WebBrowserSessionLifecycle from './lifecycle/WebBrowserSessionLifecycle';
-import WebBrowserLog from './log/WebBrowserLog';
-import WebBrowserNavigation from './navigation/WebBrowserNavigation';
-import WebBrowserScrollPosition from './scroll-position/WebBrowserScrollPosition';
+import WebBrowserDataStorage from './data-storage/WebBrowserDataStorage.js';
+import WebBrowserSessionLifecycle from './lifecycle/WebBrowserSessionLifecycle.js';
+import WebBrowserLog from './log/WebBrowserLog.js';
+import WebBrowserNavigation from './navigation/WebBrowserNavigation.js';
+import WebBrowserScrollPosition from './scroll-position/WebBrowserScrollPosition.js';
 
 export default class WebBrowserEnvironment {
   constructor() {

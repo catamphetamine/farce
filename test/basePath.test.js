@@ -1,4 +1,7 @@
-import { addBasePath, removeBasePath } from '../src/basePath';
+// import { describe, it } from 'mocha';
+import { expect } from 'chai';
+
+import { addBasePath, removeBasePath } from '../src/basePath.js';
 
 describe('addBasePath', () => {
   it('should add `basePath` to location object', () => {

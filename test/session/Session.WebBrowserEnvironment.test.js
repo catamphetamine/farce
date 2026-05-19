@@ -1,8 +1,12 @@
+// import { describe, it } from 'mocha';
+import { expect } from 'chai';
+import sinon from 'sinon';
+
 import delay from 'delay';
 
-import WebBrowserEnvironment from '../../src/environment/WebBrowserEnvironment';
-import parseInputLocation from '../../src/parseInputLocation';
-import Session from '../../src/session/Session';
+import WebBrowserEnvironment from '../../src/environment/WebBrowserEnvironment.js';
+import parseInputLocation from '../../src/parseInputLocation.js';
+import Session from '../../src/session/Session.js';
 
 describe('Session.stop() (WebBrowserEnvironment)', () => {
   const sandbox = sinon.createSandbox();
@@ -31,13 +35,11 @@ describe('Session.stop() (WebBrowserEnvironment)', () => {
     session.start(window.location);
     session.stop();
 
-    expect(window.addEventListener)
-      .to.have.been.calledOnce()
-      .and.to.have.been.called.with('popstate');
+    expect(window.addEventListener.callCount).to.equal(1)
+    expect(window.addEventListener.calledWith('popstate')).to.equal(true)
 
-    expect(window.removeEventListener)
-      .to.have.been.calledOnce()
-      .and.to.have.been.called.with('popstate');
+    expect(window.removeEventListener.callCount).to.equal(1)
+    expect(window.removeEventListener.calledWith('popstate')).to.equal(true)
   });
 });
 
@@ -102,7 +104,7 @@ describe('Session (WebBrowserEnvironment)', () => {
 
     session.start(parseInputLocation(window.location));
 
-    expect(listener).to.have.been.calledOnce();
+    expect(listener.callCount).to.equal(1);
     expect(listener.firstCall.args[0]).to.deep.include({
       operation: 'init',
       pathname: '/initial',
@@ -132,9 +134,9 @@ describe('Session (WebBrowserEnvironment)', () => {
       index: 1,
       delta: 1,
     });
-    expect(newLocation.key).not.to.be.empty();
+    expect(newLocation.key).not.to.be.empty;
 
-    expect(listener).to.have.been.calledOnce();
+    expect(listener.callCount).to.equal(1);
     expect(listener.firstCall.args[0]).to.deep.include({
       operation: 'push',
       pathname: '/new',
@@ -156,7 +158,7 @@ describe('Session (WebBrowserEnvironment)', () => {
       delta: 1,
     });
 
-    expect(listener).to.have.been.calledOnce();
+    expect(listener.callCount).to.equal(1);
     expect(listener.firstCall.args[0]).to.deep.include({
       operation: 'push',
       pathname: '/new-2',
@@ -183,7 +185,7 @@ describe('Session (WebBrowserEnvironment)', () => {
 
     expect(window.location.pathname).to.equal('/new-3');
 
-    expect(listener).to.have.been.calledOnce();
+    expect(listener.callCount).to.equal(1);
     expect(listener.firstCall.args[0]).to.deep.include({
       operation: 'replace',
       pathname: '/new-3',
@@ -201,7 +203,7 @@ describe('Session (WebBrowserEnvironment)', () => {
       hash: '#hash',
     });
 
-    expect(listener).to.have.been.calledOnce();
+    expect(listener.callCount).to.equal(1);
     expect(listener.firstCall.args[0]).to.deep.include({
       operation: 'shift',
       pathname: '/new',
@@ -218,7 +220,7 @@ describe('Session (WebBrowserEnvironment)', () => {
 
     expect(window.location.pathname).to.equal('/initial');
 
-    expect(listener).to.have.been.calledOnce();
+    expect(listener.callCount).to.equal(1);
     expect(listener.firstCall.args[0]).to.deep.include({
       operation: 'shift',
       pathname: '/initial',
@@ -249,7 +251,7 @@ describe('Session (WebBrowserEnvironment)', () => {
     session.shift(-1);
     await delay(100);
 
-    expect(listener).to.have.been.calledOnce();
+    expect(listener.callCount).to.equal(1);
     expect(listener.firstCall.args[0]).to.include({
       operation: 'shift',
       pathname: '/new',
@@ -261,7 +263,7 @@ describe('Session (WebBrowserEnvironment)', () => {
     session.shift(-1);
     await delay(100);
 
-    expect(listener).not.to.have.been.called();
+    expect(listener.callCount).to.equal(0);
   });
 });
 

@@ -1,6 +1,8 @@
 # 0.6.0 / 17.05.2026
 
 - Removed Redux.
+- Removed CommonJS compatiblity. This means that this package now can't be `require()`d. This package can only be `import`ed now.
+- Only [ES6](https://caniuse.com/?search=es6)-compliant web browsers are now supported, which are basically any web browsers released since mid-2017.
 - Renamed `maintainScrollPosition` parameter of `NavigationStack` constructor to `manageScrollPosition`.
 - Added `shouldChangePageScrollPositionOnLocationChange` parameter function to `NavigationStack` constructor.
 - Added `shouldChangeScrollPositionOnLocationChange` parameter function to the `options` of `navigationStack.addScrollableContainer()` method.

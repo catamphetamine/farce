@@ -1,4 +1,4 @@
-import stringifyQueryAsSearch from './stringifyQueryAsSearch';
+import stringifyQueryAsSearch from './stringifyQueryAsSearch.js';
 
 export default function getLocationUrl({ pathname, search, query, hash }) {
   if (!search && query) {

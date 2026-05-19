@@ -1,7 +1,8 @@
 /* eslint-disable no-underscore-dangle */
 
-import ScrollPositionAutoSaver from './ScrollPositionAutoSaver';
-import { PAGE_SCROLLABLE_CONTAINER_KEY } from './constants';
+import ScrollPositionAutoSaver from './ScrollPositionAutoSaver.js';
+import { PAGE_SCROLLABLE_CONTAINER_KEY } from './constants.js';
+import getLocationUrl from '../getLocationUrl.js';
 
 export default class ScrollPositionSaver {
   constructor({
@@ -21,6 +22,7 @@ export default class ScrollPositionSaver {
 
     this._scrollPositionAutoSaver = new ScrollPositionAutoSaver({
       log: this._log,
+      getLocation,
       scrollPosition: this._scrollPosition,
       scrollPositionSaver: this,
       getScrollableContainers,
@@ -36,17 +38,23 @@ export default class ScrollPositionSaver {
     this._scrollPositionAutoSaver.stop();
   }
 
-  cancelPreviouslyScheduledAutoSave() {
-    this._scrollPositionAutoSaver.cancelScheduledAutoSave();
+  cancelPreviouslyScheduledAutoSave(reason) {
+    this._scrollPositionAutoSaver.cancelScheduledAutoSave(reason);
   }
 
-  saveScrollPosition() {
+  saveScrollPosition(reason) {
     // This flag is not used in real life and is only used in tests (for some reason).
     if (!this._shouldSaveScrollPosition()) {
       return;
     }
 
-    this._log.debug('save scroll position', this._getLocation().pathname);
+    this._log.debug(
+      'save scroll position',
+      'at',
+      '"' + getLocationUrl(this._getLocation()) + '"',
+      'because',
+      reason,
+    );
 
     // Get scrollable containers.
     const scrollableContainers = this._getScrollableContainers();
@@ -67,8 +75,10 @@ export default class ScrollPositionSaver {
   savePageScrollPosition() {
     this._log.debug(
       'save scroll position',
-      this._getLocation().pathname,
-      PAGE_SCROLLABLE_CONTAINER_KEY,
+      'at',
+      '"' + getLocationUrl(this._getLocation()) + '"',
+      'in',
+      '<' + PAGE_SCROLLABLE_CONTAINER_KEY + '>',
       this._scrollPosition.getPageScrollPosition(),
     );
 
@@ -77,7 +87,7 @@ export default class ScrollPositionSaver {
     //   cancel it and save scroll position right now instead.
     // * If this is a scheduled "auto-save" of scroll position,
     //   clear the "cancel" function because it's no longer of use.
-    this._scrollPositionAutoSaver.cancelSavePageScrollPosition(true);
+    this._scrollPositionAutoSaver.cancelSavePageScrollPosition('SCROLL_POSITION_SAVED');
 
     // Save scroll position.
     this._saveScrollPositionForLocation(
@@ -93,8 +103,10 @@ export default class ScrollPositionSaver {
   ) {
     this._log.debug(
       'save scroll position',
-      this._getLocation().pathname,
-      scrollableContainerKey,
+      'at',
+      '"' + getLocationUrl(this._getLocation()) + '"',
+      'in',
+      '<' + scrollableContainerKey + '>',
       this._scrollPosition.getScrollableContainerScrollPosition(
         scrollableContainer,
       ),
@@ -107,7 +119,7 @@ export default class ScrollPositionSaver {
     //   clear the "cancel" function because it's no longer of use.
     this._scrollPositionAutoSaver.cancelSaveScrollableContainerScrollPosition(
       scrollableContainerKey,
-      true,
+      'SCROLL_POSITION_SAVED',
     );
 
     // Save scroll position.

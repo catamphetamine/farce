@@ -1,6 +1,6 @@
 /* eslint-disable no-underscore-dangle, max-classes-per-file */
 
-import ServerSideRedirectError from './error/ServerSideRedirectError';
+import ServerSideRedirectError from './error/ServerSideRedirectError.js';
 
 export default class ServerSideNavigation {
   init(initialLocation, { operation, key, index, delta }) {

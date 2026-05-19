@@ -1,6 +1,9 @@
-import ServerSideRenderEnvironment from '../../src/environment/ServerSideRenderEnvironment';
-import parseInputLocation from '../../src/parseInputLocation';
-import Session from '../../src/session/Session';
+// import { describe, it } from 'mocha';
+import { expect } from 'chai';
+
+import ServerSideRenderEnvironment from '../../src/environment/ServerSideRenderEnvironment.js';
+import parseInputLocation from '../../src/parseInputLocation.js';
+import Session from '../../src/session/Session.js';
 
 describe('Session (ServerSideRenderEnvironment)', () => {
   it('should parse the initial location', () => {

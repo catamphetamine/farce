@@ -1,5 +1,5 @@
-import DataStorage from './DataStorage';
-import getLocationUrl from '../getLocationUrl';
+import DataStorage from './DataStorage.js';
+import getLocationUrl from '../getLocationUrl.js';
 
 export default class LocationDataStorage {
   constructor(session, { namespace }) {

@@ -1,0 +1,12 @@
+{
+  "presets": [
+    ["@babel/env", {
+      "modules": false,
+      "bugfixes": true,
+      "loose": true,
+      "targets": {
+        "esmodules": true
+      }
+    }]
+  ]
+}

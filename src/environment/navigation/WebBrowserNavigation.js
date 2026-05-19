@@ -1,7 +1,6 @@
-import getLocationUrl from '../../getLocationUrl';
-// import parseInputLocation from '../../parseInputLocation';
-import parseQueryFromSearch from '../../parseQueryFromSearch';
-import Operations from './operation/operations';
+import getLocationUrl from '../../getLocationUrl.js';
+import parseQueryFromSearch from '../../parseQueryFromSearch.js';
+import Operations from './operation/operations.js';
 
 const NO_LOCATION_INDEX = -1;
 

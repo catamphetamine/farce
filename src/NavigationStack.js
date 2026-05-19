@@ -1,18 +1,18 @@
-import { addBasePath, removeBasePath } from './basePath';
-import LocationDataStorage from './data-storage/LocationDataStorage';
-import getLocationFromInternalLocation from './getLocationFromInternalLocation';
-import isPromise from './isPromise';
+import { addBasePath, removeBasePath } from './basePath.js';
+import LocationDataStorage from './data-storage/LocationDataStorage.js';
+import getLocationFromInternalLocation from './getLocationFromInternalLocation.js';
+import isPromise from './isPromise.js';
 import {
   addNavigationBlocker,
   removeAllNavigationBlockers,
-} from './navigationBlockers';
+} from './navigationBlockers.js';
 import {
   blockNonProgrammaticNavigationIfRequired,
   blockProgrammaticNavigationIfRequired,
-} from './navigationBlockersEvaluation';
-import parseInputLocation from './parseInputLocation';
-import ScrollPositionRestoration from './scroll-position/ScrollPositionRestoration';
-import Session from './session/Session';
+} from './navigationBlockersEvaluation.js';
+import parseInputLocation from './parseInputLocation.js';
+import ScrollPositionRestoration from './scroll-position/ScrollPositionRestoration.js';
+import Session from './session/Session.js';
 
 export default class NavigationStack {
   constructor(

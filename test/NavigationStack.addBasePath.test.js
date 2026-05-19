@@ -1,5 +1,8 @@
-import NavigationStack from '../src/NavigationStack';
-import InMemoryEnvironment from '../src/environment/InMemoryEnvironment';
+// import { describe, it } from 'mocha';
+import { expect } from 'chai';
+
+import NavigationStack from '../src/NavigationStack.js';
+import InMemoryEnvironment from '../src/environment/InMemoryEnvironment.js';
 
 describe('NavigationStack (addBasePath)', () => {
   it('should add `basePath` to `location.pathname`', () => {

@@ -269,6 +269,16 @@ export interface Environment<ScrollableContainer, Anchor> {
   scrollPosition: EnvironmentScrollPosition<ScrollableContainer, Anchor>;
 }
 
+// This is just a copy-paste of the `Environment` interface above.
+declare abstract class EnvironmentClass<ScrollableContainer, Anchor>
+  implements Environment<ScrollableContainer, Anchor> {
+  dataStorage: EnvironmentDataStorage;
+  log: EnvironmentLog;
+  lifecycle: EnvironmentLifecycle;
+  navigation: EnvironmentNavigation;
+  scrollPosition: EnvironmentScrollPosition<ScrollableContainer, Anchor>;
+}
+
 interface Session<ScrollableContainer = any, Anchor = any> {
   // `key` should be unique within `environment.dataStorage`.
   // For example, `BrowserEnvironment` uses `window.sessionStorage`
@@ -292,7 +302,7 @@ interface Session<ScrollableContainer = any, Anchor = any> {
   shift(delta: number): void;
 }
 
-// This is just a copy-paste of the `session` interface above.
+// This is just a copy-paste of the `Session` interface above.
 declare abstract class SessionClass<ScrollableContainer = any, Anchor = any>
   implements Session<ScrollableContainer, Anchor>
 {
@@ -324,15 +334,15 @@ declare abstract class SessionClass<ScrollableContainer = any, Anchor = any>
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface WebBrowserEnvironment
-  extends Environment<HTMLElement, string> {}
+export class WebBrowserEnvironment
+  extends EnvironmentClass<HTMLElement, string> {}
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface ServerSideRenderEnvironment
-  extends Environment<string, string> {}
+export class ServerSideRenderEnvironment
+  extends EnvironmentClass<string, string> {}
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface InMemoryEnvironment extends Environment<string, string> {}
+export class InMemoryEnvironment extends EnvironmentClass<string, string> {}
 
 // Theoretically, a developer could pass their own `ScrollPositionSetter` implementation
 // when calling `.addScrollableContainer()` or

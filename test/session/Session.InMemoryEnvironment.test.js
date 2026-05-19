@@ -1,6 +1,10 @@
-import InMemoryEnvironment from '../../src/environment/InMemoryEnvironment';
-import parseInputLocation from '../../src/parseInputLocation';
-import Session from '../../src/session/Session';
+// import { describe, it } from 'mocha';
+import { expect } from 'chai';
+import sinon from 'sinon';
+
+import InMemoryEnvironment from '../../src/environment/InMemoryEnvironment.js';
+import parseInputLocation from '../../src/parseInputLocation.js';
+import Session from '../../src/session/Session.js';
 
 describe('Session (InMemoryEnvironment)', () => {
   it('should parse the initial location', () => {
@@ -41,7 +45,7 @@ describe('Session (InMemoryEnvironment)', () => {
 
     session.start(parseInputLocation('/initial'));
 
-    expect(listener).to.have.been.calledOnce();
+    expect(listener.callCount).to.equal(1);
     expect(listener.firstCall.args[0]).to.deep.include({
       operation: 'init',
       pathname: '/initial',
@@ -62,9 +66,9 @@ describe('Session (InMemoryEnvironment)', () => {
       index: 1,
       delta: 1,
     });
-    expect(newLocation.key).not.to.be.empty();
+    expect(newLocation.key).not.to.be.empty;
 
-    expect(listener).to.have.been.calledOnce();
+    expect(listener.callCount).to.equal(1);
     expect(listener.firstCall.args[0]).to.deep.include({
       operation: 'push',
       pathname: '/new',
@@ -82,7 +86,7 @@ describe('Session (InMemoryEnvironment)', () => {
       delta: 1,
     });
 
-    expect(listener).to.have.been.calledOnce();
+    expect(listener.callCount).to.equal(1);
     expect(listener.firstCall.args[0]).to.deep.include({
       operation: 'push',
       pathname: '/new-2',
@@ -100,7 +104,7 @@ describe('Session (InMemoryEnvironment)', () => {
       delta: 0,
     });
 
-    expect(listener).to.have.been.calledOnce();
+    expect(listener.callCount).to.equal(1);
     expect(listener.firstCall.args[0]).to.deep.include({
       operation: 'replace',
       pathname: '/new-3',
@@ -111,7 +115,7 @@ describe('Session (InMemoryEnvironment)', () => {
 
     session.shift(-1);
 
-    expect(listener).to.have.been.calledOnce();
+    expect(listener.callCount).to.equal(1);
     expect(listener.firstCall.args[0]).to.deep.include({
       operation: 'shift',
       pathname: '/new',
@@ -135,7 +139,7 @@ describe('Session (InMemoryEnvironment)', () => {
 
     session.shift(-1);
 
-    expect(listener).to.have.been.calledOnce();
+    expect(listener.callCount).to.equal(1);
     expect(listener.firstCall.args[0]).to.include({
       operation: 'shift',
       pathname: '/new',
@@ -146,7 +150,7 @@ describe('Session (InMemoryEnvironment)', () => {
 
     session.shift(-1);
 
-    expect(listener).not.to.have.been.called();
+    expect(listener.callCount).to.equal(0);
 
     session.stop();
   });
@@ -164,11 +168,11 @@ describe('Session (InMemoryEnvironment)', () => {
       session.shift(-390);
     }).to.throw('out of navigation history bounds');
 
-    expect(listener).to.not.have.been.called();
+    expect(listener.callCount).to.equal(0);
 
     session.shift(-2);
 
-    expect(listener).to.have.been.calledOnce();
+    expect(listener.callCount).to.equal(1);
     expect(listener.firstCall.args[0]).to.include({
       operation: 'shift',
       pathname: '/initial',
@@ -180,7 +184,7 @@ describe('Session (InMemoryEnvironment)', () => {
       session.shift(-1);
     }).to.throw('out of navigation history bounds');
 
-    expect(listener).not.to.have.been.called();
+    expect(listener.callCount).to.equal(0);
 
     expect(() => {
       session.shift(+22);
@@ -188,7 +192,7 @@ describe('Session (InMemoryEnvironment)', () => {
 
     session.shift(+2);
 
-    expect(listener).to.have.been.calledOnce();
+    expect(listener.callCount).to.equal(1);
     expect(listener.firstCall.args[0]).to.include({
       operation: 'shift',
       pathname: '/new-2',
@@ -200,7 +204,7 @@ describe('Session (InMemoryEnvironment)', () => {
       session.shift(+1);
     }).to.throw('out of navigation history bounds');
 
-    expect(listener).not.to.have.been.called();
+    expect(listener.callCount).to.equal(0);
 
     session.stop();
   });
@@ -218,7 +222,7 @@ describe('Session (InMemoryEnvironment)', () => {
 
     session.shift(+1);
 
-    expect(listener).to.have.been.calledOnce();
+    expect(listener.callCount).to.equal(1);
     expect(listener.firstCall.args[0]).to.include({
       operation: 'shift',
       pathname: '/new',
@@ -244,7 +248,7 @@ describe('Session (InMemoryEnvironment)', () => {
       session.shift(+1);
     }).to.throw('out of navigation history bounds');
 
-    expect(listener).not.to.have.been.called();
+    expect(listener.callCount).to.equal(0);
 
     session.stop();
   });

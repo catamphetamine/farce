@@ -1,6 +1,6 @@
 /* eslint-disable no-underscore-dangle */
 
-import scheduleNextTick from './scheduleNextTick';
+import scheduleNextTick from './scheduleNextTick.js';
 
 // The original author of `scroll-behavior` package wrote:
 //

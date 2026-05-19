@@ -1,4 +1,7 @@
-import stringifyQuery from '../src/stringifyQuery';
+// import { describe, it } from 'mocha';
+import { expect } from 'chai';
+
+import stringifyQuery from '../src/stringifyQuery.js';
 
 describe('stringifyQuery', () => {
   it('stringify', () => {

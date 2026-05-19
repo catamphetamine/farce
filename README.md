@@ -618,14 +618,13 @@ One might ask: Why use `NavigationStack`'s data storage when one could simply st
 Clone the repository. Then:
 
 ```
-yarn
-yarn format
-yarn test
+npm install
+npm test
 ```
 
-It will open two web browser windows — Firefox and Chrome — and run live tests in those. The web browsers are specified in `karma.conf.cjs` file. When running tests, don't unfocus the web browser windows, otherwise the tests will fail with random errors. If you're not unfocusing the web browser windows and the tests still fail with random errors, see if increasing the interval in `await delay(100)` calls in tests fixes the issue.
+`npm test` command will "virtually" open two web browser windows — Firefox and Chrome — and run the tests "live" in those browsers. This is implemented through [Web Test Runner](https://modern-web.dev) + [`playwright`](https://www.npmjs.com/package/playwright). In case these tests suddenly start failing with random non-sensical errors, see if increasing the waiting interval in `await delay(100)` calls throughout the tests' code fixes the issue.
 
-For easier debugging, there's a `const DEBUG_ENABLED = false` flag in `InMemoryLog.js` file. That variable could be set to `true` in order to output a "debug" log in the console when running non-browser tests. When running browser tests, or when running `navigation-stack` in an application, one could set `window.NAVIGATION_STACK_DEBUG_ENABLED` variable to `true` to output a "debug" log in the browser's console.
+Also, if required, the internal debug log of `navigation-stack` could be enabled for easier debugging. For example, one could use it in case some test "breaks" and it's not clear what's even going on there. To enable the internal debug log, set `DEBUG_ENABLED` variable to `true` in `InMemoryLog.js` file. That will enable a "debug" log in the terminal when running non-browser tests, i.e. the tests that use `InMemoryEnvironment`, but in-browser tests will stay unaffected. That's because in-browser tests use a different environment — `WebBrowserEnvironment` — and hence, a different log implementation — `WebBrowserLog.js`. In order to enable a "debug" log in the terminal when running in-browser tests, set `window.NAVIGATION_STACK_DEBUG_ENABLED` variable to `true`.
 
 ## Development History
 

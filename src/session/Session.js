@@ -1,8 +1,9 @@
-import parseInputLocation from '../parseInputLocation';
-import createSessionKey from './key/createSessionKey';
-import Subscription from './subscription/Subscription';
-import NavigationOutOfBoundsError from '../environment/navigation/error/NavigationOutOfBoundsError';
-import NavigationOperations from '../environment/navigation/operation/operations';
+import getLocationUrl from '../getLocationUrl.js';
+import parseInputLocation from '../parseInputLocation.js';
+import createSessionKey from './key/createSessionKey.js';
+import Subscription from './subscription/Subscription.js';
+import NavigationOutOfBoundsError from '../environment/navigation/error/NavigationOutOfBoundsError.js';
+import NavigationOperations from '../environment/navigation/operation/operations.js';
 
 const INITIAL_KEY_INDEX = -1;
 const INITIAL_INDEX = -1;
@@ -79,7 +80,8 @@ export default class Session {
 
       this.environment.log.debug(
         'current location',
-        location.pathname,
+        'is',
+        '"' + getLocationUrl(location) + '"',
         'index',
         this._currentLocationIndex,
       );
@@ -160,7 +162,11 @@ export default class Session {
       throw new Error('Already started');
     }
 
-    this.environment.log.debug('▶ start session', initialLocation.pathname);
+    this.environment.log.debug(
+      '▶ start session',
+      'at',
+      '"' + getLocationUrl(initialLocation) + '"',
+    );
 
     this._started = true;
 
@@ -229,7 +235,7 @@ export default class Session {
     this.environment.log.debug(
       operation === NavigationOperations.PUSH ? '↓' : '⇅',
       operation,
-      location.pathname,
+      '"' + getLocationUrl(location) + '"',
       'index',
       index,
     );

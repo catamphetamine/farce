@@ -1,10 +1,10 @@
-import getLocationBaseFromLocation from './getLocationBaseFromLocation';
-import getLocationFromInternalLocation from './getLocationFromInternalLocation';
-import isPromise from './isPromise';
+import getLocationBaseFromLocation from './getLocationBaseFromLocation.js';
+import getLocationFromInternalLocation from './getLocationFromInternalLocation.js';
+import isPromise from './isPromise.js';
 import {
   getNavigationBlockers,
   runNavigationBlockers,
-} from './navigationBlockers';
+} from './navigationBlockers.js';
 
 // Creates "navigation blockers evaluation" status object.
 // It tracks the "cancelled" status of the evaluation:

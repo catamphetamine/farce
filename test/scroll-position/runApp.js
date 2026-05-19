@@ -1,4 +1,4 @@
-import delay from './delay';
+import delay from './delay.js';
 
 // Runs the website.
 // Executes the `steps` in order.

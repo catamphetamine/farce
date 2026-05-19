@@ -1,4 +1,4 @@
-import parseInputLocation from '../../parseInputLocation';
+import parseInputLocation from '../../parseInputLocation.js';
 
 export default class InMemoryNavigation {
   constructor() {

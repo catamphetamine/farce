@@ -1,9 +1,13 @@
+// import { describe, it } from 'mocha';
+import { expect } from 'chai';
+import sinon from 'sinon';
+
 import delay from 'delay';
 import pDefer from 'p-defer';
 
-import NavigationStack from '../src/NavigationStack';
-import addNavigationBlockerOriginal from '../src/addNavigationBlocker';
-import InMemoryEnvironment from '../src/environment/InMemoryEnvironment';
+import NavigationStack from '../src/NavigationStack.js';
+import addNavigationBlockerOriginal from '../src/addNavigationBlocker.js';
+import InMemoryEnvironment from '../src/environment/InMemoryEnvironment.js';
 
 describe('NavigationStack (blockNonProgrammaticNavigationIfRequired)', () => {
   // const sandbox = sinon.createSandbox();
@@ -92,9 +96,8 @@ describe('NavigationStack (blockNonProgrammaticNavigationIfRequired)', () => {
     //   navigationStack.shift(-1));
     //   expect(navigationStack.current().pathname).to.equal('/initial');
     //
-    //   expect(window.confirm)
-    //     .to.have.been.calledOnce()
-    //     .and.to.have.been.called.with('/new');
+    //   expect(window.confirm.callCount).to.equal(1)
+    //   expect(window.confirm.calledWith('/new')).to.equal(true)
     // });
 
     it('should support async rewinding', async () => {
@@ -207,7 +210,7 @@ describe('NavigationStack (blockNonProgrammaticNavigationIfRequired) (init)', ()
     addNavigationBlockerOriginal(session, () => true);
 
     // eslint-disable-next-line no-underscore-dangle
-    expect(navigationStack._location).to.be.undefined();
+    expect(navigationStack._location).to.be.undefined;
     navigationStack.init('/initial');
     // eslint-disable-next-line no-underscore-dangle
     expect(navigationStack._location.pathname).to.equal('/initial');

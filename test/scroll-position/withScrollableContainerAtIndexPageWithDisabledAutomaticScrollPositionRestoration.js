@@ -8,9 +8,15 @@
 export default function withScrollableContainerAtIndexPageWithDisabledAutomaticScrollPositionRestoration(
   app,
 ) {
+  const containerWidth = 100;
+  const containerHeight = 100;
+
+  const contentWidth = 20000;
+  const contentHeight = 20000;
+
   const container = document.createElement('div');
-  container.style.height = '100px';
-  container.style.width = '100px';
+  container.style.width = containerWidth + 'px';
+  container.style.height = containerHeight + 'px';
   container.style.overflow = 'hidden';
   document.body.appendChild(container);
 
@@ -49,8 +55,8 @@ export default function withScrollableContainerAtIndexPageWithDisabledAutomaticS
 
       if (location.pathname === '/') {
         scrollableContainerContentElement = document.createElement('div');
-        scrollableContainerContentElement.style.height = '20000px';
-        scrollableContainerContentElement.style.width = '20000px';
+        scrollableContainerContentElement.style.width = contentWidth + 'px';
+        scrollableContainerContentElement.style.height = contentHeight + 'px';
         container.appendChild(scrollableContainerContentElement);
       } else {
         unregisterScrollableContainer();

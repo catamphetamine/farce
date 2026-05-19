@@ -1,4 +1,7 @@
-import parseLocationUrl from '../src/parseLocationUrl';
+// import { describe, it } from 'mocha';
+import { expect } from 'chai';
+
+import parseLocationUrl from '../src/parseLocationUrl.js';
 
 describe('parseLocationUrl', () => {
   it('should create location from a URL', () => {

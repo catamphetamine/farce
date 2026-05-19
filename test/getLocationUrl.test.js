@@ -1,4 +1,7 @@
-import getLocationUrl from '../src/getLocationUrl';
+// import { describe, it } from 'mocha';
+import { expect } from 'chai';
+
+import getLocationUrl from '../src/getLocationUrl.js';
 
 describe('getLocationUrl', () => {
   it('should get location URL (`pathname`, `search`, and `hash`)', () => {

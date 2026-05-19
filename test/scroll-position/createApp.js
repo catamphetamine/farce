@@ -1,6 +1,6 @@
-import NavigationStack from '../../src/NavigationStack';
-import WebBrowserEnvironment from '../../src/environment/WebBrowserEnvironment';
-import ScrollPositionRestoration from '../../src/scroll-position/ScrollPositionRestoration';
+import NavigationStack from '../../src/NavigationStack.js';
+import WebBrowserEnvironment from '../../src/environment/WebBrowserEnvironment.js';
+import ScrollPositionRestoration from '../../src/scroll-position/ScrollPositionRestoration.js';
 
 // Creates a website with `ScrollPositionRestoration`.
 export default function createApp({

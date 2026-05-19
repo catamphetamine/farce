@@ -1,4 +1,7 @@
-import parseQueryString from '../src/parseQueryString';
+// import { describe, it } from 'mocha';
+import { expect } from 'chai';
+
+import parseQueryString from '../src/parseQueryString.js';
 
 describe('parseQueryString', () => {
   it('should parse query object from a query string', () => {

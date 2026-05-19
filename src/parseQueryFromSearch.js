@@ -1,4 +1,4 @@
-import parseQueryString from './parseQueryString';
+import parseQueryString from './parseQueryString.js';
 
 export default function parseQueryFromSearch(search) {
   if (search.length > '?'.length) {

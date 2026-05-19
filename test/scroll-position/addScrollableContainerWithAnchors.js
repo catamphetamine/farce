@@ -8,6 +8,16 @@
 // * At any other location, the scrollable container size is 10000x10000.
 //
 export default function addScrollableContainerWithAnchors(app) {
+  const containerWidth = 10000;
+  const containerHeight = 10000;
+
+  // I dunno why does it have different dimensions on "/" page.
+  // These tests were originally copied from `scroll-behavior` package code.
+  const containerWidthOnIndexPage = 20000;
+  const containerHeightOnIndexPage = 20000;
+
+  const anchorElementHeight = 100;
+
   const container = document.createElement('div');
   document.body.appendChild(container);
 
@@ -15,7 +25,7 @@ export default function addScrollableContainerWithAnchors(app) {
   // In HTML, an "anchor" is matched either by `id` attribute value
   // or by `name` attribute value.
   child1.id = 'child1';
-  child1.style.height = '100px';
+  child1.style.height = anchorElementHeight + 'px';
   container.appendChild(child1);
 
   const child2 = document.createElement('a');
@@ -25,7 +35,7 @@ export default function addScrollableContainerWithAnchors(app) {
   // Here, it tests the correctness of scrolling to an anchor called "child2".
   // The `id` attribute value is different so that it doesn't interfere.
   child2.name = 'child2';
-  child2.style.height = '100px';
+  child2.style.height = anchorElementHeight + 'px';
   child2.appendChild(document.createTextNode('link'));
   container.appendChild(child2);
 
@@ -35,11 +45,11 @@ export default function addScrollableContainerWithAnchors(app) {
 
       // Scrollable container has different height on different pages.
       if (location.pathname === '/') {
-        container.style.height = '20000px';
-        container.style.width = '20000px';
+        container.style.width = containerWidthOnIndexPage + 'px';
+        container.style.height = containerHeightOnIndexPage + 'px';
       } else {
-        container.style.height = '10000px';
-        container.style.width = '10000px';
+        container.style.width = containerWidth + 'px';
+        container.style.height = containerHeight + 'px';
       }
     });
 

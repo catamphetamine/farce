@@ -1,4 +1,7 @@
-import parseInputLocation from '../src/parseInputLocation';
+// import { describe, it } from 'mocha';
+import { expect } from 'chai';
+
+import parseInputLocation from '../src/parseInputLocation.js';
 
 describe('parseInputLocation', () => {
   it('should create `query` from `search`', () => {

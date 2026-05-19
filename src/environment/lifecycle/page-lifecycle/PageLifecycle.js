@@ -140,7 +140,7 @@ class StateChangeEvent extends Event {
 /**
  * Class definition for the exported, singleton lifecycle instance.
  */
-export default class Lifecycle extends EventTarget {
+export default class PageLifecycle extends EventTarget {
   /**
    * Initializes state, state history, and adds event listeners to monitor
    * state changes.

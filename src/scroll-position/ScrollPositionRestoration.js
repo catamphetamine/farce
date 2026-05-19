@@ -1,10 +1,11 @@
 /* eslint-disable no-underscore-dangle */
 
-import PageScrollPositionSetter from './PageScrollPositionSetter';
-import ScrollPositionSaver from './ScrollPositionSaver';
-import ScrollPositionSetter from './ScrollPositionSetter';
-import { PAGE_SCROLLABLE_CONTAINER_KEY } from './constants';
-import LocationDataStorage from '../data-storage/LocationDataStorage';
+import PageScrollPositionSetter from './PageScrollPositionSetter.js';
+import ScrollPositionSaver from './ScrollPositionSaver.js';
+import ScrollPositionSetter from './ScrollPositionSetter.js';
+import { PAGE_SCROLLABLE_CONTAINER_KEY } from './constants.js';
+import getLocationUrl from '../getLocationUrl.js';
+import LocationDataStorage from '../data-storage/LocationDataStorage.js';
 
 function areEqualScrollPositions(scrollPosition1, scrollPosition2) {
   let i = 0;
@@ -103,7 +104,7 @@ export default class ScrollPositionRestoration {
       );
     }
 
-    this._log.debug('add scrollable container', scrollableContainerKey);
+    this._log.debug('add scrollable container', '<' + scrollableContainerKey + '>');
 
     // Add scrollable container entry.
     this._scrollableContainers[scrollableContainerKey] = {
@@ -146,9 +147,10 @@ export default class ScrollPositionRestoration {
         );
       if (previouslySavedScrollPosition) {
         this._log.debug(
-          'restore scroll position on add scrollable container',
-          this._location.pathname,
-          scrollableContainerKey,
+          'set initial scroll position on add scrollable container',
+          'at',
+          '"' + getLocationUrl(this._location) + '"',
+          '<' + scrollableContainerKey + '>',
           previouslySavedScrollPosition,
         );
         this._scrollPosition.setScrollableContainerScrollPosition(
@@ -158,8 +160,9 @@ export default class ScrollPositionRestoration {
       } else {
         this._log.debug(
           'save scroll position on add scrollable container',
+          'at',
           this._location.pathname,
-          scrollableContainerKey,
+          '<' + scrollableContainerKey + '>',
         );
         this._scrollPositionSaver.saveScrollableContainerScrollPosition(
           scrollableContainerKey,
@@ -176,10 +179,11 @@ export default class ScrollPositionRestoration {
 
     // Removes the scrollable container.
     return () => {
-      this._log.debug('remove scrollable container', scrollableContainerKey);
+      this._log.debug('remove scrollable container', '<' + scrollableContainerKey + '>');
 
       this._scrollPositionSaver._scrollPositionAutoSaver.cancelSaveScrollableContainerScrollPosition(
         scrollableContainerKey,
+        'SCROLLABLE_CONTAINER_REMOVED',
       );
 
       this._scrollPositionSaver._scrollPositionAutoSaver.removeScrollableContainerScrollListener(
@@ -275,8 +279,9 @@ export default class ScrollPositionRestoration {
       // Overwrite that previously-saved scroll position with the most up-to-date one
       // just so that there's no stale scroll position left over in the data storage.
       // Alternatively, it could just clear any saved scroll position for this page,
-      // since the web browser's automatic scroll restoration is now enabled.
-      this._scrollPositionSaver.saveScrollPosition();
+      // since the web browser's automatic scroll restoration is now enabled
+      // and this currently-being-saved scroll position won't be used later anyway.
+      this._scrollPositionSaver.saveScrollPosition('STOPPED');
     }
   };
 
@@ -298,7 +303,7 @@ export default class ScrollPositionRestoration {
   //   // The previous page may have scheduled an auto-save of scroll position.
   //   // Since the previous page is no longer rendered, its scroll position can no longer be obtained,
   //   // so any scheduled scroll position auto-save produres are irrelevant now.
-  //   this._scrollPositionSaver.cancelPreviouslyScheduledAutoSave();
+  //   this._scrollPositionSaver.cancelPreviouslyScheduledAutoSave('PAGE_NO_LONGER_RENDERED');
   //
   //   // Save the current scroll position on the current page while it's still rendered.
   //   // This saved scroll position could later be restored in case of returing to this page.
@@ -316,7 +321,10 @@ export default class ScrollPositionRestoration {
       throw new Error('`location` must have a `key`');
     }
 
-    this._log.debug('rendered location', location.pathname);
+    this._log.debug(
+      'rendered location',
+      '"' + getLocationUrl(location) + '"',
+    );
 
     this._prevLocation = this._location;
     this._location = location;
@@ -336,14 +344,14 @@ export default class ScrollPositionRestoration {
       // Hence, it should explicitly save the current scroll position at the start of operation.
       if (!this._isDefaultScrollPosition()) {
         // `this._scrollPositionSaver.saveScrollPosition()` requires `this._location` to be set.
-        this._scrollPositionSaver.saveScrollPosition();
+        this._scrollPositionSaver.saveScrollPosition('STARTED_WITH_NON_ZERO_SCROLL_POSITION');
       }
     }
 
     // The previous page may have scheduled an auto-save of scroll position.
     // Since the previous page is no longer rendered, its scroll position can no longer be obtained,
     // so any scheduled scroll position auto-save produres are irrelevant now.
-    this._scrollPositionSaver.cancelPreviouslyScheduledAutoSave();
+    this._scrollPositionSaver.cancelPreviouslyScheduledAutoSave('PAGE_NO_LONGER_RENDERED');
 
     // If it was in the middle of setting scroll position for a previous location, cancel it.
     this._cancelAnyPendingSettingOfScrollPosition();
@@ -437,10 +445,14 @@ export default class ScrollPositionRestoration {
         }
 
         this._log.debug(
-          'restore scroll position',
-          this._location.pathname,
-          scrollableContainerKey,
-          scrollPositionOrAnchorToSet,
+          'set initial scroll position',
+          'at',
+          '"' + getLocationUrl(this._location) + '"',
+          'in',
+          '<' + scrollableContainerKey + '>',
+          typeof scrollPositionOrAnchorToSet === 'string'
+            ? 'at anchor #' + scrollPositionOrAnchorToSet
+            : scrollPositionOrAnchorToSet,
         );
 
         // Set scroll position of scrollable container.
@@ -470,6 +482,7 @@ export default class ScrollPositionRestoration {
     try {
       this._scrollPosition.disableAutomaticScrollRestoration();
     } catch (error) {
+      this._log.error(error);
       this._log.error(
         '[navigation-stack] could not disable default scroll restoration mode',
       );
@@ -480,6 +493,7 @@ export default class ScrollPositionRestoration {
     try {
       this._scrollPosition.enableAutomaticScrollRestoration();
     } catch (error) {
+      this._log.error(error);
       this._log.error(
         '[navigation-stack] could not enable default scroll restoration mode',
       );

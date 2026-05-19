@@ -1,4 +1,7 @@
-import parseQueryFromSearch from '../src/parseQueryFromSearch';
+// import { describe, it } from 'mocha';
+import { expect } from 'chai';
+
+import parseQueryFromSearch from '../src/parseQueryFromSearch.js';
 
 describe('parseQueryFromSearch', () => {
   it('should parse query object from `location.search', () => {

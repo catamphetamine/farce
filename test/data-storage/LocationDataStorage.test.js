@@ -1,6 +1,9 @@
-import LocationDataStorage from '../../src/data-storage/LocationDataStorage';
-import InMemoryEnvironment from '../../src/environment/InMemoryEnvironment';
-import Session from '../../src/session/Session';
+// import { describe, it } from 'mocha';
+import { expect } from 'chai';
+
+import LocationDataStorage from '../../src/data-storage/LocationDataStorage.js';
+import InMemoryEnvironment from '../../src/environment/InMemoryEnvironment.js';
+import Session from '../../src/session/Session.js';
 
 describe('LocationDataStorage', () => {
   let session;
@@ -23,19 +26,19 @@ describe('LocationDataStorage', () => {
     stateStorage.set(location, '', 1);
 
     expect(stateStorage.get(location, '')).to.equal(1);
-    expect(stateStorage.get(location, 'foo')).to.be.undefined();
+    expect(stateStorage.get(location, 'foo')).to.be.undefined;
   });
 
   it('should read saved value for explicit key', () => {
     stateStorage.set(location, 'foo', [2, 3]);
 
     expect(stateStorage.get(location, 'foo')).to.eql([2, 3]);
-    expect(stateStorage.get(location, '')).to.be.undefined();
+    expect(stateStorage.get(location, '')).to.be.undefined;
   });
 
   it('should read undefined when value is missing', () => {
-    expect(stateStorage.get(location, '')).to.be.undefined();
-    expect(stateStorage.get(location, 'foo')).to.be.undefined();
+    expect(stateStorage.get(location, '')).to.be.undefined;
+    expect(stateStorage.get(location, 'foo')).to.be.undefined;
   });
 
   it('should work with arbitrary types', () => {
@@ -51,7 +54,7 @@ describe('LocationDataStorage', () => {
     expect(stateStorage.get(location, 'string')).to.equal('state');
     expect(stateStorage.get(location, 'array')).to.eql([2, 3]);
     expect(stateStorage.get(location, 'object')).to.eql({ a: 1 });
-    expect(stateStorage.get(location, 'null')).to.be.null();
+    expect(stateStorage.get(location, 'null')).to.be.null;
   });
 
   it('should support deleting values', () => {
@@ -59,13 +62,13 @@ describe('LocationDataStorage', () => {
     expect(stateStorage.get(location, '')).to.equal(1);
 
     stateStorage.set(location, '', undefined);
-    expect(stateStorage.get(location, '')).to.be.undefined();
+    expect(stateStorage.get(location, '')).to.be.undefined;
   });
 
   it('should read undefined for invalid JSON', () => {
     window.sessionStorage.setItem('test|location:0', '[}');
 
-    expect(stateStorage.get(location, '')).to.be.undefined();
+    expect(stateStorage.get(location, '')).to.be.undefined;
   });
 
   it('should support fallback key', () => {

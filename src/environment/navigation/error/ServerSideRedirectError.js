@@ -1,4 +1,4 @@
-import getLocationUrl from '../../../getLocationUrl';
+import getLocationUrl from '../../../getLocationUrl.js';
 
 export default class ServerSideRedirectError extends Error {
   constructor(location) {

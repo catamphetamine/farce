@@ -1,4 +1,4 @@
-import parseQueryFromSearch from './parseQueryFromSearch';
+import parseQueryFromSearch from './parseQueryFromSearch.js';
 
 export default function parseLocationUrl(url) {
   if (url[0] !== '/') {

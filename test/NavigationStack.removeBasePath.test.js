@@ -1,6 +1,9 @@
-import NavigationStack from '../src/NavigationStack';
-import InMemoryEnvironment from '../src/environment/InMemoryEnvironment';
-import parseInputLocation from '../src/parseInputLocation';
+// import { describe, it } from 'mocha';
+import { expect } from 'chai';
+
+import NavigationStack from '../src/NavigationStack.js';
+import InMemoryEnvironment from '../src/environment/InMemoryEnvironment.js';
+import parseInputLocation from '../src/parseInputLocation.js';
 
 describe('NavigationStack (removeBasePath)', () => {
   it('should strip `basePath` from `location.pathname`', () => {

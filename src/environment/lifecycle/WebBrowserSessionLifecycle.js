@@ -1,6 +1,6 @@
 // https://developers.google.com/web/updates/2018/07/page-lifecycle-api
 // https://github.com/GoogleChromeLabs/page-lifecycle
-import PageLifecycle from './page-lifecycle/PageLifecycleInstance';
+import { getPageLifecycleInstance } from './page-lifecycle/PageLifecycleInstance.js';
 
 export default class WebBrowserSessionLifecycle {
   constructor() {
@@ -38,10 +38,10 @@ export default class WebBrowserSessionLifecycle {
       }
     };
 
-    PageLifecycle.addEventListener('statechange', pageLifecycleListener);
+    getPageLifecycleInstance().addEventListener('statechange', pageLifecycleListener);
 
     return () => {
-      PageLifecycle.removeEventListener('statechange', pageLifecycleListener);
+      getPageLifecycleInstance().removeEventListener('statechange', pageLifecycleListener);
     };
   }
 }
