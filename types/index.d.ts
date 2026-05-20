@@ -124,14 +124,12 @@ export function parseInputLocation(location: InputLocation): LocationBase;
 export interface NavigationStackOptions<ScrollableContainer, Anchor> {
   basePath?: string;
   manageScrollPosition?: boolean;
-  scrollPositionSetter?: Constructor<
-    ScrollPositionSetter<ScrollableContainer, Anchor>
-  >;
+  scrollPositionSetter?: ScrollPositionSetterConstructor<ScrollableContainer, Anchor>;
 }
 
 export class NavigationStack<ScrollableContainer = any, Anchor = any> {
   constructor(
-    environment: Constructor<Environment<ScrollableContainer, Anchor>>,
+    environment: EnvironmentConstructor<ScrollableContainer, Anchor>,
     options?: NavigationStackOptions<ScrollableContainer, Anchor>,
   );
 
@@ -261,6 +259,10 @@ export interface EnvironmentScrollPosition<ScrollableContainer, Anchor> {
   init(): void;
 }
 
+export interface EnvironmentConstructor<ScrollableContainer, Anchor> {
+  new (): Environment<ScrollableContainer, Anchor>;
+}
+
 export interface Environment<ScrollableContainer, Anchor> {
   dataStorage: EnvironmentDataStorage;
   log: EnvironmentLog;
@@ -313,30 +315,35 @@ export class ServerSideRenderEnvironment
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export class InMemoryEnvironment extends EnvironmentClass<string, string> {}
 
-// Theoretically, a developer could pass their own `ScrollPositionSetter` implementation
-// when calling `.addScrollableContainer()` or
+export interface ScrollPositionSetterConstructorParameters<ScrollableContainer, Anchor> {
+  // `scrollPositionApi` provides the "core" functions for setting scroll position according to the environment.
+  // For example, in the context of a `WebBrowserEnvironment`, it provides the functions for setting scroll position in a web browser.
+  // Developers of "custom" scrolling behaviors could use these "core" functions to implement the "custom" scrolling behavior on top of them.
+  scrollPositionApi: EnvironmentScrollPosition<ScrollableContainer, Anchor>;
+}
+
+export interface ScrollPositionSetterConstructor<ScrollableContainer, Anchor> {
+  new (parameters: ScrollPositionSetterConstructorParameters<ScrollableContainer, Anchor>): ScrollPositionSetter<ScrollableContainer, Anchor>;
+}
+
+// A developer could pass their own `ScrollPositionSetter` implementation
+// to enable some kind of "smooth" scrolling or something like that.
 export interface ScrollPositionSetter<ScrollableContainer, Anchor> {
   // Sets scroll position of a page or a scrollable element.
   // Returns a `Promise` that resolves when it has finished setting the scroll position.
   set(
-    // This is the scrollable container whose scroll position should be set.
-    // * When setting page scroll position, `scrollableContainer` is `undefined`.
-    // * When setting scrollable element scroll position, `scrollableContainer` is the scrollable element.
-    scrollableContainer: ScrollableContainer,
     // This is the scroll position to set.
     // * When setting page scroll position, it could be either an anchor or numeric coordinates.
     // * When setting scrollable element scroll position, it could only be numeric coordinates.
     scrollPositionOrAnchor: Anchor | [number, number],
-    // `scrollPosition` provides various "helper" methods for setting scroll position according to the environment.
-    // For example, in the context of a `WebBrowserEnvironment`, it provides the methods for setting scroll position in a web browser.
-    scrollPositionHelper: EnvironmentScrollPosition<
-      ScrollableContainer,
-      Anchor
-    >,
+    // This is the scrollable container whose scroll position should be set.
+    // * When setting page scroll position, `scrollableContainer` is `undefined`.
+    // * When setting scrollable element scroll position, `scrollableContainer` is the scrollable element.
+    scrollableContainer: ScrollableContainer,
   ): Promise<void>;
 
   // Cancels any pending (or in-progress) setting of scroll position.
-  cancel(): void;
+  stop(): void;
 }
 
 // https://stackoverflow.com/questions/39392853/is-there-a-type-for-class-in-typescript-and-does-any-include-it
@@ -383,7 +390,7 @@ export class ScrollPositionRestoration<
       // Using this option, a developer could provide their own implementation of setting
       // a scroll position. For example, it could use "smooth" (animated) scrolling, etc.
       // When specified, it applies to both page and any scrollable containers.
-      scrollPositionSetter: ScrollPositionSetter<ScrollableContainer, Anchor>;
+      scrollPositionSetter: ScrollPositionSetterConstructor<ScrollableContainer, Anchor>;
 
       shouldChangePageScrollPositionOnLocationChange?: (
         prevLocation: Location | undefined,
@@ -397,14 +404,6 @@ export class ScrollPositionRestoration<
         location: Location,
         prevLocation: Location | undefined,
       ) => [number, number] | undefined;
-
-      // Using this option, a developer could theoretically provide their own implementation
-      // of setting a scroll position. For example, it could use "smooth" (animated) scrolling, etc.
-      // This could be part of the public API if anyone provided a sensible real-world use case for it.
-      _pageScrollPositionSetter?: ScrollPositionSetter<
-        ScrollableContainer,
-        Anchor
-      >;
     },
   );
 
@@ -425,11 +424,6 @@ export class ScrollPositionRestoration<
         location: Location,
         prevLocation: Location | undefined,
       ) => [number, number] | undefined;
-
-      // Using this option, a developer could theoretically provide their own implementation
-      // of setting a scroll position. For example, it could use "smooth" (animated) scrolling, etc.
-      // This could be part of the public API if anyone provided a sensible real-world use case for it.
-      _scrollPositionSetter: ScrollPositionSetter<ScrollableContainer, Anchor>;
     },
   ): () => void;
 

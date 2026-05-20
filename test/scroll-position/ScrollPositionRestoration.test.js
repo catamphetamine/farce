@@ -162,8 +162,8 @@ describe('ScrollPositionRestoration', () => {
           // it also caused the next test (i.e. the next `it()`) to start with this weird
           // non-zero scroll position because the browser seems to be reused between tests.
           //
-          // Here's a same bug report in Playwrite repository from 2020:
-          // https://github.com/microsoft/playwright/issues/1552
+          // Here's a bug report in Playwrite repository issues:
+          // https://github.com/microsoft/playwright/issues/1552#issuecomment-4491256269
           //
           // One could test it by opening `WebBrowserScrollPosition.js` file
           // and changing `anchorElement.scrollIntoView()` line to

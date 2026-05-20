@@ -60,9 +60,7 @@ export default class ScrollPositionAutoSaver {
   }
 
   cancelScheduledAutoSave(reason) {
-    for (const scrollableContainerKey of Object.keys(
-      this._getScrollableContainers(),
-    )) {
+    for (const scrollableContainerKey of Object.keys(this._getScrollableContainers())) {
       if (scrollableContainerKey === PAGE_SCROLLABLE_CONTAINER_KEY) {
         this.cancelSavePageScrollPosition(reason);
       } else {
@@ -91,8 +89,7 @@ export default class ScrollPositionAutoSaver {
   }
 
   cancelSaveScrollableContainerScrollPosition(scrollableContainerKey, reason) {
-    const scrollableContainerEntry =
-      this._getScrollableContainers()[scrollableContainerKey];
+    const scrollableContainerEntry = this._getScrollableContainers()[scrollableContainerKey];
     if (scrollableContainerEntry.cancelSaveScrollPosition) {
       if (reason !== 'SCROLL_POSITION_SAVED') {
         this._log.debug(
@@ -117,8 +114,7 @@ export default class ScrollPositionAutoSaver {
   }
 
   removeScrollableContainerScrollListener(scrollableContainerKey) {
-    const scrollableContainerEntry =
-      this._getScrollableContainers()[scrollableContainerKey];
+    const scrollableContainerEntry = this._getScrollableContainers()[scrollableContainerKey];
     if (scrollableContainerEntry.removeScrollListener) {
       scrollableContainerEntry.removeScrollListener();
       scrollableContainerEntry.removeScrollListener = null;
@@ -126,8 +122,7 @@ export default class ScrollPositionAutoSaver {
   }
 
   addScrollableContainerScrollListener(scrollableContainerKey) {
-    const scrollableContainerEntry =
-      this._getScrollableContainers()[scrollableContainerKey];
+    const scrollableContainerEntry = this._getScrollableContainers()[scrollableContainerKey];
 
     scrollableContainerEntry.removeScrollListener =
       this._scrollPosition.addScrollableContainerScrollListener(
@@ -149,20 +144,19 @@ export default class ScrollPositionAutoSaver {
               'in',
               '<' + scrollableContainerKey + '>',
             );
-            scrollableContainerEntry.cancelSaveScrollPosition =
-              scheduleNextTick(() => {
-                this._log.debug(
-                  'auto-save scroll position after scroll',
-                  'at',
-                  '"' + getLocationUrl(this._getLocation()) + '"',
-                  'in',
-                  '<' + scrollableContainerKey + '>',
-                );
-                this._scrollPositionSaver.saveScrollableContainerScrollPosition(
-                  scrollableContainerKey,
-                  scrollableContainerEntry.scrollableContainer,
-                );
-              });
+            scrollableContainerEntry.cancelSaveScrollPosition = scheduleNextTick(() => {
+              this._log.debug(
+                'auto-save scroll position after scroll',
+                'at',
+                '"' + getLocationUrl(this._getLocation()) + '"',
+                'in',
+                '<' + scrollableContainerKey + '>',
+              );
+              this._scrollPositionSaver.saveScrollableContainerScrollPosition(
+                scrollableContainerKey,
+                scrollableContainerEntry.scrollableContainer,
+              );
+            });
           }
         },
       );
@@ -170,29 +164,28 @@ export default class ScrollPositionAutoSaver {
 
   addPageScrollListener() {
     // Set up scroll listener on the page.
-    this._removePageScrollListener =
-      this._scrollPosition.addPageScrollListener(() => {
-        this._log.debug(
-          'scroll detected',
-          'at',
-          '"' + getLocationUrl(this._getLocation()) + '"',
-          'in',
-          '<' + PAGE_SCROLLABLE_CONTAINER_KEY + '>',
-        );
+    this._removePageScrollListener = this._scrollPosition.addPageScrollListener(() => {
+      this._log.debug(
+        'scroll detected',
+        'at',
+        '"' + getLocationUrl(this._getLocation()) + '"',
+        'in',
+        '<' + PAGE_SCROLLABLE_CONTAINER_KEY + '>',
+      );
 
-        // This flag is not used in real life and is only used in tests (for some reason).
-        if (!this._shouldSaveScrollPosition()) {
-          return;
-        }
-        // Use `scheduleNextTick()` function to "throttle" incoming scroll events.
-        // There would be no use in reacting to every incoming scroll event
-        // because there might be too many in a given short period of time
-        // which could affect the performance of the application.
-        if (!this._cancelSavePageScrollPosition) {
-          this._cancelSavePageScrollPosition = scheduleNextTick(() => {
-            this._scrollPositionSaver.savePageScrollPosition();
-          });
-        }
-      });
+      // This flag is not used in real life and is only used in tests (for some reason).
+      if (!this._shouldSaveScrollPosition()) {
+        return;
+      }
+      // Use `scheduleNextTick()` function to "throttle" incoming scroll events.
+      // There would be no use in reacting to every incoming scroll event
+      // because there might be too many in a given short period of time
+      // which could affect the performance of the application.
+      if (!this._cancelSavePageScrollPosition) {
+        this._cancelSavePageScrollPosition = scheduleNextTick(() => {
+          this._scrollPositionSaver.savePageScrollPosition();
+        });
+      }
+    });
   }
 }

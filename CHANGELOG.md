@@ -1,3 +1,14 @@
+# 0.6.4 / 20.05.2026
+
+- (unlikely breaking change) Changed the API of `scrollPositionSetter`:
+  - Changed the arguments of `ScrollPositionSetter.set()` function:
+    - Old: `(scrollableContainer, scrollPositionOrAnchor, scrollPositionApi)`
+    - New: `(scrollPositionOrAnchor, scrollableContainer)`
+  - Changed the arguments of `ScrollPositionSetter()` constructor:
+    - Old: `()`
+    - New: `({ scrollPositionApi })`
+  - Renamed `ScrollPositionSetter.cancel()` method to `.stop()`
+
 # 0.6.0 / 17.05.2026
 
 - Removed Redux.

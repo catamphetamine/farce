@@ -236,32 +236,47 @@ new NavigationStack(WebBrowserEnvironment, {
 })
 
 class SmoothScrollPositionSetter {
-  // Sets scroll position of a page or a scrollable element.
+  // Class constructor.
+  constructor({ scrollPositionApi }) {
+    // `scrollPositionApi` provides the "core" functions for setting scroll position according to the environment.
+    // For example, in the context of a `WebBrowserEnvironment`, it provides the functions for setting scroll position in a web browser.
+    // Developers of "custom" scrolling behaviors could use these "core" functions to implement the "custom" scrolling behavior on top of them.
+    //
+    // this.scrollPositionApi = scrollPositionApi
+  }
+
+  // Sets scroll position on a page or inside a scrollable container.
+  //
   // Returns a `Promise` that resolves when it has finished setting the scroll position.
-  async set(
-    // `scrollableContainer: Element`.
-    // This is the scrollable container whose scroll position should be set.
-    // * When setting page scroll position, `scrollableContainer` is `undefined`.
-    // * When setting scrollable element scroll position, `scrollableContainer` is the scrollable element.
-    scrollableContainer,
-    // `scrollPositionOrAnchor: string | [number, number]`.
-    // This is the scroll position to set.
-    // * When setting page scroll position, it could be either an anchor or numeric coordinates.
-    // * When setting scrollable element scroll position, it could only be numeric coordinates.
-    scrollPositionOrAnchor,
-    // `scrollPosition` provides various "helper" methods for setting scroll position according to the environment.
-    // For example, in the context of a `WebBrowserEnvironment`, it provides the methods for setting scroll position in a web browser.
-    scrollPositionHelper
-  ) {
-    if (typeof scrollPositionOrAnchor === 'string') {
-      await smoothScrollToAnchor(scrollableContainer, scrollPositionOrAnchor)
+  //
+  // Arguments:
+  //
+  // `scrollPositionOrAnchor: string | [number, number]`
+  //
+  // This is the scroll position to set.
+  // * When setting page scroll position, it could be either an anchor or numeric coordinates.
+  // * When setting scrollable element scroll position, it could only be numeric coordinates.
+  //
+  // `scrollableContainer: Element`
+  //
+  // This is the scrollable container whose scroll position should be set.
+  // * When setting page scroll position, `scrollableContainer` is `undefined`.
+  // * When setting scrollable element scroll position, `scrollableContainer` is the scrollable element.
+  //
+  async set(scrollPositionOrAnchor, scrollableContainer) {
+    if (scrollableContainer) {
+      await smoothScrollToCoordinatesInContainer(scrollableContainer, scrollPositionOrAnchor)
     } else {
-      await smoothScrollToCoordinates(scrollableContainer, scrollPositionOrAnchor)
+      if (typeof scrollPositionOrAnchor === 'string') {
+        await smoothScrollToAnchor(scrollPositionOrAnchor)
+      } else {
+        await smoothScrollToCoordinates(scrollPositionOrAnchor)
+      }
     }
   }
 
   // Cancels any pending (or in-progress) setting of scroll position.
-  cancel() {
+  stop() {
     stopSmoothScrolling()
   }
 }

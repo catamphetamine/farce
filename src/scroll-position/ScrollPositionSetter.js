@@ -1,16 +1,31 @@
 export default class ScrollPositionSetter {
-  set(scrollableContainer, scrollPositionOrAnchor, scrollPositionHelper) {
-    if (typeof scrollPositionOrAnchor === 'string') {
-      throw new Error(
-        '`ScrollPositionSetter` only allows setting numeric scroll position, not an anchor string',
+  constructor({ scrollPositionApi }) {
+    this._scrollPositionApi = scrollPositionApi;
+  }
+
+  // Sets scroll position.
+  // Returns a `Promise`.
+  set(scrollPositionOrAnchor, scrollableContainer) {
+    if (scrollableContainer) {
+      this._scrollPositionApi.setScrollableContainerScrollPosition(
+        scrollableContainer,
+        scrollPositionOrAnchor,
       );
+    } else {
+      if (typeof scrollPositionOrAnchor === 'string') {
+        this._scrollPositionApi.setPageScrollPositionAtAnchor(scrollPositionOrAnchor);
+      } else {
+        this._scrollPositionApi.setPageScrollPosition(scrollPositionOrAnchor);
+      }
     }
-    scrollPositionHelper.setScrollableContainerScrollPosition(
-      scrollableContainer,
-      scrollPositionOrAnchor,
-    );
+    // `scrollPositionApi` functions set scroll position "instantly",
+    // so they don't return a `Promise`. Return a "dummy" `Promise`.
     return Promise.resolve();
   }
 
-  cancel() {}
+  // Cancels setting of scroll position.
+  // Because `scrollPositionApi` functions set scroll position "instantly",
+  // at any given time there's no in-progress scrolling process that could be cancelled,
+  // so this `.stop()` function doesn't do anything.
+  stop() {}
 }

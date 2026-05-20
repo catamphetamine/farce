@@ -1,3 +1,5 @@
+// Gets or sets scroll position in a web browser.
+// Setting scroll position is done "immediately", without any "smooth" animation.
 export default class WebBrowserScrollPosition {
   getPageScrollPosition() {
     return [window.pageXOffset, window.pageYOffset];
@@ -9,20 +11,27 @@ export default class WebBrowserScrollPosition {
   }
 
   setPageScrollPositionAtAnchor(anchor) {
-    const anchorElement =
-      document.getElementById(anchor) || document.getElementsByName(anchor)[0];
+    const anchorElement = document.getElementById(anchor) || document.getElementsByName(anchor)[0];
     if (anchorElement) {
-      // By default it scrolls the element into view
-      // so that it's visible at the top of the window.
+      // Scroll the element into view "instantly" so that it's visible at the top of the screen.
       anchorElement.scrollIntoView();
-      // The line above uses "smooth" scrolling by default
-      // which is not very convenient in automated tests
-      // in certain web browsers such as Firefox.
-      // Still, even adding `behavior: 'instant'` parameter here
-      // still has no effect when running auto-tests in Firefox.
+      //
+      // Note on cancellation: The internet tells that a web browser will automatically interrupt
+      // an in-progress `scrollIntoView()` whenever it detects another concurrent scroll event,
+      // so there appears to be no need to manually implement the cancellation of it
+      // when navigating to some other page because any navigation will automatically
+      // trigger an initial "set  scroll position for this page" call, which will, in that case,
+      // cause an automatic interruption of any in-progress `scrollIntoView()` call made on the previous page.
+      //
+      // Note on the arguments: The internet tells that by default `scrollIntoView()` uses
+      // `behavior: "auto"` mode which scrolls "instantly" rather than "smoothly".
+      // But for some weird reason, it causes an arrival of a delayed duplicate out-of-sync
+      // scroll event when running automated tests in Firefox.
+      // https://github.com/microsoft/playwright/issues/1552#issuecomment-4491256269
+      // And adding `{ behavior: 'instant' }` argument "just in case" doesn't result in any changes.
       // See the comments in `ScrollPositionRestoration.test.js` file for more details.
-      // anchorElement.scrollIntoView({ behavior: 'instant' });
     } else {
+      // If there's no such "anchor" on the page, just scroll to the top of the page.
       this.setPageScrollPosition([0, 0]);
     }
   }

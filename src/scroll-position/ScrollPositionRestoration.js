@@ -1,22 +1,11 @@
 /* eslint-disable no-underscore-dangle */
 
-import PageScrollPositionSetter from './PageScrollPositionSetter.js';
+import RepeatedScrollPositionSetter from './RepeatedScrollPositionSetter.js';
 import ScrollPositionSaver from './ScrollPositionSaver.js';
 import ScrollPositionSetter from './ScrollPositionSetter.js';
 import { PAGE_SCROLLABLE_CONTAINER_KEY } from './constants.js';
 import getLocationUrl from '../getLocationUrl.js';
 import LocationDataStorage from '../data-storage/LocationDataStorage.js';
-
-function areEqualScrollPositions(scrollPosition1, scrollPosition2) {
-  let i = 0;
-  while (i < scrollPosition1.length) {
-    if (scrollPosition1[i] !== scrollPosition2[i]) {
-      return false;
-    }
-    i++;
-  }
-  return true;
-}
 
 export default class ScrollPositionRestoration {
   constructor(session, options) {
@@ -54,27 +43,29 @@ export default class ScrollPositionRestoration {
     this._scrollableContainers[PAGE_SCROLLABLE_CONTAINER_KEY] = {
       scrollableContainer: undefined,
 
-      // Using this option, a developer could theoretically provide their own implementation
-      // of setting a scroll position. For example, it could use "smooth" (animated) scrolling, etc.
-      // This could be part of the public API if anyone provided a sensible real-world use case for it.
       scrollPositionSetter:
-        (options && options._pageScrollPositionSetter) ||
-        // eslint-disable-next-line new-cap
-        (this._scrollPositionSetter && new this._scrollPositionSetter()) ||
-        // A default `ScrollPositionSetter` for a page (sets page scroll position twice with a momentary delay).
-        new PageScrollPositionSetter(),
+        this._scrollPositionSetter
+          // Custom scroll position setter.
+          ? new this._scrollPositionSetter({ scrollPositionApi: this._scrollPosition })
+          // A default `ScrollPositionSetter` for a page.
+          // Sets page scroll position twice with a momentary delay in-between.
+          // Originally it was meant to work around the issue when some browsers
+          // used to overwrite the page scroll position that was set normally.
+          // The workaround was to over-overwrite the page scroll position
+          // to the originally intended value.
+          : new RepeatedScrollPositionSetter(
+            // The default basic "immediate" scroll position setter.
+            new ScrollPositionSetter({ scrollPositionApi: this._scrollPosition })
+          ),
+
+      shouldChangeScrollPositionOnLocationChange:
+        options && options.shouldChangePageScrollPositionOnLocationChange,
 
       // This function is only used in tests.
       // There seems to be no use of it in real life, hence it's not public API.
       // It's only used in tests.
       _getSavedScrollPositionOnLocationChange:
         options && options._getSavedPageScrollPositionOnLocationChange,
-
-      // This function is only used in tests.
-      // There seems to be no use of it in real life, hence it's not public API.
-      // It's only used in tests.
-      shouldChangeScrollPositionOnLocationChange:
-        options && options.shouldChangePageScrollPositionOnLocationChange,
     };
   }
 
@@ -92,16 +83,12 @@ export default class ScrollPositionRestoration {
 
     // Validate `scrollableContainerKey`.
     if (scrollableContainerKey === PAGE_SCROLLABLE_CONTAINER_KEY) {
-      throw new Error(
-        `Scrollable container key "${scrollableContainerKey}" is not allowed`,
-      );
+      throw new Error(`Scrollable container key "${scrollableContainerKey}" is not allowed`);
     }
 
     // Check that it hasn't already been added.
     if (this._scrollableContainers[scrollableContainerKey]) {
-      throw new Error(
-        `Scrollable container key "${scrollableContainerKey}" is already added`,
-      );
+      throw new Error(`Scrollable container key "${scrollableContainerKey}" is already added`);
     }
 
     this._log.debug('add scrollable container', '<' + scrollableContainerKey + '>');
@@ -111,18 +98,13 @@ export default class ScrollPositionRestoration {
       // Scrollable container element.
       scrollableContainer,
 
-      // Using this option, a developer could theoretically provide their own implementation
-      // of setting a scroll position. For example, it could use "smooth" (animated) scrolling, etc.
-      // This could be part of the public API if anyone provided a sensible real-world use case for it.
       scrollPositionSetter:
-        (options && options._scrollPositionSetter) ||
-        (this._scrollPositionSetter && new this._scrollPositionSetter()) ||
-        // The default basic "immediate" scroll position setter.
-        new ScrollPositionSetter(),
+        this._scrollPositionSetter
+          // Custom scroll position setter.
+          ? new this._scrollPositionSetter({ scrollPositionApi: this._scrollPosition })
+          // The default basic "immediate" scroll position setter.
+          : new ScrollPositionSetter({ scrollPositionApi: this._scrollPosition }),
 
-      // This function is only used in tests.
-      // There seems to be no use of it in real life, hence it's not public API.
-      // It's only used in tests.
       shouldChangeScrollPositionOnLocationChange:
         options && options.shouldChangeScrollPositionOnLocationChange,
 
@@ -140,11 +122,10 @@ export default class ScrollPositionRestoration {
     // should be restored, if it pre-exists. Otherwise, if it doesn't pre-exist,
     // the initial scroll position should be saved for the scrollable container.
     if (this._location) {
-      const previouslySavedScrollPosition =
-        this._getSavedScrollPositionForLocation(
-          this._location,
-          scrollableContainerKey,
-        );
+      const previouslySavedScrollPosition = this._getSavedScrollPositionForLocation(
+        this._location,
+        scrollableContainerKey,
+      );
       if (previouslySavedScrollPosition) {
         this._log.debug(
           'set initial scroll position on add scrollable container',
@@ -206,10 +187,9 @@ export default class ScrollPositionRestoration {
 
     this._scrollPositionSaver.start();
 
-    this._removePageStatusListener =
-      this._sessionLifecycle.addExecutionStatusListener(
-        this._sessionExecutionStatusListener,
-      );
+    this._removePageStatusListener = this._sessionLifecycle.addExecutionStatusListener(
+      this._sessionExecutionStatusListener,
+    );
   }
 
   // This method is "idempotent", i.e. it can be called multiple times.
@@ -233,10 +213,8 @@ export default class ScrollPositionRestoration {
   }
 
   _cancelAnyPendingSettingOfScrollPosition() {
-    for (const scrollableContainerEntry of Object.values(
-      this._scrollableContainers,
-    )) {
-      scrollableContainerEntry.scrollPositionSetter.cancel();
+    for (const scrollableContainerEntry of Object.values(this._scrollableContainers)) {
+      scrollableContainerEntry.scrollPositionSetter.stop();
     }
   }
 
@@ -363,35 +341,17 @@ export default class ScrollPositionRestoration {
 
   // Tells if the current scroll position is the default one.
   _isDefaultScrollPosition() {
-    for (const scrollableContainerKey of Object.keys(
-      this._scrollableContainers,
-    )) {
-      if (scrollableContainerKey === PAGE_SCROLLABLE_CONTAINER_KEY) {
-        if (
-          !areEqualScrollPositions(
-            this._scrollPosition.getPageScrollPosition(),
-            this._getDefaultScrollPosition(),
-          )
-        ) {
-          return false;
-        }
-      } else {
-        const scrollableContainerEntry =
-          this._scrollableContainers[scrollableContainerKey];
-        if (
-          !areEqualScrollPositions(
-            this._scrollPosition.getScrollableContainerScrollPosition(
-              scrollableContainerEntry.scrollableContainer,
-            ),
-            this._getDefaultScrollPosition(),
-          )
-        ) {
-          return false;
-        }
-      }
-    }
-
-    return true;
+    return Object.keys(this._scrollableContainers).some((scrollableContainerKey) => {
+      // Get current scroll position.
+      const scrollPosition =
+        scrollableContainerKey === PAGE_SCROLLABLE_CONTAINER_KEY
+          ? this._scrollPosition.getPageScrollPosition()
+          : this._scrollPosition.getScrollableContainerScrollPosition(
+            this._scrollableContainers[scrollableContainerKey].scrollableContainer
+          );
+      // See if it's a default scroll position.
+      return areEqualScrollPositions(scrollPosition, this._getDefaultScrollPosition());
+    });
   }
 
   // Restores scroll position.
@@ -400,21 +360,16 @@ export default class ScrollPositionRestoration {
   _setScrollPosition() {
     return Promise.all(
       Object.keys(this._scrollableContainers).map((scrollableContainerKey) => {
-        const scrollableContainerEntry =
-          this._scrollableContainers[scrollableContainerKey];
+        const scrollableContainerEntry = this._scrollableContainers[scrollableContainerKey];
 
-        // This function is only used in tests.
-        // There seems to be no use of it in real life, hence it's not public API.
-        // It's only used in tests.
-        if (
-          scrollableContainerEntry.shouldChangeScrollPositionOnLocationChange
-        ) {
-          if (
-            !scrollableContainerEntry.shouldChangeScrollPositionOnLocationChange(
-              this._prevLocation,
-              this._location,
-            )
-          ) {
+        // `shouldChangeScrollPositionOnLocationChange()` could be used to
+        // disable scroll position restoration for any navigation
+        // from a given `prevLocation` to a given `location`.
+        if (scrollableContainerEntry.shouldChangeScrollPositionOnLocationChange) {
+          if (!scrollableContainerEntry.shouldChangeScrollPositionOnLocationChange(
+            this._prevLocation,
+            this._location,
+          )) {
             return Promise.resolve();
           }
         }
@@ -457,9 +412,8 @@ export default class ScrollPositionRestoration {
 
         // Set scroll position of scrollable container.
         return scrollableContainerEntry.scrollPositionSetter.set(
-          scrollableContainerEntry.scrollableContainer,
           scrollPositionOrAnchorToSet,
-          this._scrollPosition,
+          scrollableContainerEntry.scrollableContainer,
         );
       }),
     );
@@ -570,4 +524,15 @@ export default class ScrollPositionRestoration {
   _disableSavingScrollPosition() {
     this._doNotSaveScrollPosition = true;
   }
+}
+
+function areEqualScrollPositions(scrollPosition1, scrollPosition2) {
+  let i = 0;
+  while (i < scrollPosition1.length) {
+    if (scrollPosition1[i] !== scrollPosition2[i]) {
+      return false;
+    }
+    i++;
+  }
+  return true;
 }
