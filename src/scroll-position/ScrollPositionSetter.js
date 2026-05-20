@@ -1,11 +1,11 @@
 export default class ScrollPositionSetter {
-  set(scrollableContainer, scrollPositionOrAnchor, environmentScrollPosition) {
+  set(scrollableContainer, scrollPositionOrAnchor, scrollPositionHelper) {
     if (typeof scrollPositionOrAnchor === 'string') {
       throw new Error(
         '`ScrollPositionSetter` only allows setting numeric scroll position, not an anchor string',
       );
     }
-    environmentScrollPosition.setScrollableContainerScrollPosition(
+    scrollPositionHelper.setScrollableContainerScrollPosition(
       scrollableContainer,
       scrollPositionOrAnchor,
     );

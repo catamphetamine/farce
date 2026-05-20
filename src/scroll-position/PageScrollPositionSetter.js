@@ -14,19 +14,19 @@ import scheduleNextTick from './scheduleNextTick.js';
 //
 export default class PageScrollPositionSetter {
   // Sets page scroll position either at an "anchor" or at given coordinates.
-  _setPageScrollPositionTo(scrollPositionOrAnchor, environmentScrollPosition) {
+  _setPageScrollPositionTo(scrollPositionOrAnchor, scrollPositionHelper) {
     if (typeof scrollPositionOrAnchor === 'string') {
       // Scrolls page to an "ahcnor".
-      environmentScrollPosition.setPageScrollPositionAtAnchor(
+      scrollPositionHelper.setPageScrollPositionAtAnchor(
         scrollPositionOrAnchor,
       );
     } else {
       // Scrolls page to given coordinates.
-      environmentScrollPosition.setPageScrollPosition(scrollPositionOrAnchor);
+      scrollPositionHelper.setPageScrollPosition(scrollPositionOrAnchor);
     }
   }
 
-  _setPageScrollPosition(environmentScrollPosition) {
+  _setPageScrollPosition(scrollPositionHelper) {
     const isDelayedCall = Boolean(this._cancelDelayedSetPageScrollPosition);
 
     // If this function was triggered in a delayed fashion,
@@ -56,7 +56,7 @@ export default class PageScrollPositionSetter {
     //
     this._setPageScrollPositionTo(
       this._pageScrollPositionOrAnchorToSet,
-      environmentScrollPosition,
+      scrollPositionHelper,
     );
 
     // If it was a delayed call, stop.
@@ -77,7 +77,7 @@ export default class PageScrollPositionSetter {
     // which isn't removed in future just in case to not "break" any unknown cases.
     return new Promise((resolve) => {
       this._cancelDelayedSetPageScrollPosition = scheduleNextTick(() =>
-        resolve(this._setPageScrollPosition(environmentScrollPosition)),
+        resolve(this._setPageScrollPosition(scrollPositionHelper)),
       );
     });
   }
@@ -86,7 +86,7 @@ export default class PageScrollPositionSetter {
   set(
     scrollableContainer,
     pageScrollPositionOrAnchor,
-    environmentScrollPosition,
+    scrollPositionHelper,
   ) {
     // Prevents empty string anchor.
     if (!pageScrollPositionOrAnchor) {
@@ -104,7 +104,7 @@ export default class PageScrollPositionSetter {
 
     this._pageScrollPositionOrAnchorToSet = pageScrollPositionOrAnchor;
 
-    return this._setPageScrollPosition(environmentScrollPosition);
+    return this._setPageScrollPosition(scrollPositionHelper);
   }
 
   // This function should be "idempotent", i.e. be able to be called multiple times.

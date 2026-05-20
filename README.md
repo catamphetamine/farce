@@ -3,13 +3,24 @@
 [![npm version](https://img.shields.io/npm/v/navigation-stack.svg?style=flat-square)](https://www.npmjs.com/package/navigation-stack)
 [![npm downloads](https://img.shields.io/npm/dm/navigation-stack.svg?style=flat-square)](https://www.npmjs.com/package/navigation-stack)
 
-Navigation in a Single-Page Application.
+Navigation Stack provides a clean and easy-to-use API for handling navigation in a Single-Page Application.
 
-* Represents web browser navigation history as a "stack" data structure.
-* Provides operations to perform programmatic navigation such as "push" (go to new URL), "replace" (redirect to new URL), "shift" (rewind to a previously visited URL).
-* Provides a subscription mechanism to get notified on location changes.
-* Supports automatic [scroll position restoration](#scroll-position-restoration) on "Back"/"Forward" navigation.
-<!-- * If you're using React, see [`navigation-stack-react`](http://npmjs.com/package/navigation-stack-react) package. -->
+* Web browser navigation history is exposed in the form of a "stack" data structure.
+* The "stack" exposes the following operations which trigger navigation:
+  * "push" — go to new URL
+  * "replace" — redirect to new URL
+  * "shift" — rewind to a previously visited URL
+* Subscribe to get notified whenever someone triggers a navigation.
+* Automatically restore [scroll position](#scroll-position-restoration) on "Back"/"Forward" navigation.
+* [Block navigation](#blocking-navigation), if required.
+
+<!-- If you're using React, see [`navigation-stack-react`](http://npmjs.com/package/navigation-stack-react) package. -->
+
+## Why
+
+There're no clean way of handling navigation in a Single-Page Application using just the "native" browser API. The "native" API is clunky, obscure and retro-fitted, lacking clear design vision.
+
+This package wraps the "native" API in a clean and easy-to-use interface.
 
 ## Install
 
@@ -19,9 +30,9 @@ npm install navigation-stack --save
 
 ## Use
 
-Any changes to a `NavigationStack` instance are "magically" reflected in the web browser's address bar and navigation history, and vice versa: any changes to the URL in the web browser's address bar are "magically" reflected in the `NavigationStack` instance. So one could think of `NavigationStack` as a very convenient proxy to web browser's address bar and navigation history. What's left to the application is to subscribe to `navigationStack` changes and re-render the page accordingly.
+Any changes made in a `NavigationStack` instance are "magically" reflected in the web browser's address bar and navigation history, and vice versa: any changes to the URL in the web browser's address bar are "magically" reflected in the `NavigationStack` instance. So one could think of `NavigationStack` as a very convenient proxy to web browser's address bar and navigation history. What's left to the application is to subscribe to `navigationStack` changes and re-render the page accordingly.
 
-Start by creating a `NavigationStack` instance.
+Start by creating a `NavigationStack` instance:
 
 ```js
 import { NavigationStack, WebBrowserEnvironment } from 'navigation-stack'
@@ -30,74 +41,82 @@ import { NavigationStack, WebBrowserEnvironment } from 'navigation-stack'
 const navigationStack = new NavigationStack(WebBrowserEnvironment)
 ```
 
-Then subscribe to changes:
+Then subscribe to location changes:
 
 ```js
 // Subscribe to location changes.
 // The listener function will be called immediately after the current location has changed.
 // The first call happens for the initial location.
-// Next calls will happen in case of navigation.
+// Next calls will happen in case of any navigation.
 const unsubscribe = navigationStack.subscribe((location) => {
   console.log('Current location', location)
-  document.body.innerHTML = '<div>' + location.pathname + '</div>'
 })
 ```
 
-Now ready to perform navigation actions.
+<!-- document.body.innerHTML = '<div>' + location.pathname + '</div>' -->
+
+Now ready to perform navigation actions:
 
 ```js
-// Sets the initial location.
+// "init" — reads the initial location.
+//
+// Until this is done, the stack is not operational.
+//
 // No argument when using `WebBrowserEnvironment`.
+//
 navigationStack.init()
 
-// Sets the `location` to be a new location.
+// "push" — updates the current location.
 //
-// Also updates the URL in the web browser's address bar.
+// One could think of it as an equivalent of clicking a link.
 //
-// Also adds a new entry in the web browser's navigation history.
+// Updates the URL in the web browser's address bar.
+//
+// Adds a new entry in the web browser's navigation history.
 //
 navigationStack.push('/new-location')
 
-// Sets the `location` to be a new location.
+// "replace" — updates the current location.
 //
-// Also updates the URL in the web browser's address bar.
+// Updates the URL in the web browser's address bar.
 //
 // Does not add a new entry in the web browser's navigation history
-// which is the only difference between this and `Actions.push()`.
+// which is the only difference between this and "push".
 //
 navigationStack.replace('/new-location')
 
-// Sets the `location` to be a previous one (if there is one).
-// If there's no such `location` in the navigation history,
-// throws a `NavigationOutOfBoundsError` error that has an `index` property.
+// Negative "shift" — updates the current location to be a previous one from the history.
+//
+// If no such location exists in the history, throws a `NavigationOutOfBoundsError` error.
 //
 // One could think of it as an equivalent of clicking a "Back" button in a web browser.
 //
-// Also updates the URL in the web browser's address bar.
+// Updates the URL in the web browser's address bar.
 //
-// Also shifts the current position in the web browser's navigation history.
+// Shifts the current position in the web browser's navigation history.
 //
 navigationStack.shift(-1)
 
-// Sets the `location` to be a next one (if there is one).
-// If there's no such `location` in the navigation history,
-// throws a `NavigationOutOfBoundsError` error that has an `index` property.
+// Positive "shift" — updates the current location to be a next one from the history.
+//
+// If no such location exists in the history, throws a `NavigationOutOfBoundsError` error.
 //
 // One could think of it as an equivalent of clicking a "Forward" button in a web browser.
 //
-// Also updates the URL in the web browser's address bar.
+// Updates the URL in the web browser's address bar.
 //
-// Also shifts the current position in the web browser's navigation history.
+// Shifts the current position in the web browser's navigation history.
 //
 navigationStack.shift(1)
 ```
 
-To get the current location:
+To get the current location at any time:
 
 ```js
 const location = navigationStack.current()
-console.log(location)
 ```
+
+<!-- console.log(location) -->
 
 (optional) After the user is done using the app, stop the session and clean up any listeners.
 
@@ -111,29 +130,6 @@ navigationStack.stop()
 ```
 
 ## Current Location
-
-<!--
-To track the current location, the application could listen to `ActionTypes.UPDATE` action. The `payload` of the action is the current location.
-
-For example, below is the source code for the default `locationReducer`.
-
-```js
-import { ActionTypes } from 'navigation-stack'
-
-// With this reducer, `state` would always tell the current location.
-function reducer(state, action) {
-  if (action.type === ActionTypes.UPDATE) {
-    // `action.payload` is the current location.
-    return action.payload
-  }
-  return state
-}
-```
-
-With this reducer, `store.getState()` will return the current location.
-
-Calling `store.dispatch(Actions.init(window.location))` will trigger the initial `ActionTypes.UPDATE` action which will set the initial current location. From then on, the current location will always stay in sync with the web browser's URL bar, including "Back"/"Forward" navigation.
--->
 
 To get the current location, use `navigationStack.current()`.
 
@@ -212,22 +208,30 @@ navigationStack.stop()
 `NavigationStack` constructor relevant options:
 
 * `manageScrollPosition: true` — Enables the automatic scroll position management feature.
-* `shouldChangePageScrollPositionOnLocationChange(prevLocation?, newLocation): boolean` — Decides whether page scroll position management should still be active for a given transition from `prevLocation` to `newLocation`. Is only relevant when `manageScrollPosition: true` option is passed to `NavigationStack` constructor. As the most obvious use case, it allows an application to selectively disable the effect of resetting page scroll position when replacing the URL with same pathname but different query parameters.
+* `shouldChangePageScrollPositionOnLocationChange(prevLocation?, newLocation): boolean` — Allows one to disable the automatic page scroll position management for any transition from a given `prevLocation` to a given `newLocation`. Is only relevant when `manageScrollPosition: true` option is passed to `NavigationStack` constructor. As the most obvious use case, it allows an application to selectively disable the effect of resetting page scroll position when updating the query parameters of the URL.
 
 
 `NavigationStack` relevant methods:
 
 * `addScrollableContainer(key: string, element: Element, options?: object)` — Use it in cases when it should restore not only the page scroll position but also the scroll position(s) of any other scrollable container(s). Returns a "remove scrollable container" function.
   * `options` object could have properties:
-    * `shouldChangeScrollPositionOnLocationChange(prevLocation?, newLocation): boolean` — Decides whether scroll position management inside this scrollable container should still be active for a given transition from `prevLocation` to `newLocation`. Is only relevant when `manageScrollPosition: true` option is passed to `NavigationStack` constructor. As the most obvious use case, it allows an application to selectively disable the effect of resetting scroll position inside a scrollable container when replacing the URL with same pathname but different query parameters.
+    * `shouldChangeScrollPositionOnLocationChange(prevLocation?, newLocation): boolean` — Allows one to disable the automatic scroll position management inside this scrollable container for any transition from a given `prevLocation` to a given `newLocation`. Is only relevant when `manageScrollPosition: true` option is passed to `NavigationStack` constructor. As the most obvious use case, it allows an application to selectively disable the effect of resetting scroll position inside this scrollable container when updating the query parameters of the URL.
 
-* `locationRendered()` — Call it every time a different location has been rendered, including the initial location, without any delay, i.e. immediately after a different location has been rendered.
+* `locationRendered()` — Call it every time a different location has been rendered, including the initial location, without any delay, i.e. immediately after a location has been rendered.
+
+### Smooth Scrolling
 
 By default, when restoring scroll position, it uses basic "immediate" scrolling. A developer could supply a custom `scrollPositionSetter` option with an implementation of custom scrolling behavior. For example, it could be some kind of "smooth" scrolling or something like that.
+
+<details>
+<summary>Example</summary>
+
+######
 
 ```js
 new NavigationStack(WebBrowserEnvironment, {
   manageScrollPosition: true,
+  // Custom `scrollPositionSetter`.
   scrollPositionSetter: SmoothScrollPositionSetter
 })
 
@@ -262,6 +266,7 @@ class SmoothScrollPositionSetter {
   }
 }
 ```
+</details>
 
 <!--
 <details>
@@ -280,10 +285,10 @@ const scrollPositionRestoration = new ScrollPositionRestoration(new WebBrowserSe
 
 //----------------------------------------------------------------------------------------
 
-// If you decide to use `NavigationStack` or Redux-way `createMiddlewares()` for navigation,
-// it should be tied to the same session.
+// If you decide to use `NavigationStack`,
+// it should be tied to the same environment.
 //
-// const navigationStack = new NavigationStack(session)
+// const navigationStack = new NavigationStack(WebBrowserEnvironment)
 // navigationStack.init()
 //
 // Or, navigation could be performed by any other means such as using `window.history.pushState()`.
@@ -365,6 +370,51 @@ scrollPositionRestoration.stop()
 </details>
 -->
 
+## Blocking Navigation
+
+`NavigationStack` provides the ability to block navigation. Call `.addNavigationBlocker()` method to set up a "navigation blocker".
+
+```js
+import {
+  NavigationStack,
+  WebBrowserEnvironment
+} from 'navigation-stack'
+
+// Create a `NavigationStack` instance.
+const navigationStack = new NavigationStack(WebBrowserEnvironment)
+
+// Add a navigation blocker.
+const removeNavigationBlocker = navigationStack.addNavigationBlocker(
+  (newLocation) => {
+    // Returning `true` means "this navigation should be blocked".
+    return true
+  }
+);
+
+// Because the navigation is blocked, current location will not change here.
+//
+// The URL in the web browser's address bar will stay the same
+// and no new entries will be added in the web browser's navigation history.
+//
+navigationStack.push('/new-location')
+
+// Remove the navigation blocker.
+removeNavigationBlocker()
+
+// With the blocker removed, current location will be set to a new one.
+//
+// This also updates the URL in the web browser's address bar
+// and adds a new entry in the web browser's navigation history.
+//
+navigationStack.push('/new-location')
+```
+
+Navigation blocker should be a function that receives a `newLocation` argument and could be "synchronous" or "asynchronous" (i.e. return a `Promise`, aka `async`/`await`).
+
+The `newLocation` argument of a blocker function is an object that has all the properties of a [standard web browser location](https://developer.mozilla.org/en-US/docs/Web/API/Window/location) with the addition of a `query` object.
+
+Navigation blockers fire both when navigating from one page to another and when closing the current browser tab. In the latter case, `newLocation` argument will be `null`, and also the blocker function can't return a `Promise` (because the browser won't wait for it), and returning `true` from it will cause the web browser will to show a confirmation modal with a non-customizable generic browser-specific text like "Leave site? Changes you made might not be saved".
+
 ## Base Path
 
 <!--
@@ -375,7 +425,7 @@ createMiddlewares(session, { basePath?: '/base-path' })
 ```
 -->
 
-If the web application is hosted under a certain URL prefix, it should be specified as a `basePath` parameter when creating a `NavigationStack` instance. This prefix will automatically be added to the URL in the web browser's address bar while the `location` object itself won't include it in the `pathname`.
+If the web application is hosted under a certain URL prefix, it should be specified as a `basePath` parameter when creating a `NavigationStack` instance. This prefix will automatically be added to the URL in the web browser's address bar, and the `location` object will automatically strip it from its `pathname`.
 
 ```js
 new NavigationStack(WebBrowserEnvironment, { basePath: '/base-path' })
@@ -529,51 +579,6 @@ removeBasePath('/base-path/abc', '/base-path') === '/abc';
 removeBasePath({ pathname: '/base-path/abc' }, '/base-path') === { pathname: '/abc' }
 ```
 
-## Block Navigation
-
-`NavigationStack` provides the ability to block navigation. Call `.addNavigationBlocker()` method to set up a "navigation blocker".
-
-```js
-import {
-  NavigationStack,
-  WebBrowserEnvironment
-} from 'navigation-stack'
-
-// Create a `NavigationStack` instance.
-const navigationStack = new NavigationStack(WebBrowserEnvironment)
-
-// Add a navigation blocker.
-const removeNavigationBlocker = navigationStack.addNavigationBlocker(
-  (newLocation) => {
-    // Returning `true` means "this navigation should be blocked".
-    return true
-  }
-);
-
-// Because the navigation is blocked, current location will not change here.
-//
-// The URL in the web browser's address bar will stay the same
-// and no new entries will be added in the web browser's navigation history.
-//
-navigationStack.push('/new-location')
-
-// Remove the navigation blocker.
-removeNavigationBlocker()
-
-// With the blocker removed, current location will be set to a new one.
-//
-// This also updates the URL in the web browser's address bar
-// and adds a new entry in the web browser's navigation history.
-//
-navigationStack.push('/new-location')
-```
-
-Navigation blocker should be a function that receives a `newLocation` argument and could be "synchronous" or "asynchronous" (i.e. return a `Promise`, aka `async`/`await`).
-
-The `newLocation` argument of a blocker function is an object that has all the properties of a [standard web browser location](https://developer.mozilla.org/en-US/docs/Web/API/Window/location) with the addition of a `query` object.
-
-Navigation blockers fire both when navigating from one page to another and when closing the current browser tab. In the latter case, `newLocation` argument will be `null`, and also the blocker function can't return a `Promise` (because it won't wait), and returning `true` from it will cause the web browser will to show a confirmation modal with a non-customizable generic browser-specific text like "Leave site? Changes you made might not be saved".
-
 ## Data Storage
 
 One could use `NavigationStack`'s "data storage" to store any kind of application-specific data within the bounds of a given "session", which could be defined as the time from "opening" the application to  "closing" it. As long as the "session" exists, so does the data in the "data storage".
@@ -634,11 +639,9 @@ Then I decided to merge it with [`scroll-behavior`](http://npmjs.com/package/scr
 
 Then I decided to completely reorganize and refactor the entire code.
 
-Then I decided to remove Redux and expose a more conventional and simple API. The original [`farce`](http://npmjs.com/package/farce) package was published in September 2016, and by that time `redux` had [still been](https://medium.com/@dan_abramov/you-might-not-need-redux-be46360cf367) a hot topic since [July 2015](https://www.youtube.com/watch?v=xsSnOQynTHs). But in retrospect, there were no legitimate reasons to heavily rely on Redux when implementing such a small and universal library. Apparently, in 2016, everyone went crazy over Redux and it became a de-facto standard when building just about any React web application, to the point of assuming that if you're building a React web app, you're 100% building it on Redux, so all hot frameworks should reuse that Redux for both the internal implementation and the public API.
+Then I decided to drop the reliance on [`redux`](http://npmjs.com/package/redux) and expose a more conventional and intuitive API — in the form of a "stack" rather than Redux "middleware". The original [`farce`](http://npmjs.com/package/farce) package was published in September 2016, and by that time Redux [still was](https://medium.com/@dan_abramov/you-might-not-need-redux-be46360cf367) a hot topic since [July 2015](https://www.youtube.com/watch?v=xsSnOQynTHs). But in retrospect, there were no legitimate reasons to heavily rely on Redux when implementing such a small and universal package. Apparently, in 2016, everyone went crazy over Redux and it became a de-facto standard when building just about any React web application, to the point of assuming that if you're building a React web app, you're 100% building it on Redux, so all hot frameworks should reuse that Redux for both the internal implementation and the public API. ["Why I Stopped Using Redux"](https://dev.to/g_abud/why-i-quit-redux-1knl).
 
-> Redux was a revolutionary technology in the React ecosystem. It enabled us to have a global store with [immutable data](https://medium.com/dailyjs/the-state-of-immutability-169d2cd11310) and **fixed the issue of [prop-drilling](https://kentcdodds.com/blog/prop-drilling) in our component tree. For sharing immutable data across an application, it continues to be an excellent tool that scales really well.
-
-Source: [Why I Stopped Using Redux](https://dev.to/g_abud/why-i-quit-redux-1knl)
+The result is the present "stack" API.
 
 ## GitHub
 
