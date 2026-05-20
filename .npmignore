@@ -1,0 +1,5 @@
+.babelrc
+.gitignore
+CODE_OF_CONDUCT.md
+/test/
+/src/
