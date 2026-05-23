@@ -7,6 +7,16 @@ import { PAGE_SCROLLABLE_CONTAINER_KEY } from './constants.js';
 import getLocationUrl from '../getLocationUrl.js';
 import LocationDataStorage from '../data-storage/LocationDataStorage.js';
 
+// Automatically restores scroll position on "Back"/"Forward" navigation.
+//
+// Web browsers do implement this feature natively, but it has some limitations:
+// * It restores scroll position "immediately" after "Back"/"Forward" navigation
+//   which won't necessarily work well with "asynchronous" rendering frameworks such as React.
+// * It scrolls "abruptly" and doesn't allow using custom "smooth" scrolling implementation.
+//
+// Also, an interesting blog post that sheds some light on the issue:
+// https://medium.com/@JanPaul123/maintaining-scroll-positions-in-all-browsers-a280d49bffca
+//
 export default class ScrollPositionRestoration {
   constructor(session, options) {
     this._log = session.environment.log;

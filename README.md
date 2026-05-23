@@ -21,6 +21,7 @@ Navigation Stack provides a clean and easy-to-use API for handling navigation in
 * The "native" browser API is clumsy. This package wraps the "native" API in a clean, coherent and easy-to-use interface.
 
 * The "native" browser API doesn't provide the control of scroll position restoration.
+  * It doesn't scroll to top when navigating to a new page.
   * It restores scroll position immediately after a "Back"/"Forward" navigation has taken place, without waiting for the page to prepare itself. Meawhile, frameworks like React render pages "asynchronously", not immediately, so the content is not rendered yet by the time it attempts to scroll to a certain position, and that scroll position is lost. This package lets a developer specify exactly when the page is ready.
   * When restoring scroll position, it does that "abruptly", with no option for "smooth" scrolling. I'm not saying that "smooth" scrolling is a good idea, but why not let developers decide. This package lets a developer use their own "smooth" scrolling implementation.
 
