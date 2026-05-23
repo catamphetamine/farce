@@ -14,8 +14,9 @@ import LocationDataStorage from '../data-storage/LocationDataStorage.js';
 //   which won't necessarily work well with "asynchronous" rendering frameworks such as React.
 // * It scrolls "abruptly" and doesn't allow using custom "smooth" scrolling implementation.
 //
-// Also, an interesting blog post that sheds some light on the issue:
+// Also, some interesting blog posts that shed some light on the issue:
 // https://medium.com/@JanPaul123/maintaining-scroll-positions-in-all-browsers-a280d49bffca
+// https://www.aworkinprogress.dev/scroll-position-restoration--how-its-done--how-its-lost--and-how-its-fixed
 //
 export default class ScrollPositionRestoration {
   constructor(session, options) {
