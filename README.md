@@ -6,7 +6,7 @@
 Navigation Stack provides a clean and easy-to-use API for handling navigation in a Single-Page Application.
 
 * Web browser navigation history is exposed in the form of a "stack" data structure.
-* The "stack" exposes the following operations which trigger navigation:
+* The "stack" exposes the following operations to trigger navigation:
   * "push" — go to new URL
   * "replace" — redirect to new URL
   * "shift" — rewind to a previously visited URL
@@ -18,9 +18,18 @@ Navigation Stack provides a clean and easy-to-use API for handling navigation in
 
 ## Why
 
-There're no clean way of handling navigation in a Single-Page Application using just the "native" browser API. The "native" API is clunky, obscure and retro-fitted, lacking clear design vision.
+* The "native" browser API is clumsy. This package wraps the "native" API in a clean, coherent and easy-to-use interface.
 
-This package wraps the "native" API in a clean and easy-to-use interface.
+* The "native" browser API doesn't provide the control of scroll position restoration.
+  * It restores scroll position immediately after a "Back"/"Forward" navigation has taken place, without waiting for the page to prepare itself. Meawhile, frameworks like React render pages "asynchronously", not immediately, so the content is not rendered yet by the time it attempts to scroll to a certain position, and that scroll position is lost. This package lets a developer specify exactly when the page is ready.
+  * When restoring scroll position, it does that "abruptly", with no option for "smooth" scrolling. I'm not saying that "smooth" scrolling is a good idea, but why not let developers decide. This package lets a developer use their own "smooth" scrolling implementation.
+
+* This package adds other quality-of-life improvements which the "native" browser API doesn't have:
+  * A centralized place to subscribe for any kind of location changes.
+  * Automatically ignore "base path" in the application URL.
+  * Read or write the location in a form of a human-readable JSON object with separate query parameters.
+  * Store location-specific data that is accessible from any page and survives page reload.
+  * Prevent accidental navigation away from a page when there're unsaved changes.
 
 ## Install
 
