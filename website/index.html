@@ -1,0 +1,123 @@
+<html>
+	<head>
+		<title>navigation-stack</title>
+
+		<meta charset="utf-8"/>
+
+		<script src="./navigation-stack.js"></script>
+
+    <script src="./lib/prism.js"></script>
+
+    <link href="lib/prism.css" rel="stylesheet" />
+
+		<style>
+			body {
+				font-family: sans-serif;
+				margin: 20px;
+        background: #434343;
+        color: #dddddd;
+			}
+
+      #main-link {
+        display: block;
+        font-size: 24px;
+        color: #fd8900;
+        font-family: monospace;
+        text-decoration: none;
+      }
+
+			p {
+        line-height: 1.5rem;
+			}
+
+			h2 {
+				font-size: 1rem;
+			}
+
+			pre {
+				padding: 0.7rem;
+				background-color: #2d2d2d;
+				border-radius: 0.5rem;
+			}
+
+			.navigation-buttons {
+				display: flex;
+				flex-direction: row;
+				align-items: flex-start;
+				margin-top: 2rem;
+				margin-bottom: 2rem;
+			}
+
+			.navigation-buttons button {
+        padding: 0.5rem;
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #fd8900;
+        margin-bottom: -5px;
+        font-size: 0.75rem;
+        margin-right: 0.5rem;
+        border-radius: 5px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        border: 1px solid #fd8900;
+			}
+
+      .navigation-buttons button:active
+      {
+        background: #fd8900;
+        color: black;
+      }
+		</style>
+	</head>
+
+	<body>
+		<a id="main-link" href="https://www.npmjs.com/package/navigation-stack">
+			navigation-stack
+		</a>
+
+		<p>
+			Provides a clean and easy-to-use API for handling navigation in a Single-Page Application.
+		</p>
+
+		<div class="navigation-buttons">
+			<button onclick="navigationStack.shift(-1)">
+			 < Back
+			</button>
+			<button onclick="navigationStack.shift(+1)">
+				Forward >
+			</button>
+			<button onclick="navigationStack.push('/location-' + window.counter); window.counter++;">
+				Go →
+			</button>
+			<button onclick="navigationStack.replace('/location-' + window.counter); window.counter++">
+				Redirect ⇄
+			</button>
+		</div>
+
+		<h2>Current Location</h2>
+
+		<pre id="location"></pre>
+
+		<script>
+			// <script type="module">
+			// import NavigationStack from '../lib/index.js';
+			// const navigationStack = new NavigationStack()
+
+			const navigationStack = new NavigationStackExports.default()
+
+			navigationStack.subscribe((location) => {
+				document.getElementById('location').innerHTML = Prism.highlight(
+					JSON.stringify(navigationStack.current(), null, 2),
+					Prism.languages.javascript,
+					'javascript'
+				)
+			})
+
+			navigationStack.init()
+
+			window.navigationStack = navigationStack
+			window.counter = 1
+		</script>
+	</body>
+</html>

@@ -1,3 +1,4 @@
+export { default as default } from './WebNavigationStack.js';
 export { addBasePath, removeBasePath } from './basePath.js';
 export { default as addNavigationBlocker } from './addNavigationBlocker.js';
 export { default as getLocationUrl } from './getLocationUrl.js';

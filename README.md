@@ -1,9 +1,13 @@
 # navigation-stack
 
-[![npm version](https://img.shields.io/npm/v/navigation-stack.svg?style=flat-square)](https://www.npmjs.com/package/navigation-stack)
+<!-- [![npm version](https://img.shields.io/npm/v/navigation-stack.svg?style=flat-square)](https://www.npmjs.com/package/navigation-stack) -->
 [![npm downloads](https://img.shields.io/npm/dm/navigation-stack.svg?style=flat-square)](https://www.npmjs.com/package/navigation-stack)
+[![npm downloads](https://img.shields.io/badge/simple%20demo-simple%20demo?style=flat-square&color=gray)](https://catamphetamine.gitlab.io/navigation-stack)
 
 Navigation Stack provides a clean and easy-to-use API for handling navigation in a Single-Page Application.
+
+<!-- The demo seems too simplistic to be advertised in the header of this readme -->
+<!-- [Demo](https://catamphetamine.gitlab.io/navigation-stack/) -->
 
 * Web browser navigation history is exposed in the form of a "stack" data structure.
 * The "stack" exposes the following operations to trigger navigation:
@@ -46,10 +50,10 @@ Any changes made in a `NavigationStack` instance are "magically" reflected in th
 Start by creating a `NavigationStack` instance:
 
 ```js
-import { NavigationStack, WebBrowserEnvironment } from 'navigation-stack'
+import NavigationStack from 'navigation-stack'
 
 // Create a `NavigationStack` instance.
-const navigationStack = new NavigationStack(WebBrowserEnvironment)
+const navigationStack = new NavigationStack()
 ```
 
 Then subscribe to location changes:
@@ -72,8 +76,6 @@ Now ready to perform navigation actions:
 // "init" — reads the initial location.
 //
 // Until this is done, the stack is not operational.
-//
-// No argument when using `WebBrowserEnvironment`.
 //
 navigationStack.init()
 
@@ -156,12 +158,10 @@ By default, `NavigationStack` doesn't do anything with the scroll position when 
 To fix that, enable automatic scroll position management feature by passing `manageScrollPosition: true` parameter when creating a `NavigationStack` instance, and then call `.locationRendered(location)` every time a different location has been rendered (including the initial location) immediately after it has been rendered.
 
 ```js
-import { NavigationStack, WebBrowserEnvironment } from 'navigation-stack'
+import NavigationStack from 'navigation-stack'
 
 // Create a `NavigationStack` instance with a `manageScrollPosition: true` option.
-const navigationStack = new NavigationStack(WebBrowserEnvironment, {
-  manageScrollPosition: true
-})
+const navigationStack = new NavigationStack({ manageScrollPosition: true })
 
 //----------------------------------------------------------------------------------------
 
@@ -189,7 +189,6 @@ navigationStack.subscribe(onLocationChange)
 //----------------------------------------------------------------------------------------
 
 // Start at the current location which is assumed to be "/initial-location".
-// No argument when using `WebBrowserEnvironment`.
 navigationStack.init()
 
 // Set the `location` to be "/new-location".
@@ -240,7 +239,9 @@ By default, when restoring scroll position, it uses basic "immediate" scrolling.
 ######
 
 ```js
-new NavigationStack(WebBrowserEnvironment, {
+import NavigationStack from 'navigation-stack'
+
+new NavigationStack({
   manageScrollPosition: true,
   // Custom `scrollPositionSetter`.
   scrollPositionSetter: SmoothScrollPositionSetter
@@ -250,7 +251,7 @@ class SmoothScrollPositionSetter {
   // Class constructor.
   constructor({ scrollPositionApi }) {
     // `scrollPositionApi` provides the "core" functions for setting scroll position according to the environment.
-    // For example, in the context of a `WebBrowserEnvironment`, it provides the functions for setting scroll position in a web browser.
+    // For example, in the context of a web browser, it provides the functions for setting scroll position in a web browser.
     // Developers of "custom" scrolling behaviors could use these "core" functions to implement the "custom" scrolling behavior on top of them.
     //
     // this.scrollPositionApi = scrollPositionApi
@@ -314,7 +315,7 @@ const scrollPositionRestoration = new ScrollPositionRestoration(new WebBrowserSe
 // If you decide to use `NavigationStack`,
 // it should be tied to the same environment.
 //
-// const navigationStack = new NavigationStack(WebBrowserEnvironment)
+// const navigationStack = new NavigationStack()
 // navigationStack.init()
 //
 // Or, navigation could be performed by any other means such as using `window.history.pushState()`.
@@ -401,13 +402,10 @@ scrollPositionRestoration.stop()
 `NavigationStack` provides the ability to block navigation. Call `.addNavigationBlocker()` method to set up a "navigation blocker".
 
 ```js
-import {
-  NavigationStack,
-  WebBrowserEnvironment
-} from 'navigation-stack'
+import NavigationStack from 'navigation-stack'
 
 // Create a `NavigationStack` instance.
-const navigationStack = new NavigationStack(WebBrowserEnvironment)
+const navigationStack = new NavigationStack()
 
 // Add a navigation blocker.
 const removeNavigationBlocker = navigationStack.addNavigationBlocker(
@@ -454,18 +452,47 @@ createMiddlewares(session, { basePath?: '/base-path' })
 If the web application is hosted under a certain URL prefix, it should be specified as a `basePath` parameter when creating a `NavigationStack` instance. This prefix will automatically be added to the URL in the web browser's address bar, and the `location` object will automatically strip it from its `pathname`.
 
 ```js
-new NavigationStack(WebBrowserEnvironment, { basePath: '/base-path' })
+new NavigationStack({ basePath: '/base-path' })
 ```
 
 ## Environment
 
-An "environment" class ties `NavigationStack` to the physical environment it operates in, such as a web browser.
+The default export — `import NavigationStack from 'navigation-stack'` — assumes web browser environment.
 
-Three different "environment" implementations are shipped with this package:
+But the same navigation logic could be applied to any environment, not just a web browser.
+
+To support those other environments, this package provides an additional non-default export called `NavigationStack` which is same as the default export with the only difference that it requires an "environment" class to be passed as the first argument.
+
+Three "environment" classes are included in this package:
 
 - Use `WebBrowserEnvironment` in a web browser. Navigation session survives a page refresh and is only destroyed when the web browser tab gets closed. Create a single `NavigationStack` instance per web browser tab.
 - Use `ServerSideRenderEnvironment` in server-side rendering. Create a separate `NavigationStack` instance for each incoming HTTP request. Initialize it with a relative URL of the HTTP request. If, during server-side render, the application code attempts to navigate to another location, it will throw a `ServerSideRedirectError` with a `location` property in it.
 - Use `InMemoryEnvironment` in tests to mimick a `WebBrowserEnvironment`. One can create as many separate `NavigationStack` instances as required because they're completely independent/isolated from one another. Initialize it with a relative URL or a location object.
+
+<details>
+<summary>See <code>WebBrowserEnvironment</code> example</summary>
+
+######
+
+```js
+import { NavigationStack, WebBrowserEnvironment } from 'navigation-stack'
+
+const navigationStack = new NavigationStack(WebBrowserEnvironment)
+
+navigationStack.subscribe((location) => {
+  console.log('Current location', location)
+})
+
+// Sets the initial location.
+// Triggers the subscription listener.
+// No argument when using `WebBrowserEnvironment`.
+navigationStack.init()
+
+// Navigates to a new location.
+// Triggers the subscription listener.
+navigationStack.push('/new-location')
+```
+</details>
 
 <details>
 <summary>See <code>ServerSideRenderEnvironment</code> example</summary>
@@ -473,6 +500,8 @@ Three different "environment" implementations are shipped with this package:
 ######
 
 ```js
+import { NavigationStack, ServerSideRenderEnvironment } from 'navigation-stack'
+
 const navigationStack = new NavigationStack(ServerSideRenderEnvironment)
 
 navigationStack.subscribe((location) => {
@@ -496,6 +525,8 @@ navigationStack.push('/new-location')
 ######
 
 ```js
+import { NavigationStack, ServerSideRenderEnvironment } from 'navigation-stack'
+
 const navigationStack = new NavigationStack(InMemoryEnvironment)
 
 navigationStack.subscribe((location) => {
@@ -616,9 +647,9 @@ Different types of data could be stored under a different `key`.
 Each different location has it's own isolated data storage compartment, so the same `key` could be reused by different locations and there'd be no conflict. For example, one could store scroll position for each different page under `key: "scroll-position"` to be able to restore it when the user decides to navigate "Back" to that page. By the way, that's how `manageScrollPosition: true` feature works.
 
 ```js
-import { NavigationStack, WebBrowserEnvironment } from 'navigation-stack'
+import NavigationStack from 'navigation-stack'
 
-const navigationStack = new NavigationStack(WebBrowserEnvironment)
+const navigationStack = new NavigationStack()
 
 navigationStack.init()
 
@@ -631,7 +662,7 @@ navigationStack.dataStorage.get(location, 'key') === 123
 The data storage doesn't provide strict guarantees about actually storing the data: if it encounters an unexpected storage error in the process, it will simply ignore it. This simplifies the API in a way that the application doesn't have to wrap `.get()`/`.set()` calls in a `try/catch` block. And judging by the nature of location-specific data, that type of data is inherently non-essential (non-critical) and rather "nice-to-have".
 
 <details>
-<summary>Examples of ignored errors in a <code>WebBrowserEnvironment</code>.</summary>
+<summary>Examples of ignored errors in a web browser environment.</summary>
 
 ######
 
@@ -642,7 +673,7 @@ The data storage doesn't provide strict guarantees about actually storing the da
 
 ######
 
-One might ask: Why use `NavigationStack`'s data storage when one could simply store the data in a usual variable? The answer is that a usual variable doesn't survive if the user decides to refresh the page. But the entire navigation history does survive because that's how web browsers work. So if the user decides to go "Back" after refreshing the current page, the data associated to that previous location would already be lost and can't be recovered. In contrast, when using `NavigationStack` with a `WebBrowserEnvironment`, the stored data does survive a page refresh, which feels more consistent and coherent with the persistence behavior of the navigation history itself.
+One might ask: Why use `NavigationStack`'s data storage when one could simply store the data in a usual variable? The answer is that a usual variable doesn't survive if the user decides to refresh the page. But the entire navigation history does survive because that's how web browsers work. So if the user decides to go "Back" after refreshing the current page, the data associated to that previous location would already be lost and can't be recovered. In contrast, when using `NavigationStack` in a web browser environment, the stored data does survive a page refresh, which feels more consistent and coherent with the persistence behavior of the navigation history itself.
 
 ## Development
 

@@ -1,3 +1,9 @@
+# 0.6.9 / 27.05.2026
+
+- Added a default export. It's the same `NavigationStack` class as before but with "hardcoded" `WebBrowserEnvironment`. This simplifies application code because applications most likely never use any other kind of environment.
+  - Old: `import { NavigationStack, WebBrowserEnvironment } from "navigation-stack"` and `new NavigationStack(WebBrowserEnvironment)`
+  - New: `import NavigationStack from "navigation-stack"` and `new NavigationStack()`
+
 # 0.6.4 / 20.05.2026
 
 - (unlikely breaking change) Changed the API of `scrollPositionSetter`:

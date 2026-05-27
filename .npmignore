@@ -1,5 +1,8 @@
 .babelrc
 .gitignore
+.gitlab-ci.yml
 CODE_OF_CONDUCT.md
 /test/
 /src/
+/bundle/
+/website/

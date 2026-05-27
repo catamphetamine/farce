@@ -117,6 +117,9 @@ dist
 # Transpiled code.
 /lib
 
+# Bundled code.
+/bundle
+
 # Yalc.
 .yalc/
 yalc.lock

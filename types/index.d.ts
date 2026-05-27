@@ -121,16 +121,16 @@ export function parseLocationUrl(locationUrl: string): LocationBase;
 
 export function parseInputLocation(location: InputLocation): LocationBase;
 
-export interface NavigationStackOptions<ScrollableContainer, Anchor> {
+export interface NavigationStackOptions<ScrollableContainer, ScrollPositionAnchor> {
   basePath?: string;
   manageScrollPosition?: boolean;
-  scrollPositionSetter?: ScrollPositionSetterConstructor<ScrollableContainer, Anchor>;
+  scrollPositionSetter?: ScrollPositionSetterConstructor<ScrollableContainer, ScrollPositionAnchor>;
 }
 
-export class NavigationStack<ScrollableContainer = any, Anchor = any> {
+export class NavigationStack<ScrollableContainer = any, ScrollPositionAnchor = any> {
   constructor(
-    environment: EnvironmentConstructor<ScrollableContainer, Anchor>,
-    options?: NavigationStackOptions<ScrollableContainer, Anchor>,
+    environment: EnvironmentConstructor<ScrollableContainer, ScrollPositionAnchor>,
+    options?: NavigationStackOptions<ScrollableContainer, ScrollPositionAnchor>,
   );
 
   addScrollableContainer(
@@ -157,6 +157,13 @@ export class NavigationStack<ScrollableContainer = any, Anchor = any> {
   locationRendered(location: Location): Promise<void>;
 
   stop(): void;
+}
+
+export default class WebNavigationStack
+  extends NavigationStack<WebScrollableContainer, WebScrollPositionAnchor> {
+  constructor(
+    options?: NavigationStackOptions<WebScrollableContainer, WebScrollPositionAnchor>,
+  );
 }
 
 export type SessionTerminationBlocker = () => boolean | undefined;
@@ -231,22 +238,24 @@ export interface EnvironmentLog {
   error(...args: any[]): void;
 }
 
+type ScrollPosition = [number, number];
+
 // Manages scroll position in an environment such as a web browser.
-export interface EnvironmentScrollPosition<ScrollableContainer, Anchor> {
+export interface EnvironmentScrollPosition<ScrollableContainer, ScrollPositionAnchor> {
   // Gets numeric scroll position of a page.
-  getPageScrollPosition(): [number, number];
+  getPageScrollPosition(): ScrollPosition;
   // Sets numeric scroll position of a page.
-  setPageScrollPosition(scrollPosition: [number, number]): void;
+  setPageScrollPosition(scrollPosition: ScrollPosition): void;
   // Sets scroll position of a page to be at an "anchor".
-  setPageScrollPositionAtAnchor(anchor: Anchor): void;
+  setPageScrollPositionAtAnchor(anchor: ScrollPositionAnchor): void;
   // Gets numeric scroll position of a scrollable element.
   getScrollableContainerScrollPosition(
     scrollableContainer: ScrollableContainer,
-  ): [number, number];
+  ): ScrollPosition;
   // Sets numeric scroll position of a scrollable element.
   setScrollableContainerScrollPosition(
     scrollableContainer: ScrollableContainer,
-    scrollPosition: [number, number],
+    scrollPosition: ScrollPosition,
   ): void;
   // Adds "on scroll" listeners.
   addPageScrollListener(listener: ScrollListener): () => void;
@@ -259,29 +268,29 @@ export interface EnvironmentScrollPosition<ScrollableContainer, Anchor> {
   init(): void;
 }
 
-export interface EnvironmentConstructor<ScrollableContainer, Anchor> {
-  new (): Environment<ScrollableContainer, Anchor>;
+export interface EnvironmentConstructor<ScrollableContainer, ScrollPositionAnchor> {
+  new (): Environment<ScrollableContainer, ScrollPositionAnchor>;
 }
 
-export interface Environment<ScrollableContainer, Anchor> {
+export interface Environment<ScrollableContainer, ScrollPositionAnchor> {
   dataStorage: EnvironmentDataStorage;
   log: EnvironmentLog;
   lifecycle: EnvironmentLifecycle;
   navigation: EnvironmentNavigation;
-  scrollPosition: EnvironmentScrollPosition<ScrollableContainer, Anchor>;
+  scrollPosition: EnvironmentScrollPosition<ScrollableContainer, ScrollPositionAnchor>;
 }
 
 // This is just a copy-paste of the `Environment` interface above.
-declare abstract class EnvironmentClass<ScrollableContainer, Anchor>
-  implements Environment<ScrollableContainer, Anchor> {
+declare abstract class EnvironmentClass<ScrollableContainer, ScrollPositionAnchor>
+  implements Environment<ScrollableContainer, ScrollPositionAnchor> {
   dataStorage: EnvironmentDataStorage;
   log: EnvironmentLog;
   lifecycle: EnvironmentLifecycle;
   navigation: EnvironmentNavigation;
-  scrollPosition: EnvironmentScrollPosition<ScrollableContainer, Anchor>;
+  scrollPosition: EnvironmentScrollPosition<ScrollableContainer, ScrollPositionAnchor>;
 }
 
-interface Session<ScrollableContainer = any, Anchor = any> {
+interface Session<ScrollableContainer = any, ScrollPositionAnchor = any> {
   // `key` should be unique within `environment.dataStorage`.
   // For example, `BrowserEnvironment` uses `window.sessionStorage`
   // that is shared across different sessions within a given web browser tab,
@@ -289,7 +298,7 @@ interface Session<ScrollableContainer = any, Anchor = any> {
   key: string;
 
   // Private varibles. Not public API.
-  environment: Environment<ScrollableContainer, Anchor>;
+  environment: Environment<ScrollableContainer, ScrollPositionAnchor>;
 
   lifecycle: EnvironmentLifecycle;
 
@@ -304,38 +313,39 @@ interface Session<ScrollableContainer = any, Anchor = any> {
   shift(delta: number): void;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-export class WebBrowserEnvironment
-  extends EnvironmentClass<HTMLElement, string> {}
+type WebScrollableContainer = HTMLElement;
+type WebScrollPositionAnchor = string;
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-export class ServerSideRenderEnvironment
-  extends EnvironmentClass<string, string> {}
+export class WebBrowserEnvironment extends EnvironmentClass<WebScrollableContainer, WebScrollPositionAnchor> {}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export class ServerSideRenderEnvironment extends EnvironmentClass<string, string> {}
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export class InMemoryEnvironment extends EnvironmentClass<string, string> {}
 
-export interface ScrollPositionSetterConstructorParameters<ScrollableContainer, Anchor> {
+export interface ScrollPositionSetterConstructorParameters<ScrollableContainer, ScrollPositionAnchor> {
   // `scrollPositionApi` provides the "core" functions for setting scroll position according to the environment.
   // For example, in the context of a `WebBrowserEnvironment`, it provides the functions for setting scroll position in a web browser.
   // Developers of "custom" scrolling behaviors could use these "core" functions to implement the "custom" scrolling behavior on top of them.
-  scrollPositionApi: EnvironmentScrollPosition<ScrollableContainer, Anchor>;
+  scrollPositionApi: EnvironmentScrollPosition<ScrollableContainer, ScrollPositionAnchor>;
 }
 
-export interface ScrollPositionSetterConstructor<ScrollableContainer, Anchor> {
-  new (parameters: ScrollPositionSetterConstructorParameters<ScrollableContainer, Anchor>): ScrollPositionSetter<ScrollableContainer, Anchor>;
+export interface ScrollPositionSetterConstructor<ScrollableContainer, ScrollPositionAnchor> {
+  new (parameters: ScrollPositionSetterConstructorParameters<ScrollableContainer, ScrollPositionAnchor>): ScrollPositionSetter<ScrollableContainer, ScrollPositionAnchor>;
 }
 
 // A developer could pass their own `ScrollPositionSetter` implementation
 // to enable some kind of "smooth" scrolling or something like that.
-export interface ScrollPositionSetter<ScrollableContainer, Anchor> {
+export interface ScrollPositionSetter<ScrollableContainer, ScrollPositionAnchor> {
   // Sets scroll position of a page or a scrollable element.
   // Returns a `Promise` that resolves when it has finished setting the scroll position.
   set(
     // This is the scroll position to set.
     // * When setting page scroll position, it could be either an anchor or numeric coordinates.
     // * When setting scrollable element scroll position, it could only be numeric coordinates.
-    scrollPositionOrAnchor: Anchor | [number, number],
+    scrollPositionOrAnchor: ScrollPositionAnchor | ScrollPosition,
     // This is the scrollable container whose scroll position should be set.
     // * When setting page scroll position, `scrollableContainer` is `undefined`.
     // * When setting scrollable element scroll position, `scrollableContainer` is the scrollable element.
@@ -381,16 +391,16 @@ declare class LocationDataStorage<
 
 export class ScrollPositionRestoration<
   ScrollableContainer = any,
-  Anchor = any,
+  ScrollPositionAnchor = any,
 > {
   constructor(
-    session: Session<ScrollableContainer, Anchor>,
+    session: Session<ScrollableContainer, ScrollPositionAnchor>,
 
     options?: {
       // Using this option, a developer could provide their own implementation of setting
       // a scroll position. For example, it could use "smooth" (animated) scrolling, etc.
       // When specified, it applies to both page and any scrollable containers.
-      scrollPositionSetter: ScrollPositionSetterConstructor<ScrollableContainer, Anchor>;
+      scrollPositionSetter: ScrollPositionSetterConstructor<ScrollableContainer, ScrollPositionAnchor>;
 
       shouldChangePageScrollPositionOnLocationChange?: (
         prevLocation: Location | undefined,
@@ -403,7 +413,7 @@ export class ScrollPositionRestoration<
       _getSavedPageScrollPositionOnLocationChange?: (
         location: Location,
         prevLocation: Location | undefined,
-      ) => [number, number] | undefined;
+      ) => ScrollPosition | undefined;
     },
   );
 
@@ -423,7 +433,7 @@ export class ScrollPositionRestoration<
       _getSavedScrollPositionOnLocationChange?: (
         location: Location,
         prevLocation: Location | undefined,
-      ) => [number, number] | undefined;
+      ) => ScrollPosition | undefined;
     },
   ): () => void;
 
