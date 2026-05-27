@@ -25,7 +25,7 @@ export default class ServerSideNavigation {
   // in their web browser.
   //
   // eslint-disable-next-line no-unused-vars
-  subscribeToAsyncrhonousLocationUpdates(listener) {
+  subscribeToAsyncrhonousLocationUpdates(listener, { getNextLocationKey }) {
     // `ServerSideNavigation` location changes are prohibited, so they couldn't happen.
     // Hence, this function doesn't have to "subscribe" to anything, so it's a "no op".
     return () => {};

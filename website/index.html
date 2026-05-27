@@ -87,10 +87,10 @@
 			<button onclick="navigationStack.shift(+1)">
 				Forward >
 			</button>
-			<button onclick="navigationStack.push('/location-' + window.counter); window.counter++;">
+			<button onclick="navigationStack.push(window.initialPathname + '/location-' + window.counter); window.counter++;">
 				Go →
 			</button>
-			<button onclick="navigationStack.replace('/location-' + window.counter); window.counter++">
+			<button onclick="navigationStack.replace(window.initialPathname + '/location-' + window.counter); window.counter++">
 				Redirect ⇄
 			</button>
 		</div>
@@ -117,6 +117,7 @@
 			navigationStack.init()
 
 			window.navigationStack = navigationStack
+			window.initialPathname = location.pathname
 			window.counter = 1
 		</script>
 	</body>

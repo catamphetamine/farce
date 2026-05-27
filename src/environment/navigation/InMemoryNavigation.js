@@ -18,7 +18,7 @@ export default class InMemoryNavigation {
   // in their web browser.
   //
   // eslint-disable-next-line no-unused-vars
-  subscribeToAsyncrhonousLocationUpdates(listener) {
+  subscribeToAsyncrhonousLocationUpdates(listener, { getNextLocationKey }) {
     // `InMemoryNavigation` location changes are always "synchronous"
     // with the code that initiated such changes, i.e. it always performs
     // any navigation immediately at the time such navigation is triggered in code.

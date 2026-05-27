@@ -1,3 +1,7 @@
+# 0.6.10 / 27.05.2026
+
+- Fixed clicking an "anchor" link, or manually editing the "anchor" part of the URL.
+
 # 0.6.9 / 27.05.2026
 
 - Added a default export. It's the same `NavigationStack` class as before but with "hardcoded" `WebBrowserEnvironment`. This simplifies application code because applications most likely never use any other kind of environment.

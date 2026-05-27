@@ -675,6 +675,10 @@ The data storage doesn't provide strict guarantees about actually storing the da
 
 One might ask: Why use `NavigationStack`'s data storage when one could simply store the data in a usual variable? The answer is that a usual variable doesn't survive if the user decides to refresh the page. But the entire navigation history does survive because that's how web browsers work. So if the user decides to go "Back" after refreshing the current page, the data associated to that previous location would already be lost and can't be recovered. In contrast, when using `NavigationStack` in a web browser environment, the stored data does survive a page refresh, which feels more consistent and coherent with the persistence behavior of the navigation history itself.
 
+## Gotchas
+
+Any programmatic navigation must be performed exclusively through `NavigationStack`. Mixing it with manual calls of `history.pushState()` or `history.replaceState()` would break the `NavigationStack`.
+
 ## Development
 
 Clone the repository. Then:

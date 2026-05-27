@@ -60,7 +60,12 @@ export default class WebBrowserNavigation {
   //
   // Returns an `unsubscribe()` function which is "idempotent", i.e. it can be called multiple times.
   //
-  subscribeToAsyncrhonousLocationUpdates(listener) {
+  subscribeToAsyncrhonousLocationUpdates(listener, { getNextLocationKey }) {
+    // "popstate" event fires whenever the active history entry changes
+    // while staying on the same document. This includes:
+    // * Clicking the browser's Back or Forward buttons.
+    // * Clicking an anchor link that changes the URL fragment/hash.
+    // * Calling history.back(), history.forward(), or history.go() via JavaScript.
     const onPopState = () => {
       // If "popstate" event is received before navigation is initialized,
       // ignore such "popstate" event. Such "ignore" behavior is logical from
@@ -73,12 +78,29 @@ export default class WebBrowserNavigation {
         );
       }
       const prevIndex = this._currentLocationIndex;
-      const { index } = this._getCurrentLocationState();
+      // In case of "Back"/"Forward" navigation, there will be a previously-saved location state.
+      // In case of clicking an "anchor" hyperlink, or manually editing the "anchor" part of the URL,
+      // there will be no previously-saved location state because it will be a new location.
+      const operation = this._getCurrentLocationState()
+        ? Operations.SHIFT
+        : Operations.PUSH
+      const index = this._getCurrentLocationState()
+        ? this._getCurrentLocationState().index
+        : this._currentLocationIndex + 1
+      const key = this._getCurrentLocationState()
+        ? this._getCurrentLocationState().key
+        : getNextLocationKey()
+
+      // If there's no state for the new location (for reasons described above), create it.
+      if (!this._getCurrentLocationState()) {
+        this._setCurrentLocationState({ key, index });
+      }
+
       this._currentLocationIndex = index;
 
       listener(
         this._createEntryFromCurrentLocation({
-          operation: Operations.SHIFT,
+          operation,
           delta: index - prevIndex,
         }),
       );
@@ -141,14 +163,7 @@ export default class WebBrowserNavigation {
     // and therefore will not be `null` and will instead have the previously-set value.
     //
     if (!this._getCurrentLocationState()) {
-      // Create additional properties for the initial locaiton.
-      const additionalProperties = { key, index };
-      // Call `history.replaceState()`.
-      this._navigateToLocationAndKeepItsAdditionalPropertiesInHistory(
-        initialLocation,
-        additionalProperties,
-        delta,
-      );
+      this._setCurrentLocationState({ key, index });
     }
 
     this._currentLocationIndex = index;
@@ -202,6 +217,15 @@ export default class WebBrowserNavigation {
 
   _getCurrentLocationState() {
     return window.history.state;
+  }
+
+  _setCurrentLocationState(state) {
+    // Call `history.replaceState()`.
+    this._navigateToLocationAndKeepItsAdditionalPropertiesInHistory(
+      this._getCurrentLocation(),
+      state,
+      0,
+    );
   }
 
   _isSameAsCurrentLocation(inputLocation) {

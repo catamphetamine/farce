@@ -60,6 +60,9 @@ export default class Session {
             // Notify all subscribers about this "asynchronous" location change.
             notifySubscribers(location);
           },
+          {
+            getNextLocationKey: this._getNextLocationKey,
+          },
         );
       },
     });
@@ -315,7 +318,7 @@ export default class Session {
     }
   }
 
-  _getNextLocationKey() {
+  _getNextLocationKey = () => {
     this._locationKeyIndex++;
     return this._locationKeyIndex.toString(36);
   }

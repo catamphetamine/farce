@@ -194,6 +194,9 @@ export class EnvironmentNavigation {
   // Subscribes to "asynchronous" changes of the current location.
   subscribeToAsyncrhonousLocationUpdates(
     listener: (location: LocationInternal) => void,
+    parameters: {
+      getNextLocationKey: () => string,
+    },
   ): () => void;
 
   init(
