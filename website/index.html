@@ -117,7 +117,9 @@
 			navigationStack.init()
 
 			window.navigationStack = navigationStack
-			window.initialPathname = location.pathname
+			window.initialPathname = location.pathname.endsWith('/')
+				? location.pathname.slice(0, -1)
+				: location.pathname
 			window.counter = 1
 		</script>
 	</body>
