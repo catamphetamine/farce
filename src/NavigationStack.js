@@ -106,6 +106,12 @@ export default class NavigationStack {
 
   // This function could potentially be exposed but there seems to be no use for it.
   //
+  // getEntries() {
+  //   return this._session._history.map(getLocationFromInternalLocation);
+  // }
+
+  // This function could potentially be exposed but there seems to be no use for it.
+  //
   // getSavedScrollPositionForLocation(location, scrollableContainerKey) {
   //   if (!this._scrollPositionRestoration) {
   //     throw new Error('`manageScrollPosition: true` option not passed');

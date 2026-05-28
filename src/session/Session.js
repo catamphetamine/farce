@@ -17,6 +17,10 @@ export default class Session {
     // under the hood, and `window.sessionStorage` is shared between different sessions.
     this.key = createSessionKey();
 
+    // Could keep a history of visited locations, if required.
+    // In case of uncommenting this property, also add the relevant `expect()` tests for various cases.
+    // this._history = [];
+
     // Create an environment instance.
     this.environment = new EnvironmentClass();
 
@@ -67,14 +71,23 @@ export default class Session {
       },
     });
 
-    // This subscription is triggered in two cases:
-    // * Set initial current location index at initial page load.
-    // * Update current location index whenever a location change is not initiated
-    //   by this session but rather by the user clicking "Back" or "Forward" button.
+    // This subscription will be triggered in two cases:
+    // * When reading initial location.
+    // * Whenever the current location changes.
     this._unsubscribe = this.subscribe((location) => {
       // Update `this._currentLocationIndex` when the location change was not initiated
       // by this session but rather by the user clicking "Back" or "Forward" button.
       this._currentLocationIndex = location.index;
+
+      // Could keep a history of visited locations, if required.
+      // if (location.operation === NavigationOperations.INIT || location.operation === NavigationOperations.PUSH) {
+      //   this._history.push(location)
+      // } else if (location.operation === NavigationOperations.REPLACE) {
+      //   this._history[location.index] = location
+      // } else {
+      //   // On "shift" operation, don't trim the history of visited locations.
+      // }
+
       // Since `currentLocationIndex` has been updated, update `terminalLocationIndex`.
       // It's not really currently possible to see a "PUSH" or a "REPLACE" operation here,
       // but if it was possible, this call would be required. It would also be required
@@ -92,11 +105,19 @@ export default class Session {
   }
 
   // Subscribes to changes in location.
-  // The first subscriber is always the `Session` itself:
-  // its listener keeps the current location index up-to-date.
+  //
+  // A subscription will be triggered in two cases:
+  // * When reading initial location.
+  // * Whenever the current location changes.
+  //
+  // The first subscriber is always the `Session`'s own internal listener:
+  // it keeps the current location index variable value up-to-date.
   // Any additional application-specific listeners could be added, if required.
+  //
   // Applications should prefer adding any such listeners by calling `NavigationStack.subscribe()`
-  // method instead of calling this method directly, in order to "normalize" the `location` argument.
+  // method instead of calling `Session.subscribe()` directly in order to "normalize" the `location` argument:
+  // the `location` argument exposed in a `NavigationStack.subscribe()` listener drops some internal-use properties.
+  //
   subscribe(listener) {
     // Validates the state of things and then calls the listener.
     const onLocationDidChange = (location) => {
@@ -315,6 +336,9 @@ export default class Session {
       operation === NavigationOperations.INIT
     ) {
       this._terminalLocationIndex = this._currentLocationIndex;
+
+      // Could keep a history of visited locations, if required.
+      // this._history = this._history.slice(0, this._terminalLocationIndex + 1);
     }
   }
 

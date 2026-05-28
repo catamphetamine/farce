@@ -6,28 +6,28 @@
 
 		<script src="./navigation-stack.js"></script>
 
-    <script src="./lib/prism.js"></script>
+		<script src="./lib/prism.js"></script>
 
-    <link href="lib/prism.css" rel="stylesheet" />
+		<link href="lib/prism.css" rel="stylesheet" />
 
 		<style>
 			body {
 				font-family: sans-serif;
 				margin: 20px;
-        background: #434343;
-        color: #dddddd;
+				background: #434343;
+				color: #dddddd;
 			}
 
-      #main-link {
-        display: block;
-        font-size: 24px;
-        color: #fd8900;
-        font-family: monospace;
-        text-decoration: none;
-      }
+			#main-link {
+				display: block;
+				font-size: 24px;
+				color: #fd8900;
+				font-family: monospace;
+				text-decoration: none;
+			}
 
 			p {
-        line-height: 1.5rem;
+				line-height: 1.5rem;
 			}
 
 			h2 {
@@ -49,25 +49,26 @@
 			}
 
 			.navigation-buttons button {
-        padding: 0.5rem;
-        background: none;
-        border: none;
-        cursor: pointer;
-        color: #fd8900;
-        margin-bottom: -5px;
-        font-size: 0.75rem;
-        margin-right: 0.5rem;
-        border-radius: 5px;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        border: 1px solid #fd8900;
+				line-height: 1em;
+				padding: 0.5rem;
+				background: none;
+				border: none;
+				cursor: pointer;
+				color: #fd8900;
+				margin-bottom: -5px;
+				font-size: 0.75rem;
+				margin-right: 0.5rem;
+				border-radius: 5px;
+				text-transform: uppercase;
+				letter-spacing: 1px;
+				border: 1px solid #fd8900;
 			}
 
-      .navigation-buttons button:active
-      {
-        background: #fd8900;
-        color: black;
-      }
+			.navigation-buttons button:active
+			{
+				background: #fd8900;
+				color: black;
+			}
 		</style>
 	</head>
 
@@ -81,11 +82,14 @@
 		</p>
 
 		<div class="navigation-buttons">
+			<button onclick="navigationStack.shift(-1 * window.navigationStack.current().index)">
+			 ❮<span style="margin-left: -0.15em">❮</span> Start
+			</button>
 			<button onclick="navigationStack.shift(-1)">
-			 < Back
+			 ❮ Back
 			</button>
 			<button onclick="navigationStack.shift(+1)">
-				Forward >
+				Forward ❯
 			</button>
 			<button onclick="navigationStack.push(window.basePath + '/location-' + window.counter); window.counter++;">
 				Go →
@@ -104,7 +108,7 @@
 			// import NavigationStack from '../lib/index.js';
 			// const navigationStack = new NavigationStack()
 
-			const navigationStack = new NavigationStackExports.default()
+			const navigationStack = new NavigationStackExports.default({ manageScrollPosition: true })
 
 			navigationStack.subscribe((location) => {
 				document.getElementById('location').innerHTML = Prism.highlight(
