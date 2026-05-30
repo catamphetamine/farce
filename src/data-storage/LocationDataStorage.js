@@ -2,8 +2,8 @@ import DataStorage from './DataStorage.js';
 import getLocationUrl from '../getLocationUrl.js';
 
 export default class LocationDataStorage {
-  constructor(session, { namespace }) {
-    this._storage = new DataStorage(session, { namespace });
+  constructor({ dataStorage, log, namespace }) {
+    this._storage = new DataStorage({ dataStorage, log, namespace });
 
     this._getFallbackLocationKey = getLocationUrl;
   }

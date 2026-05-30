@@ -127,7 +127,10 @@ export interface NavigationStackOptions<ScrollableContainer, ScrollPositionAncho
   scrollPositionSetter?: ScrollPositionSetterConstructor<ScrollableContainer, ScrollPositionAnchor>;
 }
 
-export class NavigationStack<ScrollableContainer = any, ScrollPositionAnchor = any> {
+export class NavigationStack<
+  ScrollableContainer = any,
+  ScrollPositionAnchor = any,
+> {
   constructor(
     environment: EnvironmentConstructor<ScrollableContainer, ScrollPositionAnchor>,
     options?: NavigationStackOptions<ScrollableContainer, ScrollPositionAnchor>,
@@ -143,6 +146,10 @@ export class NavigationStack<ScrollableContainer = any, ScrollPositionAnchor = a
   dataStorage: LocationDataStorage;
 
   subscribe(listener: (location: Location) => void): () => void;
+
+  // entries(): Location[];
+
+  // size(): number;
 
   current(): Location;
 
@@ -229,6 +236,7 @@ export interface EnvironmentDataStorage {
 }
 
 export interface EnvironmentLifecycle {
+  running: boolean;
   addTerminationBlocker(blocker: SessionTerminationBlocker): () => void;
   addExecutionStatusListener(
     listener: SessionExecutionStatusListener,
@@ -302,7 +310,7 @@ interface Session<ScrollableContainer = any, ScrollPositionAnchor = any> {
 
   // Private varibles. Not public API.
   environment: Environment<ScrollableContainer, ScrollPositionAnchor>;
-
+  // history: LocationInternal[];
   lifecycle: EnvironmentLifecycle;
 
   subscribe(listener: (location: LocationInternal) => void): () => void;
@@ -366,30 +374,41 @@ export type DataStorageValue =
   | string
   | number
   | boolean
-  | Record<string, unknown>
-  | null
-  | undefined;
+  | Record<string, unknown>;
 
+// This class is used internally in `LocationDataStorage` class.
 declare class DataStorage<
   Key extends string = string,
-  Value extends DataStorageValue = DataStorageValue,
+  Value = DataStorageValue,
 > {
-  constructor(session: Session, options: { namespace: string });
+  constructor(
+    options: {
+      dataStorage: EnvironmentDataStorage,
+      log: EnvironmentLog,
+      namespace: string,
+    },
+  );
 
-  get(key: Key): Value | undefined;
+  get(key: Key): Value | null;
 
-  set(key: Key, value: Value | undefined): void;
+  set(key: Key, value: Value | null): void;
 }
 
 declare class LocationDataStorage<
   Key extends string = string,
-  Value extends DataStorageValue = DataStorageValue,
+  Value = DataStorageValue,
 > {
-  constructor(session: Session, options: { namespace: string });
+  constructor(
+    options: {
+      dataStorage: EnvironmentDataStorage,
+      log: EnvironmentLog,
+      namespace: string,
+    },
+  );
 
-  get(location: Location, key: Key): Value;
+  get(location: Location, key: Key): Value | null;
 
-  set(location: Location, key: Key, value: Value): void;
+  set(location: Location, key: Key, value: Value | null): void;
 }
 
 export class ScrollPositionRestoration<

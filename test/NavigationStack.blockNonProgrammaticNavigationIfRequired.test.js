@@ -167,10 +167,10 @@ describe('NavigationStack (blockNonProgrammaticNavigationIfRequired)', () => {
       // current location was updated immediately.
       // Any `.subscribe()` listeners haven't yet been called,
       // so current location in Redux state hasn't been updated yet.
-      // That's why it uses `session._latestLocation` here
+      // That's why it uses `session._currentLocation` here
       // instead of simply reading the current location from the `NavigationStack` state.
       // eslint-disable-next-line no-underscore-dangle
-      expect(session._latestLocation.pathname).to.equal('/initial');
+      expect(session._currentLocation.pathname).to.equal('/initial');
       // navigation is waiting.
       expect(navigationStack.current().pathname).to.equal('/new');
 
@@ -180,7 +180,7 @@ describe('NavigationStack (blockNonProgrammaticNavigationIfRequired)', () => {
 
       // rewinded.
       // eslint-disable-next-line no-underscore-dangle
-      expect(session._latestLocation.pathname).to.equal('/new');
+      expect(session._currentLocation.pathname).to.equal('/new');
       // navigation almost finished: navigation blockers are running.
       expect(navigationStack.current().pathname).to.equal('/new');
 
@@ -194,7 +194,7 @@ describe('NavigationStack (blockNonProgrammaticNavigationIfRequired)', () => {
 
       // the rewind was undone.
       // eslint-disable-next-line no-underscore-dangle
-      expect(session._latestLocation.pathname).to.equal('/initial');
+      expect(session._currentLocation.pathname).to.equal('/initial');
       // navigation finished.
       // wasn't blocked.
       expect(navigationStack.current().pathname).to.equal('/initial');

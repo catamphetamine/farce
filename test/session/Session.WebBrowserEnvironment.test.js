@@ -62,6 +62,8 @@ describe('Session (WebBrowserEnvironment)', () => {
       location = newLocation;
     });
 
+    expect(session._history).to.deep.equal([]);
+
     session.start(parseInputLocation(window.location));
 
     expect(location).to.deep.include({
@@ -75,6 +77,10 @@ describe('Session (WebBrowserEnvironment)', () => {
       index: 0,
       delta: 0,
     });
+
+    expect(session._history.length).to.equal(1);
+    expect(session._history[0].operation).to.equal('init');
+    expect(session._history[0].pathname).to.equal('/initial');
   });
 
   it('should require initialization', () => {
@@ -113,11 +119,19 @@ describe('Session (WebBrowserEnvironment)', () => {
     });
     listener.resetHistory();
 
+    expect(session._history.length).to.equal(1);
+    expect(session._history[0].operation).to.equal('init');
+    expect(session._history[0].pathname).to.equal('/initial');
+
     session.navigate('push', {
       pathname: '/new',
       search: '?search',
       hash: '#hash',
     });
+
+    expect(session._history.length).to.equal(2);
+    expect(session._history[1].operation).to.equal('push');
+    expect(session._history[1].pathname).to.equal('/new');
 
     const newLocation = location;
 
@@ -151,6 +165,10 @@ describe('Session (WebBrowserEnvironment)', () => {
       hash: '',
     });
 
+    expect(session._history.length).to.equal(3);
+    expect(session._history[2].operation).to.equal('push');
+    expect(session._history[2].pathname).to.equal('/new-2');
+
     expect(location).to.include({
       operation: 'push',
       pathname: '/new-2',
@@ -175,6 +193,10 @@ describe('Session (WebBrowserEnvironment)', () => {
       hash: '',
     });
 
+    expect(session._history.length).to.equal(3);
+    expect(session._history[2].operation).to.equal('replace');
+    expect(session._history[2].pathname).to.equal('/new-3');
+
     expect(location).to.include({
       operation: 'replace',
       pathname: '/new-3',
@@ -197,6 +219,13 @@ describe('Session (WebBrowserEnvironment)', () => {
     session.shift(-1);
     await delay(100);
 
+    expect(session._history.length).to.equal(3);
+    expect(session._history[1].operation).to.equal('shift');
+    expect(session._history[1].delta).to.equal(-1);
+    expect(session._history[1].pathname).to.equal('/new');
+    expect(session._history[2].operation).to.equal('replace');
+    expect(session._history[2].pathname).to.equal('/new-3');
+
     expect(window.location).to.include({
       pathname: '/new',
       search: '?search',
@@ -218,6 +247,16 @@ describe('Session (WebBrowserEnvironment)', () => {
     window.history.back();
     await delay(100);
 
+    expect(session._history.length).to.equal(3);
+    expect(session._history[0].operation).to.equal('shift');
+    expect(session._history[0].delta).to.equal(-1);
+    expect(session._history[0].pathname).to.equal('/initial');
+    expect(session._history[1].operation).to.equal('shift');
+    expect(session._history[1].delta).to.equal(-1);
+    expect(session._history[1].pathname).to.equal('/new');
+    expect(session._history[2].operation).to.equal('replace');
+    expect(session._history[2].pathname).to.equal('/new-3');
+
     expect(window.location.pathname).to.equal('/initial');
 
     expect(listener.callCount).to.equal(1);
@@ -228,6 +267,25 @@ describe('Session (WebBrowserEnvironment)', () => {
       delta: -1,
     });
     listener.resetHistory();
+
+    session.navigate('replace', { pathname: '/new-4' });
+
+    expect(session._history.length).to.equal(3);
+    expect(session._history[0].operation).to.equal('replace');
+    expect(session._history[0].pathname).to.equal('/new-4');
+    expect(session._history[1].operation).to.equal('shift');
+    expect(session._history[1].delta).to.equal(-1);
+    expect(session._history[1].pathname).to.equal('/new');
+    expect(session._history[2].operation).to.equal('replace');
+    expect(session._history[2].pathname).to.equal('/new-3');
+
+    session.navigate('push', { pathname: '/new-5' });
+
+    expect(session._history.length).to.equal(2);
+    expect(session._history[0].operation).to.equal('replace');
+    expect(session._history[0].pathname).to.equal('/new-4');
+    expect(session._history[1].operation).to.equal('push');
+    expect(session._history[1].pathname).to.equal('/new-5');
   });
 
   it('should support subscribing and unsubscribing', async () => {
@@ -293,7 +351,7 @@ describe('Session (WebBrowserEnvironment) (restart)', () => {
     newSession.start();
 
     // eslint-disable-next-line no-underscore-dangle
-    expect(newSession._latestLocation.operation).to.equal('init');
+    expect(newSession._currentLocation.operation).to.equal('init');
 
     expect(currentLocation.pathname).to.equal('/new');
     expect(currentLocation.index).to.equal(latestLocationIndex);

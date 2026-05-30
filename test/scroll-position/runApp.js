@@ -6,7 +6,10 @@ import delay from './delay.js';
 // otherwise the application wouldn't reach the last step and would just freeze after the incorrect step.
 export default function runApp(app, steps) {
   window.history.replaceState(null, null, '/');
+  return runAppAtCurrentLocation(app, steps);
+}
 
+export function runAppAtCurrentLocation(app, steps) {
   let i = 0;
 
   return app.listen((location) => {

@@ -2,12 +2,19 @@
 	<head>
 		<title>navigation-stack</title>
 
+		<!-- Fixes character encoding. -->
 		<meta charset="utf-8"/>
 
+		<!-- Fix document width on mobile devices. -->
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+		<!-- `navigation-stack` package. -->
 		<script src="./navigation-stack.js"></script>
 
+		<!-- Syntax highlighting. -->
 		<script src="./lib/prism.js"></script>
 
+		<!-- Syntax highlighting. -->
 		<link href="lib/prism.css" rel="stylesheet" />
 
 		<style>
@@ -18,7 +25,7 @@
 				color: #dddddd;
 			}
 
-			#main-link {
+			.main-link {
 				display: block;
 				font-size: 24px;
 				color: #fd8900;
@@ -38,6 +45,8 @@
 				padding: 0.7rem;
 				background-color: #2d2d2d;
 				border-radius: 0.5rem;
+
+				overflow: auto;
 			}
 
 			.navigation-buttons {
@@ -49,8 +58,10 @@
 			}
 
 			.navigation-buttons button {
+				height: 2rem;
 				line-height: 1em;
-				padding: 0.5rem;
+				padding-left: 0.5rem;
+				padding-right: 0.5rem;
 				background: none;
 				border: none;
 				cursor: pointer;
@@ -64,16 +75,35 @@
 				border: 1px solid #fd8900;
 			}
 
-			.navigation-buttons button:active
-			{
+			.navigation-buttons button:active {
 				background: #fd8900;
 				color: black;
+			}
+
+			input[type="text"] {
+				height: 2rem;
+				border-radius: 0.25rem;
+				background-color: #2d2d2d;
+				color: #dddddd;
+				border: 1px solid #6a6a6a;
+				outline: none;
+			}
+
+			input[type="text"]:focus {
+				border-color: #fd8900;
+			}
+
+			#next-location-url {
+				margin-right: 0.5rem;
+				padding-left: 0.5rem;
+				padding-right: 0.5rem;
+				font-family: monospace;
 			}
 		</style>
 	</head>
 
 	<body>
-		<a id="main-link" href="https://www.npmjs.com/package/navigation-stack">
+		<a class="main-link" href="https://www.npmjs.com/package/navigation-stack">
 			navigation-stack
 		</a>
 
@@ -91,10 +121,18 @@
 			<button onclick="navigationStack.shift(+1)">
 				Forward ❯
 			</button>
-			<button onclick="navigationStack.push(window.basePath + '/location-' + window.counter); window.counter++;">
+			<!--
+			<button onclick="navigationStack.shift((window.navigationStack.size() - 1) - window.navigationStack.current().index)">
+				End <span style="margin-left: -0.15em">❯</span>❯
+			</button>
+			-->
+		</div>
+		<div class="navigation-buttons">
+			<input type="text" id="next-location-url" value="/new-location"/>
+			<button onclick="navigationStack.push(window.getNextLocationUrl())">
 				Go →
 			</button>
-			<button onclick="navigationStack.replace(window.basePath + '/location-' + window.counter); window.counter++">
+			<button onclick="navigationStack.replace(window.getNextLocationUrl())">
 				Redirect ⇄
 			</button>
 		</div>
@@ -111,20 +149,36 @@
 			const navigationStack = new NavigationStackExports.default({ manageScrollPosition: true })
 
 			navigationStack.subscribe((location) => {
+				// Print the current location object.
 				document.getElementById('location').innerHTML = Prism.highlight(
 					JSON.stringify(navigationStack.current(), null, 2),
 					Prism.languages.javascript,
 					'javascript'
 				)
+
+				// Call `.locationRendered()`, which is required for scroll position management.
+				navigationStack.locationRendered(location)
 			})
 
 			navigationStack.init()
 
 			window.navigationStack = navigationStack
+
 			window.basePath = location.pathname.endsWith('/')
 				? location.pathname.slice(0, -1)
 				: location.pathname
-			window.counter = 1
+
+			window.getNextLocationUrl = () => {
+				const url = document.getElementById('next-location-url').value.trim()
+				return window.basePath + (url
+					// Normalize `url`
+					? (url[0] === '/' || url[0] === '?' || url[0] === '#'
+						? url
+						: '/' + url
+					)
+					: ''
+				)
+			}
 		</script>
 	</body>
 </html>

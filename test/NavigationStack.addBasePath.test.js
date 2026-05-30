@@ -11,7 +11,7 @@ describe('NavigationStack (addBasePath)', () => {
     });
     navigationStack.init('/path');
     // eslint-disable-next-line no-underscore-dangle
-    expect(navigationStack._session._latestLocation.pathname).to.equal(
+    expect(navigationStack._session._currentLocation.pathname).to.equal(
       '/base/path',
     );
     navigationStack.stop();
@@ -23,7 +23,7 @@ describe('NavigationStack (addBasePath)', () => {
     });
     navigationStack.init('/path');
     // eslint-disable-next-line no-underscore-dangle
-    expect(navigationStack._session._latestLocation.pathname).to.equal(
+    expect(navigationStack._session._currentLocation.pathname).to.equal(
       '/base/path',
     );
     navigationStack.stop();
@@ -33,7 +33,7 @@ describe('NavigationStack (addBasePath)', () => {
     const navigationStack = new NavigationStack(InMemoryEnvironment);
     navigationStack.init('/path');
     // eslint-disable-next-line no-underscore-dangle
-    expect(navigationStack._session._latestLocation.pathname).to.equal(
+    expect(navigationStack._session._currentLocation.pathname).to.equal(
       '/path',
     );
     navigationStack.stop();
@@ -45,7 +45,7 @@ describe('NavigationStack (addBasePath)', () => {
     });
     navigationStack.init('/path');
     // eslint-disable-next-line no-underscore-dangle
-    expect(navigationStack._session._latestLocation.pathname).to.equal(
+    expect(navigationStack._session._currentLocation.pathname).to.equal(
       '/path',
     );
     navigationStack.stop();

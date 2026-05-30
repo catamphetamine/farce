@@ -64,6 +64,12 @@ export default class InMemoryNavigation {
   }
 
   shift({ operation, index, delta }) {
+    // Validate the `index`.
+    // Because `session._terminalLocationIndex` property was commented out,
+    // this validation had to be moved here from the `Session` class.
+    if (index >= this._stack.length) {
+      throw new Error('out of navigation history bounds')
+    }
     return this._createLocationObject({
       operation,
       index,

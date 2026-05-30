@@ -26,7 +26,9 @@ export default class NavigationStack {
     this._basePath = basePath;
 
     // Create location data storage.
-    this.dataStorage = new LocationDataStorage(this._session, {
+    this.dataStorage = new LocationDataStorage({
+      dataStorage: this._session.environment.dataStorage,
+      log: this._session.environment.log,
       namespace: 'navigation-stack',
     });
 
@@ -104,10 +106,32 @@ export default class NavigationStack {
     );
   }
 
-  // This function could potentially be exposed but there seems to be no use for it.
+  // This function was commented out because `session._history` won't "survive" page reload.
+  // It could be modified to "survive" page reload but that would introduce an unnecessary dependency
+  // on "data storage" while not really adding anything useful to the public API.
+  // I.e. what would be the point of adding a public method `.entries()`
+  // rather than just the mental satisfaction of feature-completeness
+  // and "flexing" one's engineering erudition in public.
   //
-  // getEntries() {
+  // entries() {
   //   return this._session._history.map(getLocationFromInternalLocation);
+  // }
+
+  // This function was commented out because `session._history` won't "survive" page reload.
+  // It could be modified to "survive" page reload but that would introduce an unnecessary dependency
+  // on "data storage" while not really adding anything useful to the public API.
+  // I.e. what would be the point of adding a public method `.size()`
+  // rather than just the mental satisfaction of feature-completeness
+  // and "flexing" one's engineering erudition in public.
+  //
+  // size() {
+  //   return this._session._history.length;
+  // }
+
+  // Instead of calling `index()`, one could simply read `current().index` property.
+  //
+  // index() {
+  //   return this._location ? this._location.index : -1;
   // }
 
   // This function could potentially be exposed but there seems to be no use for it.
@@ -127,10 +151,6 @@ export default class NavigationStack {
     this._session.start(
       initialLocation && this._parseInputLocation(initialLocation),
     );
-
-    if (this._scrollPositionRestoration) {
-      this._scrollPositionRestoration.start();
-    }
   }
 
   current() {

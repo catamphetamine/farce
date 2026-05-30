@@ -1,4 +1,8 @@
 export default class InMemorySessionLifecycle {
+  constructor() {
+    this.running = true;
+  }
+
   // Termination blockers of an "in-memory session" are currently ignored.
   // eslint-disable-next-line no-unused-vars
   addTerminationBlocker(blocker) {

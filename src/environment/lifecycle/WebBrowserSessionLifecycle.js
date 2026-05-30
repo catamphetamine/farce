@@ -4,7 +4,7 @@ import { getPageLifecycleInstance } from './page-lifecycle/PageLifecycleInstance
 
 export default class WebBrowserSessionLifecycle {
   constructor() {
-    this._running = true;
+    this.running = true;
   }
 
   addTerminationBlocker(terminationBlocker) {
@@ -32,8 +32,8 @@ export default class WebBrowserSessionLifecycle {
         newState,
       );
 
-      if (this._running !== running) {
-        this._running = running;
+      if (this.running !== running) {
+        this.running = running;
         listener({ running });
       }
     };

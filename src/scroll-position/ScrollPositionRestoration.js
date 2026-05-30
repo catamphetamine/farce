@@ -29,7 +29,9 @@ export default class ScrollPositionRestoration {
 
     this._sessionLifecycle = session.environment.lifecycle;
 
-    this._locationDataStorage = new LocationDataStorage(session, {
+    this._locationDataStorage = new LocationDataStorage({
+      dataStorage: session.environment.dataStorage,
+      log: session.environment.log,
       namespace: 'navigation-stack-scroll-position',
     });
 
@@ -194,10 +196,11 @@ export default class ScrollPositionRestoration {
 
     this._started = true;
 
-    this._disableAutomaticScrollRestoration();
-
     this._scrollPositionSaver.start();
 
+    // On initial execution status.
+    this._onExecutionStatus(this._sessionLifecycle.running);
+    // Listen to execution status changes.
     this._removePageStatusListener = this._sessionLifecycle.addExecutionStatusListener(
       this._sessionExecutionStatusListener,
     );
@@ -259,10 +262,10 @@ export default class ScrollPositionRestoration {
   _sessionExecutionStatusListener = ({ running }) => {
     if (running) {
       this._log.debug('▶ running');
-      this._disableAutomaticScrollRestoration();
+      this._onExecutionStatus(true);
     } else {
       this._log.debug('⏹ not running');
-      this._enableAutomaticScrollRestoration();
+      this._onExecutionStatus(false);
 
       // There might be previous scroll position already saved in the data storage.
       // Overwrite that previously-saved scroll position with the most up-to-date one
@@ -273,6 +276,14 @@ export default class ScrollPositionRestoration {
       this._scrollPositionSaver.saveScrollPosition('STOPPED');
     }
   };
+
+  _onExecutionStatus(running) {
+    if (running) {
+      this._disableAutomaticScrollRestoration();
+    } else {
+      this._enableAutomaticScrollRestoration();
+    }
+  }
 
   // willRenderLocation = (location) => {
   //   // "Foolproof" check.

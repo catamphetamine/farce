@@ -78,28 +78,23 @@ export default class WebBrowserNavigation {
         );
       }
       const prevIndex = this._currentLocationIndex;
+      const state = getCurrentLocationState()
       // In case of "Back"/"Forward" navigation, there will be a previously-saved location state.
       // In case of clicking an "anchor" hyperlink, or manually editing the "anchor" part of the URL,
       // there will be no previously-saved location state because it will be a new location.
-      const operation = this._getCurrentLocationState()
-        ? Operations.SHIFT
-        : Operations.PUSH
-      const index = this._getCurrentLocationState()
-        ? this._getCurrentLocationState().index
-        : this._currentLocationIndex + 1
-      const key = this._getCurrentLocationState()
-        ? this._getCurrentLocationState().key
-        : getNextLocationKey()
+      const operation = state ? Operations.SHIFT : Operations.PUSH
+      const index = state ? state.index : this._currentLocationIndex + 1
+      const key = state ? state.key : getNextLocationKey()
 
       // If there's no state for the new location (for reasons described above), create it.
-      if (!this._getCurrentLocationState()) {
-        this._setCurrentLocationState({ key, index });
+      if (!state) {
+        setCurrentLocationState({ key, index });
       }
 
       this._currentLocationIndex = index;
 
       listener(
-        this._createEntryFromCurrentLocation({
+        createEntryFromCurrentLocation({
           operation,
           delta: index - prevIndex,
         }),
@@ -141,8 +136,8 @@ export default class WebBrowserNavigation {
   init(initialLocation, { operation, key, index, delta }) {
     // Validate that `initialLocation` is same as `window.location`.
     const isCurrentLocation =
-      initialLocation === this._getCurrentLocation() ||
-      this._isSameAsCurrentLocation(initialLocation);
+      initialLocation === getCurrentLocation() ||
+      isSameAsCurrentLocation(initialLocation);
 
     if (!isCurrentLocation) {
       throw new Error(
@@ -162,20 +157,20 @@ export default class WebBrowserNavigation {
     // If the user refreshes the initial page, `window.history.state` will not be cleared
     // and therefore will not be `null` and will instead have the previously-set value.
     //
-    if (!this._getCurrentLocationState()) {
-      this._setCurrentLocationState({ key, index });
+    if (!getCurrentLocationState()) {
+      setCurrentLocationState({ key, index });
     }
 
     this._currentLocationIndex = index;
 
     // Call the listeners.
-    return this._createEntryFromCurrentLocation({ operation, delta });
+    return createEntryFromCurrentLocation({ operation, delta });
   }
 
   navigate(location, { operation, key, index, delta }) {
     const additionalProperties = { key, index };
 
-    this._navigateToLocationAndKeepItsAdditionalPropertiesInHistory(
+    navigateToLocationAndKeepItsAdditionalPropertiesInHistory(
       location,
       additionalProperties,
       delta,
@@ -208,80 +203,80 @@ export default class WebBrowserNavigation {
   getInitialLocation() {
     // Web browser environment already knows the initial location
     // by the time javascript code starts execution.
-    return this._getCurrentLocation();
+    return getCurrentLocation();
   }
+}
 
-  _getCurrentLocation() {
-    return window.location;
-  }
+function getCurrentLocation() {
+  return window.location;
+}
 
-  _getCurrentLocationState() {
-    return window.history.state;
-  }
+function getCurrentLocationState() {
+  return window.history.state;
+}
 
-  _setCurrentLocationState(state) {
-    // Call `history.replaceState()`.
-    this._navigateToLocationAndKeepItsAdditionalPropertiesInHistory(
-      this._getCurrentLocation(),
-      state,
-      0,
-    );
-  }
+function isSameAsCurrentLocation(inputLocation) {
+  return typeof inputLocation === 'string'
+    ? inputLocation === getLocationUrl(getCurrentLocation())
+    : inputLocation === getCurrentLocation() ||
+        getLocationUrl(inputLocation) ===
+          getLocationUrl(getCurrentLocation());
+}
 
-  _isSameAsCurrentLocation(inputLocation) {
-    return typeof inputLocation === 'string'
-      ? inputLocation === getLocationUrl(this._getCurrentLocation())
-      : inputLocation === this._getCurrentLocation() ||
-          getLocationUrl(inputLocation) ===
-            getLocationUrl(this._getCurrentLocation());
-  }
+function createEntryFromCurrentLocation({ operation, delta }) {
+  const { pathname, search, hash } = getCurrentLocation();
 
-  _createEntryFromCurrentLocation({ operation, delta }) {
-    const { pathname, search, hash } = this._getCurrentLocation();
+  const { key, index } = getCurrentLocationState();
 
-    const { key, index } = this._getCurrentLocationState();
-
-    return {
-      operation,
-      pathname,
-      search,
-      query: parseQueryFromSearch(search),
-      hash,
-      key,
-      index,
-      delta,
-    };
-  }
-
-  // Stores "additional" properties associated with `location` in web browser's history storage.
-  // Web browser's history storage is not intended for large datasets and should only be used
-  // to store small bits of data.
-  //
-  // "Some browsers save state objects to the user's disk so they can be restored after the user restarts
-  //  the browser, and impose a size limit on the serialized representation of a state object, and will throw
-  //  an exception if you pass a state object whose serialized representation is larger than that size limit.
-  //  So in cases where you want to ensure you have more space than what some browsers might impose,
-  //  you're encouraged to use sessionStorage and/or localStorage."
-  //
-  // Source: https://developer.mozilla.org/en-US/docs/Web/API/History/pushState
-  //
-  // To store large amounts of data, one could use `window.sessionStorage` instead.
-  // It is accessible via `DataStorage(session)` class.
-  //
-  _navigateToLocationAndKeepItsAdditionalPropertiesInHistory(
-    location,
-    additionalProperties,
+  return {
+    operation,
+    pathname,
+    search,
+    query: parseQueryFromSearch(search),
+    hash,
+    key,
+    index,
     delta,
-  ) {
-    const url = getLocationUrl(location);
-    // `delta` property is not stored in `window.history.state`
-    // because it is supposed to be recalculated every time when reading from `window.history.state`.
-    if (delta === 1) {
-      window.history.pushState(additionalProperties, null, url);
-    } else if (delta === 0) {
-      window.history.replaceState(additionalProperties, null, url);
-    } else {
-      throw new Error(`Unsupported \`delta\`: ${delta}`);
-    }
+  };
+}
+
+function setCurrentLocationState(state) {
+  // Call `history.replaceState()`.
+  navigateToLocationAndKeepItsAdditionalPropertiesInHistory(
+    getCurrentLocation(),
+    state,
+    0,
+  );
+}
+
+// Stores "additional" properties associated with `location` in web browser's history storage.
+// Web browser's history storage is not intended for large datasets and should only be used
+// to store small bits of data.
+//
+// "Some browsers save state objects to the user's disk so they can be restored after the user restarts
+//  the browser, and impose a size limit on the serialized representation of a state object, and will throw
+//  an exception if you pass a state object whose serialized representation is larger than that size limit.
+//  So in cases where you want to ensure you have more space than what some browsers might impose,
+//  you're encouraged to use sessionStorage and/or localStorage."
+//
+// Source: https://developer.mozilla.org/en-US/docs/Web/API/History/pushState
+//
+// To store large amounts of data, one could use `window.sessionStorage` instead.
+// It is accessible via `DataStorage(session)` class.
+//
+function navigateToLocationAndKeepItsAdditionalPropertiesInHistory(
+  location,
+  additionalProperties,
+  delta,
+) {
+  const url = getLocationUrl(location);
+  // `delta` property is not stored in `window.history.state`
+  // because it is supposed to be recalculated every time when reading from `window.history.state`.
+  if (delta === 1) {
+    window.history.pushState(additionalProperties, null, url);
+  } else if (delta === 0) {
+    window.history.replaceState(additionalProperties, null, url);
+  } else {
+    throw new Error(`Unsupported \`delta\`: ${delta}`);
   }
 }

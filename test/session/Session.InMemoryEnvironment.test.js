@@ -15,6 +15,8 @@ describe('Session (InMemoryEnvironment)', () => {
       location = newLocation;
     });
 
+    expect(session._history).to.deep.equal([]);
+
     session.start(parseInputLocation('/initial?bar=baz#qux'));
 
     expect(location).to.deep.include({
@@ -28,6 +30,10 @@ describe('Session (InMemoryEnvironment)', () => {
       index: 0,
       delta: 0,
     });
+
+    expect(session._history.length).to.equal(1);
+    expect(session._history[0].operation).to.equal('init');
+    expect(session._history[0].pathname).to.equal('/initial');
 
     session.stop();
   });
@@ -45,6 +51,10 @@ describe('Session (InMemoryEnvironment)', () => {
 
     session.start(parseInputLocation('/initial'));
 
+    expect(session._history.length).to.equal(1);
+    expect(session._history[0].operation).to.equal('init');
+    expect(session._history[0].pathname).to.equal('/initial');
+
     expect(listener.callCount).to.equal(1);
     expect(listener.firstCall.args[0]).to.deep.include({
       operation: 'init',
@@ -57,6 +67,10 @@ describe('Session (InMemoryEnvironment)', () => {
     session.navigate('push', {
       pathname: '/new',
     });
+
+    expect(session._history.length).to.equal(2);
+    expect(session._history[1].operation).to.equal('push');
+    expect(session._history[1].pathname).to.equal('/new');
 
     const newLocation = location;
 
@@ -79,6 +93,10 @@ describe('Session (InMemoryEnvironment)', () => {
 
     session.navigate('push', { pathname: '/new-2' });
 
+    expect(session._history.length).to.equal(3);
+    expect(session._history[2].operation).to.equal('push');
+    expect(session._history[2].pathname).to.equal('/new-2');
+
     expect(location).to.include({
       operation: 'push',
       pathname: '/new-2',
@@ -96,6 +114,10 @@ describe('Session (InMemoryEnvironment)', () => {
     listener.resetHistory();
 
     session.navigate('replace', { pathname: '/new-3' });
+
+    expect(session._history.length).to.equal(3);
+    expect(session._history[2].operation).to.equal('replace');
+    expect(session._history[2].pathname).to.equal('/new-3');
 
     expect(location).to.include({
       operation: 'replace',
@@ -115,6 +137,13 @@ describe('Session (InMemoryEnvironment)', () => {
 
     session.shift(-1);
 
+    expect(session._history.length).to.equal(3);
+    expect(session._history[1].operation).to.equal('shift');
+    expect(session._history[1].delta).to.equal(-1);
+    expect(session._history[1].pathname).to.equal('/new');
+    expect(session._history[2].operation).to.equal('replace');
+    expect(session._history[2].pathname).to.equal('/new-3');
+
     expect(listener.callCount).to.equal(1);
     expect(listener.firstCall.args[0]).to.deep.include({
       operation: 'shift',
@@ -124,6 +153,37 @@ describe('Session (InMemoryEnvironment)', () => {
       delta: -1,
     });
     listener.resetHistory();
+
+    session.shift(-1);
+
+    expect(session._history.length).to.equal(3);
+    expect(session._history[0].operation).to.equal('shift');
+    expect(session._history[0].delta).to.equal(-1);
+    expect(session._history[0].pathname).to.equal('/initial');
+    expect(session._history[1].operation).to.equal('shift');
+    expect(session._history[1].delta).to.equal(-1);
+    expect(session._history[1].pathname).to.equal('/new');
+    expect(session._history[2].operation).to.equal('replace');
+    expect(session._history[2].pathname).to.equal('/new-3');
+
+    session.navigate('replace', { pathname: '/new-4' });
+
+    expect(session._history.length).to.equal(3);
+    expect(session._history[0].operation).to.equal('replace');
+    expect(session._history[0].pathname).to.equal('/new-4');
+    expect(session._history[1].operation).to.equal('shift');
+    expect(session._history[1].delta).to.equal(-1);
+    expect(session._history[1].pathname).to.equal('/new');
+    expect(session._history[2].operation).to.equal('replace');
+    expect(session._history[2].pathname).to.equal('/new-3');
+
+    session.navigate('push', { pathname: '/new-5' });
+
+    expect(session._history.length).to.equal(2);
+    expect(session._history[0].operation).to.equal('replace');
+    expect(session._history[0].pathname).to.equal('/new-4');
+    expect(session._history[1].operation).to.equal('push');
+    expect(session._history[1].pathname).to.equal('/new-5');
 
     session.stop();
   });

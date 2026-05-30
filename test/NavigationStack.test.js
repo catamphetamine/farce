@@ -13,6 +13,11 @@ describe('NavigationStack', () => {
 
   beforeEach(() => {
     navigationStack = new NavigationStack(InMemoryEnvironment);
+
+    // Test `.size()` and `.entries()` methods.
+    // expect(navigationStack.size()).to.equal(0)
+    // expect(navigationStack.entries().length).to.equal(0)
+
     navigationStack.init('/initial');
   });
 
@@ -23,12 +28,24 @@ describe('NavigationStack', () => {
     navigationStack.stop();
   });
 
+  // it('should support `push` and `shift` navigation operations, and return correct `entries()` and `size()`', () => {
   it('should support `push` and `shift` navigation operations', () => {
+    // expect(navigationStack.size()).to.equal(1)
+
+    // expect(navigationStack.entries().length).to.equal(1)
+    // expect(navigationStack.entries()[0].pathname).to.equal('/initial')
+
     navigationStack.push('/new');
     expect(navigationStack.current()).to.include({
       pathname: '/new',
       index: 1,
     });
+
+    // expect(navigationStack.size()).to.equal(2)
+
+    // expect(navigationStack.entries().length).to.equal(2)
+    // expect(navigationStack.entries()[0].pathname).to.equal('/initial')
+    // expect(navigationStack.entries()[1].pathname).to.equal('/new')
 
     navigationStack.shift(-1);
     expect(navigationStack.current()).to.include({
@@ -36,11 +53,57 @@ describe('NavigationStack', () => {
       index: 0,
     });
 
+    // expect(navigationStack.size()).to.equal(2)
+
+    // expect(navigationStack.entries().length).to.equal(2)
+    // expect(navigationStack.entries()[0].pathname).to.equal('/initial')
+    // expect(navigationStack.entries()[1].pathname).to.equal('/new')
+
     navigationStack.shift(+1);
     expect(navigationStack.current()).to.include({
       pathname: '/new',
       index: 1,
     });
+
+    // expect(navigationStack.size()).to.equal(2)
+
+    // expect(navigationStack.entries().length).to.equal(2)
+    // expect(navigationStack.entries()[0].pathname).to.equal('/initial')
+    // expect(navigationStack.entries()[1].pathname).to.equal('/new')
+
+    navigationStack.push('/new-2');
+    expect(navigationStack.current()).to.include({
+      pathname: '/new-2',
+      index: 2,
+    });
+
+    // expect(navigationStack.size()).to.equal(3)
+
+    // expect(navigationStack.entries().length).to.equal(3)
+    // expect(navigationStack.entries()[0].pathname).to.equal('/initial')
+    // expect(navigationStack.entries()[1].pathname).to.equal('/new')
+    // expect(navigationStack.entries()[2].pathname).to.equal('/new-2')
+
+    navigationStack.shift(-2);
+
+    // expect(navigationStack.size()).to.equal(3)
+
+    // expect(navigationStack.entries().length).to.equal(3)
+    // expect(navigationStack.entries()[0].pathname).to.equal('/initial')
+    // expect(navigationStack.entries()[1].pathname).to.equal('/new')
+    // expect(navigationStack.entries()[2].pathname).to.equal('/new-2')
+
+    navigationStack.push('/new-3');
+    expect(navigationStack.current()).to.include({
+      pathname: '/new-3',
+      index: 1,
+    });
+
+    // expect(navigationStack.size()).to.equal(2)
+
+    // expect(navigationStack.entries().length).to.equal(2)
+    // expect(navigationStack.entries()[0].pathname).to.equal('/initial')
+    // expect(navigationStack.entries()[1].pathname).to.equal('/new-3')
   });
 
   it('should support `replace` navigation operation', () => {
@@ -318,7 +381,7 @@ describe('NavigationStack', () => {
     navigationStack.push('/new');
 
     // eslint-disable-next-line no-underscore-dangle
-    expect(session._latestLocation.pathname).to.equal('/base/new');
+    expect(session._currentLocation.pathname).to.equal('/base/new');
 
     expect(navigationStack.current()).to.include({
       pathname: '/new',

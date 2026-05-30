@@ -8,8 +8,8 @@ import addScrollableContainer from './addScrollableContainer.js';
 import addScrollableContainerWithAnchors from './addScrollableContainerWithAnchors.js';
 import createApp from './createApp.js';
 import delay from './delay.js';
-import { setEventListener, triggerEvent } from './mockPageLifecycle.js';
-import runApp from './runApp.js';
+import { setPageLifecycleEventListener, triggerPageLifecycleEventForStateTransition } from './mockPageLifecycle.js';
+import runApp, { runAppAtCurrentLocation } from './runApp.js';
 import withScrollableContainerAtIndexPageWithDisabledAutomaticScrollPositionRestoration from './withScrollableContainerAtIndexPageWithDisabledAutomaticScrollPositionRestoration.js';
 import { getPageLifecycleInstance } from '../../src/environment/lifecycle/page-lifecycle/PageLifecycleInstance.js';
 import scheduleNextTick from '../../src/scroll-position/scheduleNextTick.js'
@@ -35,21 +35,21 @@ describe('ScrollPositionRestoration', () => {
       unlisten = undefined;
     }
     sinon.restore();
-    setEventListener();
+    setPageLifecycleEventListener();
   });
 
   it('sets/restores/resets `window.history.scrollRestoration` on freeze/resume', (done) => {
-    sinon.replace(getPageLifecycleInstance(), 'addEventListener', setEventListener);
+    sinon.replace(getPageLifecycleInstance(), 'addEventListener', setPageLifecycleEventListener);
     const app = createApp();
     expect(window.history.scrollRestoration).to.equal('auto');
     unlisten = runApp(app, [
       () => {
         expect(window.history.scrollRestoration).to.equal('manual');
-        triggerEvent('frozen', 'hidden');
+        triggerPageLifecycleEventForStateTransition('frozen', 'hidden');
         expect(window.history.scrollRestoration).to.equal('manual');
-        triggerEvent('hidden', 'frozen');
+        triggerPageLifecycleEventForStateTransition('hidden', 'frozen');
         expect(window.history.scrollRestoration).to.equal('auto');
-        triggerEvent('frozen', 'hidden');
+        triggerPageLifecycleEventForStateTransition('frozen', 'hidden');
         expect(window.history.scrollRestoration).to.equal('manual');
         done();
       },
@@ -57,13 +57,13 @@ describe('ScrollPositionRestoration', () => {
   });
 
   it('sets/restores `window.history.scrollRestoration` on termination', (done) => {
-    sinon.replace(getPageLifecycleInstance(), 'addEventListener', setEventListener);
+    sinon.replace(getPageLifecycleInstance(), 'addEventListener', setPageLifecycleEventListener);
     expect(window.history.scrollRestoration).to.equal('auto');
     const app = createApp();
     unlisten = runApp(app, [
       () => {
         expect(window.history.scrollRestoration).to.equal('manual');
-        triggerEvent('hidden', 'terminated');
+        triggerPageLifecycleEventForStateTransition('hidden', 'terminated');
         expect(window.history.scrollRestoration).to.equal('auto');
         done();
       },
@@ -462,38 +462,58 @@ describe('ScrollPositionRestoration', () => {
       ]);
     });
 
-    it('should save element scroll position on scroll event, i.e. before navigation is even attempted', (done) => {
+    it('should save scroll position in a "data storage" that "survives" a page reload and then gets "picked up" when navigating "back"', (done) => {
       const app1 = addScrollableContainer(
-        createApp({
-          shouldChangePageScrollPositionOnLocationChange: () => false,
-        }),
+        createApp(),
       );
 
       const unlisten1 = runApp(app1, [
         () => {
           expect(scrollTop(app1.container)).to.equal(0);
+          // Emit a scroll event.
+          // Scroll position will be saved upon detecting this event.
           scrollTop(app1.container, 5000);
+          // Go to some other page.
+          delay(() => {
+            app1.goTo('/new');
+          });
+        },
+
+        () => {
+          // The scroll position was reset when the new page was rendered.
+          expect(scrollTop(app1.container)).to.equal(0);
 
           delay(() => {
+            // Emulate a page reload.
+            // All javascript objects are disposed of.
             unlisten1();
 
+            // Emulate that the new page has loaded.
+            // New javascript objects are re-created from scratch.
+            // For example, a new `session` instance is created from scratch,
+            // but it should still have access to the data that was written
+            // to the "data storage" by the previous `session` instance
             const app2 = addScrollableContainer(
-              createApp({
-                // Restore the data of the session of `app1`.
-                // That data includes the scroll position.
-                sessionKey: app1.getSessionKey(),
-                shouldChangePageScrollPositionOnLocationChange: () => false,
-              }),
+              createApp(),
             );
 
-            unlisten = app2.listen(() => {
-              delay(() => {
+            unlisten = runAppAtCurrentLocation(app2, [
+              () => {
+                // The scroll position is still at the top.
+                expect(scrollTop(app2.container)).to.equal(0);
+                // Go the the previous page.
+                // It should restore the scroll position from the previous session.
+                app2.goBack();
+              },
+              () => {
+                // Validate that the previously-saved scroll position was restored.
+                //
                 // Here, it said "expected 4999.7998046875 to equal 5000".
                 // Using `.to.be.closeTo()` here instead of `.to.equal()` to work around this browser issue.
                 expect(scrollTop(app2.container)).to.be.closeTo(5000, 0.5);
                 done();
-              });
-            });
+              }
+            ]);
           });
         },
       ]);

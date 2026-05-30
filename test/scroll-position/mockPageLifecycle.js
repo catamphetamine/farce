@@ -3,11 +3,11 @@
 let listener;
 
 // eslint-disable-next-line no-unused-vars
-export const setEventListener = (eventType, callback) => {
+export const setPageLifecycleEventListener = (eventType, callback) => {
   listener = callback;
 };
 
-export const triggerEvent = (oldState, newState) => {
+export const triggerPageLifecycleEventForStateTransition = (oldState, newState) => {
   if (listener) {
     const event = new Event('statechange');
     event.newState = newState;

@@ -17,7 +17,9 @@ describe('LocationDataStorage', () => {
     window.sessionStorage.clear();
 
     session = new Session(InMemoryEnvironment);
-    stateStorage = new LocationDataStorage(session, {
+    stateStorage = new LocationDataStorage({
+      dataStorage: session.environment.dataStorage,
+      log: session.environment.log,
       namespace: 'test',
     });
   });
@@ -26,19 +28,19 @@ describe('LocationDataStorage', () => {
     stateStorage.set(location, '', 1);
 
     expect(stateStorage.get(location, '')).to.equal(1);
-    expect(stateStorage.get(location, 'foo')).to.be.undefined;
+    expect(stateStorage.get(location, 'foo')).to.be.null;
   });
 
   it('should read saved value for explicit key', () => {
     stateStorage.set(location, 'foo', [2, 3]);
 
     expect(stateStorage.get(location, 'foo')).to.eql([2, 3]);
-    expect(stateStorage.get(location, '')).to.be.undefined;
+    expect(stateStorage.get(location, '')).to.be.null;
   });
 
-  it('should read undefined when value is missing', () => {
-    expect(stateStorage.get(location, '')).to.be.undefined;
-    expect(stateStorage.get(location, 'foo')).to.be.undefined;
+  it('should read `null` when value is missing', () => {
+    expect(stateStorage.get(location, '')).to.be.null;
+    expect(stateStorage.get(location, 'foo')).to.be.null;
   });
 
   it('should work with arbitrary types', () => {
@@ -62,13 +64,16 @@ describe('LocationDataStorage', () => {
     expect(stateStorage.get(location, '')).to.equal(1);
 
     stateStorage.set(location, '', undefined);
-    expect(stateStorage.get(location, '')).to.be.undefined;
+    expect(stateStorage.get(location, '')).to.be.null;
+
+    stateStorage.set(location, '', null);
+    expect(stateStorage.get(location, '')).to.be.null;
   });
 
-  it('should read undefined for invalid JSON', () => {
+  it('should read `null` for invalid JSON', () => {
     window.sessionStorage.setItem('test|location:0', '[}');
 
-    expect(stateStorage.get(location, '')).to.be.undefined;
+    expect(stateStorage.get(location, '')).to.be.null;
   });
 
   it('should support fallback key', () => {

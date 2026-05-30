@@ -129,6 +129,16 @@ To get the current location at any time:
 const location = navigationStack.current()
 ```
 
+<!--
+To get the history of visited locations:
+
+```js
+const locations = navigationStack.entries()
+
+locations.length === navigationStack.size()
+```
+-->
+
 <!-- console.log(location) -->
 
 (optional) After the user is done using the app, stop the session and clean up any listeners.

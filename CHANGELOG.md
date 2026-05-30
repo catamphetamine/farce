@@ -1,3 +1,7 @@
+# 0.6.11 / 30.05.2026
+
+- Fixed restoration of scroll position on previously-visited pages after a page reload.
+
 # 0.6.10 / 27.05.2026
 
 - Fixed clicking an "anchor" link, or manually editing the "anchor" part of the URL.

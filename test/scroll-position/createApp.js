@@ -4,7 +4,6 @@ import ScrollPositionRestoration from '../../src/scroll-position/ScrollPositionR
 
 // Creates a website with `ScrollPositionRestoration`.
 export default function createApp({
-  sessionKey,
   shouldChangePageScrollPositionOnLocationChange,
   getSavedPageScrollPositionOnLocationChange,
 } = {}) {
@@ -59,12 +58,6 @@ export default function createApp({
     navigationStack = new NavigationStack(WebBrowserEnvironment);
     // eslint-disable-next-line no-underscore-dangle
     session = navigationStack._session;
-    // There's this one test that restores data of a session of a previous app
-    // and for that the new session just has to have the same key in order to read
-    // the previous app's session data from the environment storage.
-    if (sessionKey) {
-      session.key = sessionKey;
-    }
     scrollPositionRestoration = new ScrollPositionRestoration(session, {
       shouldChangePageScrollPositionOnLocationChange,
       _getSavedPageScrollPositionOnLocationChange:
@@ -127,7 +120,6 @@ export default function createApp({
     registerScrollableContainer,
     disableSavingScrollPosition,
     enableSavingScrollPosition,
-    getSessionKey: () => session.key,
     whenRenderedLocation,
   };
 }

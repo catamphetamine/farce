@@ -25,18 +25,10 @@ export default function parseLocationUrl(url) {
     search = '';
   }
 
-  const location = {
+  return {
     pathname: remainingPath,
     search,
+    query: parseQueryFromSearch(search) || {},
     hash,
   };
-
-  const query = parseQueryFromSearch(search);
-  if (query) {
-    location.query = query;
-  } else {
-    location.query = {};
-  }
-
-  return location;
 }

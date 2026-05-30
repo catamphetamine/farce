@@ -4,6 +4,10 @@ import createSessionKey from './key/createSessionKey.js';
 import Subscription from './subscription/Subscription.js';
 import NavigationOutOfBoundsError from '../environment/navigation/error/NavigationOutOfBoundsError.js';
 import NavigationOperations from '../environment/navigation/operation/operations.js';
+import DataStorage from '../data-storage/DataStorage.js';
+
+const DATA_STORAGE_NAMESPACE = 'navigation-stack-session'
+const LOCATION_KEY_INDEX_DATA_STORAGE_KEY = 'location-key-index'
 
 const INITIAL_KEY_INDEX = -1;
 const INITIAL_INDEX = -1;
@@ -12,20 +16,74 @@ const INIT_LOCATION_DELTA = 0;
 
 export default class Session {
   constructor(EnvironmentClass) {
-    // `key` is used in `WebBrowserSession` to uniquely identify a session
-    // when storing data in a `WebBrowserDataStorage` which uses `window.sessionStorage`
-    // under the hood, and `window.sessionStorage` is shared between different sessions.
-    this.key = createSessionKey();
-
-    // Could keep a history of visited locations, if required.
-    // In case of uncommenting this property, also add the relevant `expect()` tests for various cases.
-    // this._history = [];
+    // Previously, `key` was used in a `WebBrowserSession` to uniquely identify a `session`
+    // instance when storing data in a `WebBrowserDataStorage` which uses `window.sessionStorage`
+    // under the hood, and the data in that storage exists until the browser tab is closed
+    // and is shared between all pages that ever get opened in that tab and hosted at same HTTP origin.
+    //
+    // But then it was found out that restricting each `session` instance to its own isolated data
+    // broke scroll position restoration after a page reload. And really, there wasn't any rationale
+    // behind why shouldn't different `session` instances share the same data.
+    //
+    // So eventually, the use of `session.key` was removed from the `DataStorage` class.
+    //
+    // But then another requirement for uniqueness had to be met:
+    // whenever a page is reloaded, it creates a new `session` instance with the
+    // "next location ID" counter being reset to `0`, meaning that location IDs
+    // would start repeating after a page reload, breaking the uniqueness contract.
+    //
+    // There could be a couple solutions to that issue:
+    // * Prepend `session.key` to each `location.key`.
+    //   This way, different `session` instances would produce different `location.key`s.
+    // * Store the "next location ID" in the data storage that "survives" page reload.
+    //   This way, a new `session` instance would "pick up" the counter from the previous one.
+    //
+    // Eventually, the latter solution was chosen just because it produces cleaner IDs.
+    // But both are valid.
+    //
+    // The cons of choosing the latter solution would be that "data storage" concept
+    // becomes mandatory to the "session" concept, but it doesn't look like a big thing
+    // because currently all supported types of environment provide correct "data storage"
+    // implementations, so it wouldn't restrict any current environment from being supported
+    // in this package.
+    //
+    // this.key = createSessionKey();
 
     // Create an environment instance.
     this.environment = new EnvironmentClass();
 
+    // Because location key index is stored in the "data storage",
+    // create an instance of `DataStorage` class to read and write data.
+    this._dataStorage = new DataStorage({
+      dataStorage: this.environment.dataStorage,
+      log: this.environment.log,
+      namespace: DATA_STORAGE_NAMESPACE,
+    });
+
+    // Keeps a history of visited locations.
+    //
+    // It doesn't "survive" a page reload because it's a regular variable.
+    // To "survive" a page reload, it could be stored in `this.environment.dataStorage`
+    // but then it would introduce an unnecessary dependency on the "data storage"
+    // while not really providing anything useful in terms of the public API.
+    // I.e. what would be the point of exposing a public method `.getHistory()`
+    // rather than just the mental satisfaction of feature-completeness
+    // and "flexing" one's engineering erudition in public.
+    //
+    // For the reason above, it's only used in tests.
+    //
+    this._history = [];
+
     // `this._locationKeyIndex` is incremented every time the current location changes.
-    this._locationKeyIndex = INITIAL_KEY_INDEX;
+    // this._locationKeyIndex = INITIAL_KEY_INDEX;
+    const locationKeyIndexBeforePageReload = this._dataStorage.get(LOCATION_KEY_INDEX_DATA_STORAGE_KEY);
+    this._locationKeyIndex = typeof locationKeyIndexBeforePageReload === 'number'
+      ? locationKeyIndexBeforePageReload
+      : INITIAL_KEY_INDEX;
+
+    // Current location.
+    // It is only used in tests.
+    this._currentLocation = undefined;
 
     // `this._currentLocationIndex` is the index of the top element in the navigation stack.
     // I.e. it's the index of the "current" location in the navigation stack.
@@ -33,7 +91,21 @@ export default class Session {
 
     // The `index` of the terminal (rightmost) location in the navigation history.
     // In other words, this is the last location index that it can `.shift()` to.
-    this._terminalLocationIndex = this._currentLocationIndex;
+    //
+    // It doesn't "survive" a page reload because it's a regular variable.
+    // To "survive" a page reload, it could be stored in `this.environment.dataStorage`
+    // but then it would introduce an unnecessary dependency on the "data storage"
+    // while not really providing anything useful in terms of the public API.
+    // Yeah, validation of the maximum allowed location index to shift to
+    // is a nice feature but it doesn't really add anything substantial
+    // because the environment would've thrown an error anyway if the location index
+    // being shifted to is too large. Receiving that type of "native" error
+    // rather than a `NavigationOutOfBounds` error doesn't really change anything
+    // in a real-world application.
+    //
+    // For the reason above, this property was commented out.
+    //
+    // this._terminalLocationIndex = this._currentLocationIndex;
 
     // Allows subscribing to location updates.
     //
@@ -59,8 +131,6 @@ export default class Session {
       subscribe: (notifySubscribers) => {
         return this.environment.navigation.subscribeToAsyncrhonousLocationUpdates(
           (location) => {
-            // `this._latestLocation` is only used in tests.
-            this._latestLocation = location;
             // Notify all subscribers about this "asynchronous" location change.
             notifySubscribers(location);
           },
@@ -75,31 +145,50 @@ export default class Session {
     // * When reading initial location.
     // * Whenever the current location changes.
     this._unsubscribe = this.subscribe((location) => {
+      // `this._currentLocation` is only used in tests.
+      this._currentLocation = location;
+
       // Update `this._currentLocationIndex` when the location change was not initiated
       // by this session but rather by the user clicking "Back" or "Forward" button.
       this._currentLocationIndex = location.index;
 
-      // Could keep a history of visited locations, if required.
-      // if (location.operation === NavigationOperations.INIT || location.operation === NavigationOperations.PUSH) {
-      //   this._history.push(location)
-      // } else if (location.operation === NavigationOperations.REPLACE) {
-      //   this._history[location.index] = location
-      // } else {
-      //   // On "shift" operation, don't trim the history of visited locations.
-      // }
+      if (location.operation === NavigationOperations.PUSH) {
+        // Trim the history of visited locations.
+        this._history = this._history.slice(0, location.index);
+      }
+
+      // Update the history of visited locations.
+      if (location.operation === NavigationOperations.INIT || location.operation === NavigationOperations.PUSH) {
+        this._history.push(location)
+      } else if (location.operation === NavigationOperations.REPLACE) {
+        this._history[location.index] = location
+      } else {
+        // Replace the `location` on "shift" operation
+        // because it now has different properties: `operation` and `delta`.
+        this._history[location.index] = location
+      }
 
       // Since `currentLocationIndex` has been updated, update `terminalLocationIndex`.
       // It's not really currently possible to see a "PUSH" or a "REPLACE" operation here,
       // but if it was possible, this call would be required. It would also be required
       // by `navigation` to call `session.getNextKey()` function to increment `locationKeyIndex`.
-      this._updateTerminalLocationIndex(location);
+      //
+      // `_terminalLocationIndex` property was commented out.
+      //
+      //   if (
+      //     location.operation === NavigationOperations.PUSH ||
+      //     location.operation === NavigationOperations.INIT
+      //   ) {
+      //     this._terminalLocationIndex = location.index;
+      //   }
+      // }
 
       this.environment.log.debug(
         'current location',
         'is',
         '"' + getLocationUrl(location) + '"',
         'index',
-        this._currentLocationIndex,
+        location.index,
       );
     });
   }
@@ -206,8 +295,6 @@ export default class Session {
     });
 
     if (locationResult) {
-      // `this._latestLocation` is only used in tests.
-      this._latestLocation = locationResult;
       // Notify all subscribers about this "synchronous" location change.
       this._synchronousLocationChangesSubscription.notifySubscribers(
         locationResult,
@@ -251,8 +338,6 @@ export default class Session {
 
     const delta = operation === NavigationOperations.PUSH ? 1 : 0;
 
-    this._updateTerminalLocationIndex({ operation });
-
     const key = this._getNextLocationKey();
     const index = this._currentLocationIndex + delta;
 
@@ -273,8 +358,6 @@ export default class Session {
     });
 
     if (locationResult) {
-      // `this._latestLocation` is only used in tests.
-      this._latestLocation = locationResult;
       // Notify all subscribers about this "synchronous" location change.
       this._synchronousLocationChangesSubscription.notifySubscribers(
         locationResult,
@@ -303,9 +386,14 @@ export default class Session {
     );
 
     // Validate that the new `index` is not out of bounds.
-    if (index < 0 || index > this._terminalLocationIndex) {
+    if (index < 0) {
       throw new NavigationOutOfBoundsError(index);
     }
+
+    // `_terminalLocationIndex` property was commented out.
+    // if (index > this._terminalLocationIndex) {
+    //   throw new NavigationOutOfBoundsError(index);
+    // }
 
     // Navigate to the location.
     const locationResult = this.environment.navigation.shift({
@@ -315,8 +403,6 @@ export default class Session {
     });
 
     if (locationResult) {
-      // `this._latestLocation` is only used in tests.
-      this._latestLocation = locationResult;
       // Notify all subscribers about this "synchronous" location change.
       this._synchronousLocationChangesSubscription.notifySubscribers(
         locationResult,
@@ -329,21 +415,9 @@ export default class Session {
     return this._currentLocationIndex;
   };
 
-  _updateTerminalLocationIndex({ operation }) {
-    // A `PUSH` navigation sets a new terminal (rightmost) location.
-    if (
-      operation === NavigationOperations.PUSH ||
-      operation === NavigationOperations.INIT
-    ) {
-      this._terminalLocationIndex = this._currentLocationIndex;
-
-      // Could keep a history of visited locations, if required.
-      // this._history = this._history.slice(0, this._terminalLocationIndex + 1);
-    }
-  }
-
   _getNextLocationKey = () => {
     this._locationKeyIndex++;
+    this._dataStorage.set(LOCATION_KEY_INDEX_DATA_STORAGE_KEY, this._locationKeyIndex);
     return this._locationKeyIndex.toString(36);
   }
 

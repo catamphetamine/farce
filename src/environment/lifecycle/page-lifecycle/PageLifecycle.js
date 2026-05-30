@@ -151,14 +151,13 @@ export default class PageLifecycle extends EventTarget {
     const state = getCurrentState();
 
     this._state = state;
-    this._unsavedChanges = [];
 
     // Bind the callback and add event listeners.
     this._handleEvents = this._handleEvents.bind(this);
 
     // Add capturing events on window so they run immediately.
-    EVENTS.forEach((evt) =>
-      window.addEventListener(evt, this._handleEvents, true),
+    EVENTS.forEach((event) =>
+      window.addEventListener(event, this._handleEvents, true),
     );
   }
 
@@ -177,40 +176,6 @@ export default class PageLifecycle extends EventTarget {
    */
   get pageWasDiscarded() {
     return document.wasDiscarded || false;
-  }
-
-  /**
-   * @param {Symbol|Object} id A unique symbol or object identifying the
-   *.    pending state. This ID is required when removing the state later.
-   */
-  addUnsavedChanges(id) {
-    // Don't add duplicate state. Note: ideall this would be a set, but for
-    // better browser compatibility we're using an array.
-    if (!this._unsavedChanges.indexOf(id) > -1) {
-      // If this is the first state being added,
-      // also add a beforeunload listener.
-      if (this._unsavedChanges.length === 0) {
-        window.addEventListener('beforeunload', onbeforeunload);
-      }
-      this._unsavedChanges.push(id);
-    }
-  }
-
-  /**
-   * @param {Symbol|Object} id A unique symbol or object identifying the
-   *.    pending state. This ID is required when removing the state later.
-   */
-  removeUnsavedChanges(id) {
-    const idIndex = this._unsavedChanges.indexOf(id);
-
-    if (idIndex > -1) {
-      this._unsavedChanges.splice(idIndex, 1);
-
-      // If there's no more pending state, remove the event listener.
-      if (this._unsavedChanges.length === 0) {
-        window.removeEventListener('beforeunload', onbeforeunload);
-      }
-    }
   }
 
   /**
@@ -248,29 +213,29 @@ export default class PageLifecycle extends EventTarget {
 
   /**
    * @private
-   * @param {!Event} evt
+   * @param {!Event} event
    */
-  _handleEvents(evt) {
-    switch (evt.type) {
+  _handleEvents(event) {
+    switch (event.type) {
       case 'pageshow':
       case 'resume':
-        this._dispatchChangesIfNeeded(evt, getCurrentState());
+        this._dispatchChangesIfNeeded(event, getCurrentState());
         break;
       case 'focus':
-        this._dispatchChangesIfNeeded(evt, ACTIVE);
+        this._dispatchChangesIfNeeded(event, ACTIVE);
         break;
       case 'blur':
         // The `blur` event can fire while the page is being unloaded, so we
         // only need to update the state if the current state is "active".
         if (this._state === ACTIVE) {
-          this._dispatchChangesIfNeeded(evt, getCurrentState());
+          this._dispatchChangesIfNeeded(event, getCurrentState());
         }
         break;
       case 'pagehide':
       case 'unload':
         this._dispatchChangesIfNeeded(
-          evt,
-          evt.persisted ? FROZEN : TERMINATED,
+          event,
+          event.persisted ? FROZEN : TERMINATED,
         );
         break;
       case 'visibilitychange':
@@ -278,11 +243,11 @@ export default class PageLifecycle extends EventTarget {
         // is being unloaded, but in such cases the lifecycle state shouldn't
         // change.
         if (this._state !== FROZEN && this._state !== TERMINATED) {
-          this._dispatchChangesIfNeeded(evt, getCurrentState());
+          this._dispatchChangesIfNeeded(event, getCurrentState());
         }
         break;
       case 'freeze':
-        this._dispatchChangesIfNeeded(evt, FROZEN);
+        this._dispatchChangesIfNeeded(event, FROZEN);
         break;
       default:
         break;

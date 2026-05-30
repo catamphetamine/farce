@@ -4,6 +4,8 @@ import { PAGE_SCROLLABLE_CONTAINER_KEY } from './constants.js';
 import scheduleNextTick from './scheduleNextTick.js';
 import getLocationUrl from '../getLocationUrl.js';
 
+const LOCATION_RENDERED_NOT_CALLED_ERROR_MESSAGE = 'Scroll detected on a rendered page before `.locationRendered()` has ever been called. You\'re using `manageScrollPosition: true` feature, so make sure you call `navigationStack.locationRendered(location)` every time immediately after a different location has been rendered (including the initial location).';
+
 export default class ScrollPositionAutoSaver {
   constructor({
     log,
@@ -132,11 +134,20 @@ export default class ScrollPositionAutoSaver {
           if (!this._shouldSaveScrollPosition()) {
             return;
           }
+
           // Use `scheduleNextTick()` function to "throttle" incoming scroll events.
           // There would be no use in reacting to every incoming scroll event
           // because there might be too many in a given short period of time
           // which could affect the performance of the application.
           if (!scrollableContainerEntry.cancelSaveScrollPosition) {
+            if (!this._getLocation()) {
+              // Apparently, the page is already rendered but `.locationRendered()` hasn't been called yet.
+              // This signals that the developer either forgot to call `.locationRendered()` at all
+              // or that they call it not immediately after the page has been actually rendered (which is not really correct).
+              this._log.error(LOCATION_RENDERED_NOT_CALLED_ERROR_MESSAGE);
+              return;
+            }
+
             this._log.debug(
               'scroll detected',
               'at',
@@ -144,6 +155,7 @@ export default class ScrollPositionAutoSaver {
               'in',
               '<' + scrollableContainerKey + '>',
             );
+
             scrollableContainerEntry.cancelSaveScrollPosition = scheduleNextTick(() => {
               this._log.debug(
                 'auto-save scroll position after scroll',
@@ -165,6 +177,14 @@ export default class ScrollPositionAutoSaver {
   addPageScrollListener() {
     // Set up scroll listener on the page.
     this._removePageScrollListener = this._scrollPosition.addPageScrollListener(() => {
+      if (!this._getLocation()) {
+        // Apparently, the page is already rendered but `.locationRendered()` hasn't been called yet.
+        // This signals that the developer either forgot to call `.locationRendered()` at all
+        // or that they call it not immediately after the page has been actually rendered (which is not really correct).
+        this._log.error(LOCATION_RENDERED_NOT_CALLED_ERROR_MESSAGE);
+        return;
+      }
+
       this._log.debug(
         'scroll detected',
         'at',
@@ -177,6 +197,7 @@ export default class ScrollPositionAutoSaver {
       if (!this._shouldSaveScrollPosition()) {
         return;
       }
+
       // Use `scheduleNextTick()` function to "throttle" incoming scroll events.
       // There would be no use in reacting to every incoming scroll event
       // because there might be too many in a given short period of time
