@@ -467,12 +467,20 @@ describe('ScrollPositionRestoration', () => {
         createApp(),
       );
 
+      // Location key index value will be tested.
+      let _locationKeyIndexInitial1;
+
       const unlisten1 = runApp(app1, [
         () => {
+          // Read the initial location key index value.
+          _locationKeyIndexInitial1 = app1.getSession()._locationKeyIndex;
+
           expect(scrollTop(app1.container)).to.equal(0);
+
           // Emit a scroll event.
           // Scroll position will be saved upon detecting this event.
           scrollTop(app1.container, 5000);
+
           // Go to some other page.
           delay(() => {
             app1.goTo('/new');
@@ -499,6 +507,12 @@ describe('ScrollPositionRestoration', () => {
 
             unlisten = runAppAtCurrentLocation(app2, [
               () => {
+                // Check that it reuses a previously-stored location key index from "data storage"
+                // rather than creating a new one from scratch.
+                const _locationKeyIndexInitial2 = app2.getSession()._locationKeyIndex;
+                expect(_locationKeyIndexInitial2).to.not.equal(_locationKeyIndexInitial1);
+                // The restored location key index is always incremented at `init` stage.
+                expect(_locationKeyIndexInitial2).to.equal(app1.getSession()._locationKeyIndex + 1)
                 // The scroll position is still at the top.
                 expect(scrollTop(app2.container)).to.equal(0);
                 // Go the the previous page.

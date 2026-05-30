@@ -121,5 +121,9 @@ export default function createApp({
     disableSavingScrollPosition,
     enableSavingScrollPosition,
     whenRenderedLocation,
+    // There's one test that requires access to the `session` instance.
+    // It tests that `session._locationKeyIndex` is initialized from
+    // a previously-saved value in "data storage".
+    getSession: () => session,
   };
 }
