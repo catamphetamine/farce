@@ -283,6 +283,12 @@ export default class Session {
 
     this._started = true;
 
+    // This new `key` will not necessarily be used:
+    // if this `session` instance is created after a page reload,
+    // the properties of the already-existing location from history
+    // will be reused, and this new `key` will be discarded.
+    // Discarding a `key` in situations like this is fine
+    // because `key`s are not required to be sequential, unlike `index`es.
     const key = this._getNextLocationKey();
     const index = INITIAL_INDEX + 1;
     const delta = INIT_LOCATION_DELTA;
