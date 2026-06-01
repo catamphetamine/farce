@@ -139,6 +139,12 @@ export class NavigationStack<
   addScrollableContainer(
     scrollableContainerKey: string,
     scrollableContainer: ScrollableContainer,
+    options?: {
+      shouldChangeScrollPositionOnLocationChange?: (
+        prevLocation: Location | undefined,
+        newLocation: Location,
+      ) => boolean;
+    }
   ): () => void;
 
   addNavigationBlocker(blocker: NavigationBlocker): () => void;
