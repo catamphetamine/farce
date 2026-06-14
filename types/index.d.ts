@@ -116,6 +116,8 @@ export function removeBasePath<L extends InputLocation>(
   basePath?: string,
 ): L;
 
+export function isRelativeUrl(url: string): boolean;
+
 export function getLocationUrl(location: InputLocationObject): string;
 export function parseLocationUrl(locationUrl: string): LocationBase;
 

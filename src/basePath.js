@@ -1,11 +1,13 @@
+import isRelativeUrl from './isRelativeUrl.js';
+
 function normalizeBasePath(basePath) {
   if (!basePath || basePath === '/') {
     return undefined;
   }
 
   // Validate `basePath`.
-  if (basePath[0] !== '/') {
-    throw new Error('`basePath` must start with a slash');
+  if (!isRelativeUrl(basePath)) {
+    throw new Error('`basePath` must me a relative URL');
   }
 
   // Remove trailing slash from `basePath`.

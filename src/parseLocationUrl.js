@@ -1,8 +1,9 @@
+import isRelativeUrl from './isRelativeUrl.js';
 import parseQueryFromSearch from './parseQueryFromSearch.js';
 
 export default function parseLocationUrl(url) {
-  if (url[0] !== '/') {
-    throw new Error('Expected URL to start with a slash');
+  if (!isRelativeUrl(url)) {
+    throw new Error('Must be a relative URL');
   }
 
   let remainingPath = url;

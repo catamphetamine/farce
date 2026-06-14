@@ -593,12 +593,18 @@ This package exports a few utility functions for transforming locations.
 
 ```js
 import {
+  isRelativeUrl,
   getLocationUrl,
   parseLocationUrl,
   parseInputLocation,
   addBasePath,
   removeBasePath
 } from 'navigation-stack'
+
+// Tells if a URL is a "relative" one.
+isRelativeUrl('/abc') === true
+isRelativeUrl('//abc') === false
+isRelativeUrl('https://example.com/abc') === false
 
 // The following two are "mutually inverse functions":
 // one maps a `location` object to a URL string

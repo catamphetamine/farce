@@ -5,6 +5,7 @@ import * as exports from '../../src/index.js';
 
 describe('index', () => {
 	it('should export top level correctly', () => {
+		expect(exports.isRelativeUrl).to.be.a('function');
 		expect(exports.addBasePath).to.be.a('function');
 		expect(exports.removeBasePath).to.be.a('function');
 		expect(exports.getLocationUrl).to.be.a('function');
