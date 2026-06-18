@@ -107,6 +107,11 @@ export interface BeforeLocationChangeListener {
   (location: Location): void;
 }
 
+export type ShouldChangeScrollPositionOnLocationChange = (
+  prevLocation: Location | undefined,
+  newLocation: Location,
+) => boolean;
+
 export function addBasePath<L extends InputLocation>(
   location: L,
   basePath?: string,
@@ -126,6 +131,7 @@ export function parseInputLocation(location: InputLocation): LocationBase;
 export interface NavigationStackOptions<ScrollableContainer, ScrollPositionAnchor> {
   basePath?: string;
   manageScrollPosition?: boolean;
+  shouldChangePageScrollPositionOnLocationChange?: ShouldChangeScrollPositionOnLocationChange;
   scrollPositionSetter?: ScrollPositionSetterConstructor<ScrollableContainer, ScrollPositionAnchor>;
 }
 
@@ -142,10 +148,7 @@ export class NavigationStack<
     scrollableContainerKey: string,
     scrollableContainer: ScrollableContainer,
     options?: {
-      shouldChangeScrollPositionOnLocationChange?: (
-        prevLocation: Location | undefined,
-        newLocation: Location,
-      ) => boolean;
+      shouldChangeScrollPositionOnLocationChange?: ShouldChangeScrollPositionOnLocationChange
     }
   ): () => void;
 
@@ -430,12 +433,9 @@ export class ScrollPositionRestoration<
       // Using this option, a developer could provide their own implementation of setting
       // a scroll position. For example, it could use "smooth" (animated) scrolling, etc.
       // When specified, it applies to both page and any scrollable containers.
-      scrollPositionSetter: ScrollPositionSetterConstructor<ScrollableContainer, ScrollPositionAnchor>;
+      scrollPositionSetter: ScrollPositionSetterConstructor<ScrollableContainer, ScrollPositionAnchor>,
 
-      shouldChangePageScrollPositionOnLocationChange?: (
-        prevLocation: Location | undefined,
-        newLocation: Location,
-      ) => boolean;
+      shouldChangePageScrollPositionOnLocationChange?: ShouldChangeScrollPositionOnLocationChange,
 
       // `options._getSavedPageScrollPositionOnLocationChange`
       // isn't used in real life and is not part of the public API.
@@ -452,10 +452,7 @@ export class ScrollPositionRestoration<
     scrollableContainer: ScrollableContainer,
 
     options?: {
-      shouldChangeScrollPositionOnLocationChange?: (
-        prevLocation: Location | undefined,
-        newLocation: Location,
-      ) => boolean;
+      shouldChangeScrollPositionOnLocationChange?: ShouldChangeScrollPositionOnLocationChange,
 
       // `_options._getSavedScrollPositionOnLocationChange`
       // isn't used in real life and is not part of the public API.

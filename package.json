@@ -1,6 +1,6 @@
 {
   "name": "navigation-stack",
-  "version": "0.6.13",
+  "version": "0.6.14",
   "description": "Navigation in a Single-Page Application",
   "keywords": [
     "history",
