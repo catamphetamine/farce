@@ -156,7 +156,14 @@ export class NavigationStack<
 
   dataStorage: LocationDataStorage;
 
-  subscribe(listener: (location: Location) => void): () => void;
+  // Subscribes to location changes.
+  // The listener function will be called immediately after the location has changed,
+  // and also at initialization phase for the initial location.
+  //
+  // FYI: If you decide to set up any `async` "navigation blockers", it will delay
+  // the listener function until those `async` "navigation blockers" have been resolved.
+  //
+  subscribe(onLocationUpdated: (location: Location) => void): () => void;
 
   // entries(): Location[];
 

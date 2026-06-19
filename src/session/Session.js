@@ -195,9 +195,9 @@ export default class Session {
 
   // Subscribes to changes in location.
   //
-  // A subscription will be triggered in two cases:
-  // * When reading initial location.
-  // * Whenever the current location changes.
+  // The listener funtion will be called in two cases:
+  // * Initially when reading the initial location in the class constructor.
+  // * Immediately after the current location has changed.
   //
   // The first subscriber is always the `Session`'s own internal listener:
   // it keeps the current location index variable value up-to-date.

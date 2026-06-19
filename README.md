@@ -60,9 +60,12 @@ Then subscribe to location changes:
 
 ```js
 // Subscribe to location changes.
-// The listener function will be called immediately after the current location has changed.
-// The first call happens for the initial location.
-// Next calls will happen in case of any navigation.
+// The listener function will be called immediately after the location has changed,
+// and also at initialization phase for the initial location.
+//
+// FYI: If you decide to set up any `async` "navigation blockers", it will delay
+// the listener function until those `async` "navigation blockers" have been resolved.
+//
 const unsubscribe = navigationStack.subscribe((location) => {
   console.log('Current location', location)
 })

@@ -35,7 +35,7 @@ export default class NavigationStack {
     // Allows temporarily ignoring location update events when set to `true`.
     this._ignoreLocationUpdates = false;
 
-    // Subscribe to location updates.
+    // Subscribes to location updates.
     // * Ignores location updates if `_ignoreLocationUpdates` flag is temporarily set.
     // * Runs navigation blockers to see if the location update should be reverted.
     // * Updates `this._location` if the update wasn't ignored or blocked.
